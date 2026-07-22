@@ -120,7 +120,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyZ-32e_ffW-Er0FRCeUC37KbJDgES-MqSMEYJ_4LF-hfh7-WAE0qH-XzfFo_xiUM-isg/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzy-9Kg0FmNa9rmCCaXjd6ZY2dZh6IMMS0QeXhjq5Ob5tAVdF7R_vMSoygoFuww16Clzg/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -174,37 +174,44 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
+// 🌟 關鍵效能優化：平行非同步載入
 async function initPage() {
   createCircuitBackground();
-  
-  // 1. 先讀取公司職缺清單並立刻渲染
-  const compRes = await callGasApi('getCompanyData', {}, 'GET');
-  window.companyData = Array.isArray(compRes) ? compRes : [];
-  renderCompanyOptions();
 
-  // 2. 初始化 LIFF 自動帶入身分
-  try {
-    if (typeof liff !== 'undefined' && LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile && profile.userId) {
-          window.lineUserId = profile.userId;
-          const userRes = await callGasApi('checkUserByLineUserId', { lineUserId: profile.userId });
-          if (userRes.success && userRes.data) {
-            window.isAutoBound = true;
-            document.getElementById('userInfoName').innerText = userRes.data.name;
-            document.getElementById('name').value = userRes.data.name;
-            document.getElementById('idNumber').value = userRes.data.idNumber;
-            document.getElementById('manualInputFields').classList.add('hidden');
-            document.getElementById('autoUserStatus').classList.remove('hidden');
+  // 定義工作 1：抓取職缺資料
+  const fetchJobsTask = callGasApi('getCompanyData', {}, 'GET').then(res => {
+    window.companyData = Array.isArray(res) ? res : [];
+    renderCompanyOptions();
+  });
+
+  // 定義工作 2：LIFF 身份驗證與比對
+  const liffTask = (async () => {
+    try {
+      if (typeof liff !== 'undefined' && LIFF_ID) {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          if (profile && profile.userId) {
+            window.lineUserId = profile.userId;
+            const userRes = await callGasApi('checkUserByLineUserId', { lineUserId: profile.userId });
+            if (userRes.success && userRes.data) {
+              window.isAutoBound = true;
+              document.getElementById('userInfoName').innerText = userRes.data.name;
+              document.getElementById('name').value = userRes.data.name;
+              document.getElementById('idNumber').value = userRes.data.idNumber;
+              document.getElementById('manualInputFields').classList.add('hidden');
+              document.getElementById('autoUserStatus').classList.remove('hidden');
+            }
           }
         }
       }
+    } catch (e) {
+      console.warn('LIFF 無法自動驗證，切換為手動輸入');
     }
-  } catch (e) { 
-    console.warn('LIFF 無法自動驗證，切換為手動輸入'); 
-  }
+  })();
+
+  // ⚡ 同時平行啟動這兩項任務！
+  await Promise.all([fetchJobsTask, liffTask]);
 }
 
 function renderCompanyOptions() {
@@ -238,9 +245,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const nameInput = document.getElementById('name');
   const idInput = document.getElementById('idNumber');
 
-  idInput.addEventListener('input', function() {
-    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  });
+  if (idInput) {
+    idInput.addEventListener('input', function() {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    });
+  }
 
   // 提交預約
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
