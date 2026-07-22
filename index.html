@@ -92,6 +92,16 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <div class="main-content-area max-w-3xl mx-auto px-4">
 <div id="generalMessageArea" class="status-message hidden"></div>
 
+<!-- 舊用戶快捷提示卡片 (預設隱藏) -->
+<div id="quickBookingBanner" class="form-container p-6 mb-8 border-2 border-circuitCyan hidden">
+  <h2 class="text-2xl font-bold text-circuitCyan mb-2">👋 歡迎回來，<span id="quickUserName">求職者</span>！</h2>
+  <p class="text-nearWhite mb-4">系統偵測到您先前已完成線上履歷填寫。您可以直接進行職缺預約，無須重新填寫履歷。</p>
+  <div class="flex flex-col sm:flex-row gap-4">
+    <button id="quickBookBtn" class="submit-btn flex-1 py-3 text-lg font-bold">🚀 直接進行職缺預約</button>
+    <button id="showFormBtn" class="secondary-btn flex-1 py-3 text-lg">✏️ 重新填寫/修改履歷</button>
+  </div>
+</div>
+
 <!-- 表單主體 -->
 <div id="formContainer" class="form-container p-5 sm:p-7 md:p-9">
 <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 sm:mb-10 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
@@ -303,7 +313,7 @@ font-weight: 500; cursor: pointer; text-align: center; }
 </div>
 </div>
 
-<!-- 客製化確認 Modal -->
+<!-- 客製化 Modal -->
 <div id="customConfirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
 <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
 <p id="customConfirmMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
@@ -314,7 +324,6 @@ font-weight: 500; cursor: pointer; text-align: center; }
 </div>
 </div>
 
-<!-- 客製化 Alert Modal (完全替代原生 alert) -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
 <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
 <p id="customAlertMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
@@ -332,8 +341,9 @@ window.lineUserId = '';
 window.formData = {}; 
 window.companyData = []; 
 window.currentBookingInfo = {};
+window.existingUser = null; // 暫存舊用戶資訊
 
-// 2. 超高相容性 API 呼叫工具 (完整支援跨網域 POST 與自動跟隨重導向)
+// 2. 通用 API 呼叫工具
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
     if (method === 'GET') {
@@ -341,12 +351,11 @@ async function callGasApi(action, payload = {}, method = 'GET') {
       const resp = await fetch(`${GAS_API_URL}?${query}`);
       return await resp.json();
     } else {
-      // 關鍵修復：補齊 Content-Type 與 redirect: 'follow'，確保手機瀏覽器不被 CORS 攔截
+      const params = new URLSearchParams();
+      params.append('postData', JSON.stringify({ action, ...payload }));
       const resp = await fetch(GAS_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, ...payload }),
-        redirect: 'follow'
+        body: params
       });
       return await resp.json();
     }
@@ -356,7 +365,7 @@ async function callGasApi(action, payload = {}, method = 'GET') {
   }
 }
 
-// 3. LIFF 初始化
+// 3. LIFF 初始化 (含自動自動檢查舊用戶功能)
 async function initLiff() {
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
@@ -366,12 +375,26 @@ async function initLiff() {
         window.lineUserId = profile.userId;
         const lineUserIdInput = document.getElementById('lineUserId');
         if (lineUserIdInput) lineUserIdInput.value = profile.userId;
+
+        // 🌟 自動檢查舊用戶履歷
+        checkExistingUser(profile.userId);
+
       } else if (liff.isInClient()) {
         liff.login();
       }
     }
   } catch (err) {
     console.warn('LIFF 初始化跳過:', err);
+  }
+}
+
+// 🌟 檢查是否為舊用戶
+async function checkExistingUser(uid) {
+  const res = await callGasApi('queryByLineUserId', { lineUserId: uid }, 'GET');
+  if (res.status === 'found' && res.data) {
+    window.existingUser = res.data;
+    document.getElementById('quickUserName').innerText = res.data.name || '求職者';
+    document.getElementById('quickBookingBanner').classList.remove('hidden');
   }
 }
 
@@ -393,7 +416,7 @@ function createCircuitBackground() {
   }
 }
 
-// 5. 嚴格身分證與居留證檢核邏輯
+// 5. 身分證與生日檢核
 function validateTaiwanID(id) {
   if(!id || typeof id !== 'string') return false;
   const m={"A":10,"B":11,"C":12,"D":13,"E":14,"F":15,"G":16,"H":17,"I":34,"J":18,"K":19,"L":20,"M":21,"N":22,"O":35,"P":23,"Q":24,"R":25,"S":26,"T":27,"U":28,"V":29,"W":32,"X":30,"Y":31,"Z":33};
@@ -428,20 +451,14 @@ function validateIdField(showError = true) {
   const idNumberError = document.getElementById('idNumberError');
   if (!idNumberInput) return true; 
   const idValue = idNumberInput.value.trim().toUpperCase(); 
-  
   const isValid = (validateTaiwanID(idValue) || validateResidentID(idValue));
-  
   if (idNumberError) { 
-    if (isValid || idValue === '') {
-      idNumberError.classList.add('hidden');
-    } else {
-      if (showError) idNumberError.classList.remove('hidden');
-    }
+    if (isValid || idValue === '') idNumberError.classList.add('hidden');
+    else if (showError) idNumberError.classList.remove('hidden');
   }
   return isValid;
 }
 
-// 6. 民國生日轉碼與檢核
 function validateBirthdateYear() {
   const birthdateInput = document.getElementById('birthdate');
   const birthdateError = document.getElementById('birthdateError');
@@ -462,7 +479,6 @@ function validateBirthdateYear() {
       else if (year > new Date().getFullYear()) { isValid = false; errorMessage = "日期不可超過西元今日"; }
     }
   } else if (birthdateInput.required) { isValid = false; errorMessage = "出生日期為必填。"; }
-  
   if (birthdateError) { 
     birthdateError.textContent = errorMessage; 
     birthdateError.classList.toggle('hidden', isValid); 
@@ -470,7 +486,7 @@ function validateBirthdateYear() {
   return isValid;
 }
 
-// 7. 客製化 Modal 控制 (解決 joying830.github.io 跳窗問題)
+// 6. 客製化 Modal 控制
 let confirmResolve = null;
 let alertResolve = null;
 
@@ -506,7 +522,7 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 8. 表單資料載入與預覽
+// 7. 表單預覽與清單渲染
 function populateFormWithData(data) {
   if (!data) return;
   const agreementRadios = document.getElementsByName('agreement');
@@ -516,7 +532,6 @@ function populateFormWithData(data) {
   }
   const infoSource = document.getElementById('infoSource');
   if(infoSource) infoSource.value = data.infoSource || "";
-  
   document.getElementById('name').value = data.name || "";
   if(data.birthdate && data.birthdate.includes('-')) {
     const p = data.birthdate.split('-'); const ryc = parseInt(p[0], 10) - 1911;
@@ -551,6 +566,7 @@ function displayDataInReview(dataObject) {
     reviewContent.appendChild(row);
   });
   document.getElementById('formContainer').classList.add('hidden'); 
+  document.getElementById('quickBookingBanner').classList.add('hidden');
   document.getElementById('reviewSection').classList.remove('hidden'); 
   window.scrollTo(0, 0);
 }
@@ -577,6 +593,8 @@ function displayAppointmentSection(resumeInfo) {
   } else { 
     companyListContainer.innerHTML = '<p class="text-center text-red-500">無法載入職務列表。</p>'; 
   }
+  document.getElementById('formContainer').classList.add('hidden');
+  document.getElementById('quickBookingBanner').classList.add('hidden');
   document.getElementById('reviewSection').classList.add('hidden'); 
   document.getElementById('appointmentSection').classList.remove('hidden'); 
   window.scrollTo(0, 0);
@@ -595,13 +613,13 @@ function handleFinalSuccess(r) {
   if(successMessageContent) successMessageContent.innerHTML = h; 
   if(successMessageContainer) successMessageContainer.classList.remove('hidden'); 
 
-  ['formContainer', 'reviewSection', 'appointmentSection'].forEach(id => {
+  ['formContainer', 'quickBookingBanner', 'reviewSection', 'appointmentSection'].forEach(id => {
     const el = document.getElementById(id); if(el) el.classList.add('hidden');
   });
   window.scrollTo(0,0);
 }
 
-// 9. 事件綁定與主流程
+// 8. 主邏輯事件監聽
 document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initLiff();
@@ -621,7 +639,18 @@ document.addEventListener('DOMContentLoaded', function() {
   if(customConfirmCancelBtn) customConfirmCancelBtn.addEventListener('click', () => { if (confirmResolve) confirmResolve(false); hideCustomConfirm(); });
   if(customAlertOkBtn) customAlertOkBtn.addEventListener('click', hideCustomAlert);
 
-  // 個資宣告切換
+  // 🌟 舊用戶快捷預約按鈕處置
+  document.getElementById('quickBookBtn').addEventListener('click', function() {
+    if (window.existingUser) {
+      displayAppointmentSection({ name: window.existingUser.name, idNumber: window.existingUser.idNumber });
+    }
+  });
+
+  document.getElementById('showFormBtn').addEventListener('click', function() {
+    document.getElementById('quickBookingBanner').classList.add('hidden');
+    document.getElementById('formContainer').classList.remove('hidden');
+  });
+
   if (agreementRadios && agreementRadios.length > 0) {
     Array.from(agreementRadios).forEach(r => {
       r.addEventListener('change', function() {
@@ -632,7 +661,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 身分證即時強制轉大寫與檢核
   if(idNumberInput) {
     idNumberInput.addEventListener('input', function() {
       this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -643,22 +671,17 @@ document.addEventListener('DOMContentLoaded', function() {
     birthdateInput.addEventListener('input', validateBirthdateYear);
   }
 
-  // 初始化取得職缺清單
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
 
-  // 點擊「提交檢查履歷」時的嚴格驗證
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
-    
-    // 檢查個資同意
     if(!Array.from(agreementRadios).some(r => r.checked && r.value === '同意')) { 
       showCustomAlert('請先同意個資宣告。'); 
       return; 
     }
     
-    // 嚴格檢核身分證字號與生日
     const isIdValid = validateIdField(true);
     const isBirthValid = validateBirthdateYear();
 
@@ -702,7 +725,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
 
-  // 確認送出履歷
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
     confirmBtn.disabled = true; 
@@ -732,7 +754,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // 確認預約面試
   confirmAppointmentBtn.addEventListener('click', async function() {
     const companyListContainer = document.getElementById('companyListContainer');
     const sels = companyListContainer.querySelectorAll('select[data-company]'); 
