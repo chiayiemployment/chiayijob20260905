@@ -76,11 +76,11 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
       <div id="manualInputFields" class="space-y-4">
         <div>
           <label for="name" class="block text-lg md:text-base font-medium mb-1">姓名<span class="text-errorRed">*</span></label>
-          <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg" placeholder="請輸入您的姓名" required>
+          <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg" placeholder="請輸入您的姓名">
         </div>
         <div>
           <label for="idNumber" class="block text-lg md:text-base font-medium mb-1">身份證字號/居留證號<span class="text-errorRed">*</span></label>
-          <input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 rounded-lg uppercase" placeholder="請輸入身份證字號或居留證號" required>
+          <input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 rounded-lg uppercase" placeholder="請輸入身份證字號或居留證號">
           <div id="idError" class="error-message-inline hidden">請輸入有效的證號</div>
         </div>
       </div>
@@ -89,7 +89,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 
       <!-- 公司職缺選擇列表 -->
       <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
-        <p class="text-center text-lightPurple">載入職物列表中...</p>
+        <p class="text-center text-lightPurple">載入職缺清單中...</p>
       </div>
 
       <div id="appointmentError" class="error-message-inline hidden mb-4 text-center">請至少選擇一個職務進行預約。</div>
@@ -120,11 +120,11 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzy-9Kg0FmNa9rmCCaXjd6ZY2dZh6IMMS0QeXhjq5Ob5tAVdF7R_vMSoygoFuww16Clzg/exec';
+// ⚠️ 請確認此處為您的「預約面試」專用 GAS API URL
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwJA7nS9TSzFy6SAL6wbI2HyZLDPusvph_bwzfuSer2em9LPWbClz90hmt2szeYZvyB-w/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
-window.isAutoBound = false;
 
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
@@ -174,44 +174,46 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 🌟 關鍵效能優化：平行非同步載入
+// 🌟 極速優化：單次 API 請求同時抓取職缺與身分比對
 async function initPage() {
   createCircuitBackground();
 
-  // 定義工作 1：抓取職缺資料
-  const fetchJobsTask = callGasApi('getCompanyData', {}, 'GET').then(res => {
-    window.companyData = Array.isArray(res) ? res : [];
-    renderCompanyOptions();
-  });
-
-  // 定義工作 2：LIFF 身份驗證與比對
-  const liffTask = (async () => {
-    try {
-      if (typeof liff !== 'undefined' && LIFF_ID) {
-        await liff.init({ liffId: LIFF_ID });
-        if (liff.isLoggedIn()) {
-          const profile = await liff.getProfile();
-          if (profile && profile.userId) {
-            window.lineUserId = profile.userId;
-            const userRes = await callGasApi('checkUserByLineUserId', { lineUserId: profile.userId });
-            if (userRes.success && userRes.data) {
-              window.isAutoBound = true;
-              document.getElementById('userInfoName').innerText = userRes.data.name;
-              document.getElementById('name').value = userRes.data.name;
-              document.getElementById('idNumber').value = userRes.data.idNumber;
-              document.getElementById('manualInputFields').classList.add('hidden');
-              document.getElementById('autoUserStatus').classList.remove('hidden');
-            }
-          }
+  let uid = '';
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile && profile.userId) {
+          uid = profile.userId;
+          window.lineUserId = uid;
         }
       }
-    } catch (e) {
-      console.warn('LIFF 無法自動驗證，切換為手動輸入');
     }
-  })();
+  } catch (e) {
+    console.warn('LIFF 驗證跳過，使用手動輸入模式');
+  }
 
-  // ⚡ 同時平行啟動這兩項任務！
-  await Promise.all([fetchJobsTask, liffTask]);
+  // ⚡ 單次請求同步取回職缺與使用者驗證資料
+  const initRes = await callGasApi('getInitialData', { lineUserId: uid }, 'GET');
+
+  if (initRes.success) {
+    window.companyData = Array.isArray(initRes.companyData) ? initRes.companyData : [];
+    renderCompanyOptions();
+
+    if (initRes.userData) {
+      document.getElementById('userInfoName').innerText = initRes.userData.name;
+      document.getElementById('name').value = initRes.userData.name;
+      document.getElementById('idNumber').value = initRes.userData.idNumber;
+      document.getElementById('manualInputFields').classList.add('hidden');
+      document.getElementById('autoUserStatus').classList.remove('hidden');
+    }
+  } else {
+    // 萬一 API 失敗仍嘗試單獨載入職缺
+    const compRes = await callGasApi('getCompanyData', {}, 'GET');
+    window.companyData = Array.isArray(compRes) ? compRes : [];
+    renderCompanyOptions();
+  }
 }
 
 function renderCompanyOptions() {
