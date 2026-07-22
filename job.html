@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>詳細職缺資訊</title>
+<title>職缺資訊</title>
 <!-- LIFF SDK -->
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
@@ -17,7 +17,6 @@ tailwind.config = {
         deepBlue: "#053D88", blue: "#01529F", royalBlue: "#2956A8",
         lightPurple: "#A48DCD", nearWhite: "#EDEEF7", circuitCyan: "#28C4FF",
         dateBlockBg: "#7E2AFF", buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
-        errorRed: "#ff6b6b", successGreen: "#4ade80",
       },
     },
   },
@@ -41,7 +40,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
 
-/* 🌟 按鈕頁籤樣式 */
+/* 🌟 按鈕頁籤專屬美化樣式 */
 .company-tab-btn {
   background: rgba(76, 35, 124, 0.5);
   border: 1px solid rgba(164, 141, 205, 0.4);
@@ -70,16 +69,12 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
   background: rgba(31, 29, 83, 0.65);
   border: 1px solid rgba(164, 141, 205, 0.3);
   border-radius: 12px;
-  transition: transform 0.2s ease;
-}
-.job-card:hover {
-  border-color: rgba(40, 196, 255, 0.5);
 }
 .hidden { display: none !important; }
 .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* 隱藏原生橫向滾動條，保持滑動順暢 */
+/* 隱藏橫向滾動條 */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>
@@ -90,19 +85,19 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-3xl mx-auto px-4 space-y-6">
 
-  <!-- 頂部廠商切換區塊 -->
+  <!-- 頂部廠商選擇按鈕列 -->
   <div class="form-container p-5 sm:p-7 md:p-9">
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-6 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">徵才廠商與詳細職缺</h1>
     </div>
 
-    <p class="text-center text-lightPurple text-base mb-4">請點擊下方公司按鈕，即可查看該廠商的完整職缺與薪資福利：</p>
+    <p class="text-center text-lightPurple text-base mb-4">請點擊下方公司按鈕切換廠商職缺：</p>
 
-    <!-- 🌟 按鈕式公司列表 (可左右滑動) -->
+    <!-- 🌟 按鈕式公司列表 (左右滑動) -->
     <div id="companyTabContainer" class="flex gap-2 overflow-x-auto pb-3 pt-1 no-scrollbar border-b border-lightPurple/20">
       <div class="text-center w-full py-4 text-circuitCyan flex items-center justify-center gap-2">
         <span class="spinner"></span>
-        <span>載入廠商列表中...</span>
+        <span>載入廠商清單中...</span>
       </div>
     </div>
   </div>
@@ -121,10 +116,8 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-// ⚠️ 請確認指向您包含 getCompanyData 與 getJobData 的 GAS API URL
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzctVt7zKO5k-Z5ba_Z40Fj1wIH2MCiStDMB7N4sPYvbhY_tZApS_Eux021gFnQLrZ0/exec';
-
-// ⚠️ 請填入專屬於 job.html 的 LIFF ID (讓頁面在 LINE 內視窗直接開啟)
+// ⚠️ 請填入您發布的「職缺專用 GAS API」網址
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwKAarqKDv66GCX6pCJNRCtfGgscfsjtTWClVb39zErgppUtgl-I9B3am7lccChHv9F/exec';
 const LIFF_ID = '2010785535-6BsUuSEy'; 
 
 async function callGasApi(action, payload = {}, method = 'GET') {
@@ -154,47 +147,44 @@ function createCircuitBackground() {
   }
 }
 
-// 頁面初始化
+// 初始化頁面
 async function initJobPage() {
   createCircuitBackground();
 
-  // 1. 初始化 LIFF (確保可以在 LINE 內建瀏覽器滑順開啟)
   try {
-    if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== '2010785535-XXXXX') {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
     }
-  } catch (e) {
-    console.warn('LIFF 初始化跳過，使用預設模式');
-  }
+  } catch (e) { console.warn('LIFF 初始化跳過'); }
 
-  // 2. 載入公司按鈕清單
-  const companies = await callGasApi('getCompanyData', {}, 'GET');
+  // 自動取得試算表中的所有公司分頁
+  const res = await callGasApi('getCompanyList', {}, 'GET');
   const tabContainer = document.getElementById('companyTabContainer');
   tabContainer.innerHTML = '';
 
-  if (Array.isArray(companies) && companies.length > 0) {
+  let companies = Array.isArray(res) ? res : (res.data || []);
+
+  if (companies.length > 0) {
     companies.forEach((comp, index) => {
       const btn = document.createElement('button');
       btn.className = `company-tab-btn ${index === 0 ? 'active' : ''}`;
       btn.innerText = comp.company;
       btn.onclick = () => {
-        // 切換按鈕 active 高亮狀態
         document.querySelectorAll('.company-tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        // 載入該公司的詳細職缺
         loadJobsForCompany(comp.company);
       };
       tabContainer.appendChild(btn);
     });
 
-    // 預設自動載入第一家公司的職缺
+    // 預設切換至第一個公司分頁
     loadJobsForCompany(companies[0].company);
   } else {
     tabContainer.innerHTML = '<p class="text-center w-full text-red-400">目前尚無廠商資料。</p>';
   }
 }
 
-// 載入指定廠商的詳細職缺清單
+// 載入指定公司的職缺細節
 async function loadJobsForCompany(companyName) {
   const container = document.getElementById('jobCardsContainer');
   document.getElementById('currentCompanyName').innerText = companyName;
@@ -203,7 +193,7 @@ async function loadJobsForCompany(companyName) {
   container.innerHTML = `
     <div class="text-center py-8 text-lightPurple flex items-center justify-center gap-2">
       <span class="spinner"></span>
-      <span>正在讀取 ${companyName} 的職缺細節...</span>
+      <span>正在讀取 ${companyName} 的詳細職缺...</span>
     </div>
   `;
 
@@ -218,23 +208,24 @@ async function loadJobsForCompany(companyName) {
       card.className = 'job-card p-5 space-y-3';
       card.innerHTML = `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-lightPurple/20 pb-2">
-          <h3 class="text-xl font-bold text-white flex items-center gap-2">
-            <span class="text-circuitCyan">🔹</span> ${job.title}
-          </h3>
-          <span class="text-lg font-bold text-yellow-300 bg-darkPurple/60 px-3 py-1 rounded-lg border border-yellow-300/30">
+          <div>
+            <span class="text-xs text-lightPurple bg-darkPurple/80 px-2 py-0.5 rounded border border-lightPurple/30">編號: ${job.id || 'N/A'}</span>
+            <h3 class="text-xl font-bold text-white mt-1 whitespace-pre-line">${job.title}</h3>
+          </div>
+          <span class="text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3 py-1 rounded-lg border border-yellow-300/30">
             💰 ${job.salary || '面議'}
           </span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
-          <div><span class="text-lightPurple">🎓 學歷要求：</span>${job.education || '不限'}</div>
-          <div><span class="text-lightPurple">⏰ 工作班別：</span>${job.shift || '日班/依公司規定'}</div>
+          <div><span class="text-lightPurple">🎓 學經歷：</span>${job.education || '不限'}</div>
+          <div><span class="text-lightPurple">⏰ 工作班別/休假：</span>${job.shift || '依公司規定'}</div>
         </div>
 
         ${job.description ? `
           <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200">
-            <span class="text-lightPurple block font-medium mb-1">📋 內容說明：</span>
-            <p class="whitespace-pre-line">${job.description}</p>
+            <span class="text-lightPurple block font-medium mb-1">📋 工作內容：</span>
+            <p class="whitespace-pre-line leading-relaxed">${job.description}</p>
           </div>
         ` : ''}
 
@@ -247,7 +238,7 @@ async function loadJobsForCompany(companyName) {
       container.appendChild(card);
     });
   } else {
-    container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無提供詳細職缺說明。</p>`;
+    container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無詳細職缺說明。</p>`;
   }
 }
 
