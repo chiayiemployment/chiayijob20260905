@@ -65,11 +65,11 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">預約面試</h1>
     </div>
 
-    <!-- 驗證狀態提示 (預設顯示比對中，不遮擋下方選單) -->
+    <!-- 驗證狀態提示 -->
     <div id="statusBanner" class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30">
       <div id="verifyingStatus" class="flex items-center gap-2 text-circuitCyan">
         <span class="spinner"></span>
-        <span class="text-base font-medium">⚡ 正在識別您的 LINE 身份與履歷紀錄...</span>
+        <span class="text-base font-medium">⚡ 正在識別您的 LINE 身份與載入職缺...</span>
       </div>
       <div id="autoUserStatus" class="hidden">
         <p class="text-lg">應徵者姓名：<span id="userInfoName" class="text-circuitCyan font-bold"></span></p>
@@ -78,7 +78,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
     </div>
 
     <form id="reservationForm" class="space-y-6 md:space-y-5">
-      <!-- 手動輸入區 (若背景比對成功會自動藏起) -->
+      <!-- 手動輸入區 -->
       <div id="manualInputFields" class="space-y-4">
         <div>
           <label for="name" class="block text-lg md:text-base font-medium mb-1">姓名<span class="text-errorRed">*</span></label>
@@ -93,9 +93,9 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 
       <p class="text-lg font-bold text-left text-[#FFC72C] my-4">如欲應徵兩項以上職務，請於面試時告知。</p>
 
-      <!-- 公司職缺選擇列表 (立刻渲染) -->
+      <!-- 公司職缺選擇列表 -->
       <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
-        <p class="text-center text-lightPurple">⚡ 載入職缺清單中...</p>
+        <p class="text-center text-lightPurple">載入職缺清單中...</p>
       </div>
 
       <div id="appointmentError" class="error-message-inline hidden mb-4 text-center">請至少選擇一個職務進行預約。</div>
@@ -126,7 +126,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxo8dVEUnoCfvhCa77uJTUNfg-syrTUVghDjRhvPYrnvP5GRsMZNVnnWY2w58tZ6l9Eog/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWHYU5EAJMNoOdoK2Yj5_Kv3darcDWQ1iWwDLMKWIivRBVkIGl8Gsne-HG4JhFJTF8Jw/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -179,50 +179,49 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 🌟 體感 0 秒「先顯後驗」非同步體驗
 async function initPage() {
   createCircuitBackground();
 
-  // 1. ⚡ 立即請求快取的職缺清單 (0.5秒內渲染畫面)
-  callGasApi('getCompanyData', {}, 'GET').then(compRes => {
-    if (Array.isArray(compRes) && compRes.length > 0) {
-      window.companyData = compRes;
-      renderCompanyOptions();
-    }
-  });
-
-  // 2. ⚡ 背景同時執行 LIFF 比對
+  let uid = '';
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
         if (profile && profile.userId) {
-          window.lineUserId = profile.userId;
-          
-          // 向後端請求比對履歷
-          const userRes = await callGasApi('getInitialData', { lineUserId: profile.userId }, 'GET');
-          
-          if (userRes.success && userRes.userData) {
-            document.getElementById('userInfoName').innerText = userRes.userData.name;
-            document.getElementById('name').value = userRes.userData.name;
-            document.getElementById('idNumber').value = userRes.userData.idNumber;
-            
-            // 驗證成功：切換標頭卡片，隱藏手動輸入框
-            document.getElementById('verifyingStatus').classList.add('hidden');
-            document.getElementById('manualInputFields').classList.add('hidden');
-            document.getElementById('autoUserStatus').classList.remove('hidden');
-            return;
-          }
+          uid = profile.userId;
+          window.lineUserId = uid;
         }
       }
     }
   } catch (e) {
-    console.warn('LIFF 比對跳過，保持手動輸入');
+    console.warn('LIFF 驗證跳過，使用手動輸入模式');
   }
 
-  // 若未登入 LINE 或查無履歷，隱藏驗證中提示，顯示手動輸入框
-  document.getElementById('statusBanner').classList.add('hidden');
+  // 🌟 單一入口 API：一次取回職缺與使用者資料
+  const res = await callGasApi('getInitialData', { lineUserId: uid }, 'GET');
+
+  document.getElementById('verifyingStatus').classList.add('hidden');
+
+  if (res && res.success) {
+    // 渲染職缺選單
+    window.companyData = Array.isArray(res.companyData) ? res.companyData : [];
+    renderCompanyOptions();
+
+    // 若登入 LINE 且有履歷紀錄，帶入身份
+    if (res.userData) {
+      document.getElementById('userInfoName').innerText = res.userData.name;
+      document.getElementById('name').value = res.userData.name;
+      document.getElementById('idNumber').value = res.userData.idNumber;
+      document.getElementById('manualInputFields').classList.add('hidden');
+      document.getElementById('autoUserStatus').classList.remove('hidden');
+    } else {
+      document.getElementById('statusBanner').classList.add('hidden');
+    }
+  } else {
+    document.getElementById('statusBanner').classList.add('hidden');
+    renderCompanyOptions();
+  }
 }
 
 function renderCompanyOptions() {
