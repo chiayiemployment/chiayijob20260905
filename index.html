@@ -284,7 +284,7 @@ window.formData = {};
 window.companyData = []; 
 window.currentBookingInfo = {};
 
-// 2. 通用 API 呼叫工具 (非阻塞安全模式)
+// 2. 通用 API 呼叫工具
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
     if (method === 'GET') {
@@ -300,27 +300,36 @@ async function callGasApi(action, payload = {}, method = 'GET') {
       return await resp.json();
     }
   } catch (err) {
-    console.warn('API 呼叫跳過或連線失敗:', err);
+    console.warn('API 呼叫失敗:', err);
     return { status: 'error', message: '連線逾時' };
   }
 }
 
-// 3. 改良版 LIFF 初始化
+// 3. 關鍵修正：加強版 LIFF 初始化 (確保 100% 取得 UserId)
 async function initLiff() {
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
+      
+      // 若尚未登入且在 LINE 內，自動喚起登入
+      if (!liff.isLoggedIn()) {
+        if (liff.isInClient()) {
+          liff.login();
+        }
+        return;
+      }
+
+      // 取得 Profile
+      const profile = await liff.getProfile();
+      if (profile && profile.userId) {
         window.lineUserId = profile.userId;
         const lineUserIdInput = document.getElementById('lineUserId');
         if (lineUserIdInput) lineUserIdInput.value = profile.userId;
-      } else if (liff.isInClient()) {
-        liff.login();
+        console.log('✅ 成功抓取 LINE UserId:', profile.userId);
       }
     }
   } catch (err) {
-    console.warn('LIFF 初始化跳過:', err);
+    console.warn('LIFF 初始化失敗:', err);
   }
 }
 
@@ -365,7 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const otherInfoSourceInput = document.getElementById('otherInfoSourceText');
   const birthdateInput = document.getElementById('birthdate');
 
-  // **修復重點 1：即時切換與初始狀態判斷**
   function updateAgreementView() {
     let isAgree = false;
     if (agreementRadios && agreementRadios.length > 0) {
@@ -382,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function() {
       r.addEventListener('change', updateAgreementView);
     });
   }
-  updateAgreementView(); // 頁面一開先檢查一次
+  updateAgreementView();
 
   function handleOtherOptionToggle(selectElementOrCheckbox, otherContainer, otherInput) {
     if (!selectElementOrCheckbox || !otherContainer || !otherInput) return;
@@ -400,12 +408,11 @@ document.addEventListener('DOMContentLoaded', function() {
     el.addEventListener('change', () => handleOtherOptionToggle(el, targets[idx][0], targets[idx][1]));
   });
 
-  // **修復重點 2：背景非同步載入職缺，不阻塞介面渲染**
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
 
-  // 提交履歷預覽
+  // 預覽履歷資料 (關鍵：雙重確認打包 UserId)
   form.addEventListener('submit', function(e) {
     e.preventDefault(); 
     if(!Array.from(agreementRadios).some(r => r.checked && r.value === '同意')) { alert('請先同意個資宣告。'); return; }
@@ -421,7 +428,10 @@ document.addEventListener('DOMContentLoaded', function() {
     dReview['license'] = f.getAll('license'); 
     dReview['computerSkill'] = f.getAll('computerSkill'); 
     dReview['language'] = f.getAll('language');
-    dReview['lineUserId'] = window.lineUserId;
+    
+    // 關鍵修復：從 Hidden Input 與全域變數雙重取值，確保不為空
+    const currentUserId = document.getElementById('lineUserId').value || window.lineUserId || '';
+    dReview['lineUserId'] = currentUserId;
     
     window.formData = dReview; 
     displayDataInReview(dReview);
@@ -447,9 +457,15 @@ document.addEventListener('DOMContentLoaded', function() {
     mainFormContainer.classList.remove('hidden'); 
   });
 
-  // 確認送出履歷
+  // 送出履歷
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
+    
+    // 補強：若變數遺失則再次抓取
+    if (!d.lineUserId) {
+      d.lineUserId = document.getElementById('lineUserId').value || window.lineUserId || '';
+    }
+
     confirmBtn.disabled = true; 
     confirmBtn.innerHTML = '處理中...';
 
@@ -486,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.scrollTo(0, 0);
   }
 
-  // 確認預約面試
+  // 預約面試
   confirmAppointmentBtn.addEventListener('click', async function() {
     const sels = companyListContainer.querySelectorAll('select[data-company]'); 
     const pos = [];
@@ -496,12 +512,14 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmAppointmentBtn.disabled = true; 
     confirmAppointmentBtn.innerHTML = '預約中...';
 
+    const uid = document.getElementById('lineUserId').value || window.lineUserId || '';
+
     const r = await callGasApi('bookAppointments', { 
       appointmentData: {
         name: window.currentBookingInfo.name, 
         id: window.currentBookingInfo.id, 
         companyPositions: pos, 
-        lineUserId: window.lineUserId 
+        lineUserId: uid 
       }
     }, 'POST');
 
