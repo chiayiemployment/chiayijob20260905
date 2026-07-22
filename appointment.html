@@ -17,6 +17,7 @@ tailwind.config = {
         deepBlue: "#053D88", blue: "#01529F", royalBlue: "#2956A8",
         lightPurple: "#A48DCD", nearWhite: "#EDEEF7", circuitCyan: "#28C4FF",
         dateBlockBg: "#7E2AFF", buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
+        errorRed: "#ff6b6b", successGreen: "#4ade80",
       },
     },
   },
@@ -30,7 +31,6 @@ tailwind.config = {
   --bright-cyan: #28C4FF; --date-purple: #7E2AFF;
   --button-start: #AC3FFF; --button-end: #6A1BCB;
   --error-red: #ff6b6b; --success-green: #4ade80;
-  --light-purple-30: rgba(164, 141, 205, 0.3);
 }
 body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; overflow-x: hidden; min-height: 100vh; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -41,11 +41,10 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
-select, input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; transition: all 0.3s ease !important; border-radius: 8px !important; }
+input[type="text"], select { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
 select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23a48dcd"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 1.2em 1.2em !important; padding-right: 2.5rem !important; }
-.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); transition: all 0.3s ease; border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-.secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; }
-.company-group { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--light-purple-30); }
+.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
+.company-group { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(164, 141, 205, 0.3); }
 .company-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .company-title { font-size: 1.25rem; font-weight: 600; color: var(--bright-cyan); margin-bottom: 0.75rem; }
 .error-message-inline { color: var(--error-red); font-size: 0.875rem; margin-top: 0.25rem; font-weight: 500; }
@@ -60,52 +59,57 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-3xl mx-auto px-4">
 
-  <!-- 載入中動畫 -->
-  <div id="loadingBox" class="form-container p-8 text-center my-10">
-    <p class="text-2xl text-circuitCyan animate-pulse">⚡ 正在驗證您的 LINE 身份與履歷狀態...</p>
+  <!-- 預約面試主表單 -->
+  <div id="appointmentSection" class="form-container p-5 sm:p-7 md:p-9">
+    <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
+      <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">預約面試</h1>
+    </div>
+
+    <!-- 驗證狀態提示 -->
+    <div id="autoUserStatus" class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30 hidden">
+      <p class="text-lg">應徵者姓名：<span id="userInfoName" class="text-circuitCyan font-bold"></span></p>
+      <p class="text-sm text-lightPurple mt-1">身份驗證：<span class="text-successGreen font-medium">✅ 已登入 LINE 並比對履歷成功</span></p>
+    </div>
+
+    <form id="reservationForm" class="space-y-6 md:space-y-5">
+      <!-- 手動輸入區 (若自動抓不到時顯示) -->
+      <div id="manualInputFields" class="space-y-4">
+        <div>
+          <label for="name" class="block text-lg md:text-base font-medium mb-1">姓名<span class="text-errorRed">*</span></label>
+          <input type="text" id="name" name="name" class="w-full px-4 py-3 rounded-lg" placeholder="請輸入您的姓名" required>
+        </div>
+        <div>
+          <label for="idNumber" class="block text-lg md:text-base font-medium mb-1">身份證字號/居留證號<span class="text-errorRed">*</span></label>
+          <input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 rounded-lg uppercase" placeholder="請輸入身份證字號或居留證號" required>
+          <div id="idError" class="error-message-inline hidden">請輸入有效的證號</div>
+        </div>
+      </div>
+
+      <p class="text-lg font-bold text-left text-[#FFC72C] my-4">如欲應徵兩項以上職務，請於面試時告知。</p>
+
+      <!-- 公司職缺選擇列表 -->
+      <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
+        <p class="text-center text-lightPurple">載入職物列表中...</p>
+      </div>
+
+      <div id="appointmentError" class="error-message-inline hidden mb-4 text-center">請至少選擇一個職務進行預約。</div>
+
+      <div class="pt-4">
+        <button type="submit" id="submitBtn" class="submit-btn w-full px-4 py-3 text-2xl lg:text-3xl md:text-xl font-bold">
+          <span id="submitBtnText">提交預約面試</span>
+        </button>
+      </div>
+    </form>
   </div>
 
-  <!-- 未查獲履歷之提示卡片 -->
-  <div id="noResumeBox" class="form-container p-8 text-center my-10 hidden">
-    <h2 class="text-2xl font-bold text-error-red mb-3">⚠️ 尚未查有您的履歷紀錄</h2>
-    <p class="text-nearWhite mb-6">進行面試預約前，請先完成個人求職履歷填寫。</p>
-    <a href="index.html" class="submit-btn inline-block px-8 py-3 text-xl font-bold">前往填寫求職登記表</a>
-  </div>
-
-  <!-- 預約面試主體 -->
-  <div id="appointmentSection" class="form-container p-6 sm:p-8 hidden">
-    <div class="form-header -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 sm:mb-8 py-5 px-6 sm:py-6 sm:px-8 rounded-t-lg">
-      <h1 class="form-title text-3xl font-bold text-center">預約面試職務選擇</h1>
-    </div>
-
-    <!-- 求職者身份摘要確認卡片 -->
-    <div class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30">
-      <p class="text-lg">應徵者姓名：<span id="userInfoName" class="text-circuitCyan font-bold">讀取中...</span></p>
-      <p class="text-sm text-lightPurple mt-1">身分驗證：<span class="text-success-green font-medium">✅ 已綁定個人線上履歷</span></p>
-    </div>
-
-    <p class="text-lg font-bold text-left text-[#FFC72C] mb-4">如欲應徵同家公司兩項以上職務，請於面試時告知。</p>
-
-    <!-- 公司與職務選單動態載入區 -->
-    <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
-      <p class="text-center text-lightPurple">載入職責列表中...</p>
-    </div>
-
-    <div id="appointmentError" class="error-message-inline hidden mb-4 text-center">請至少選擇一個職務進行預約。</div>
-
-    <div class="appointment-buttons mt-8 flex flex-col md:flex-row justify-center gap-4 md:gap-6">
-      <button id="confirmAppointmentBtn" class="submit-btn w-full md:w-auto px-8 py-3 text-xl font-bold">確認預約面試</button>
-    </div>
-  </div>
-
-  <!-- 預約成功展示區 (無原生跳窗) -->
+  <!-- 預約成功結果頁 -->
   <div id="successMessageContainer" class="form-container p-6 sm:p-8 hidden mt-10">
     <div id="successMessageContent"></div>
   </div>
 
 </div>
 
-<!-- 客製化 Alert Modal -->
+<!-- 客製化 Modal -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
   <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
     <p id="customAlertMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
@@ -116,13 +120,13 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwtKtT2h9M73SStSpz-BPV2f9b1MUywnFH33ENIz6jkc9MbOeo41BvciLFaqw73YjOuOA/exec';
-const LIFF_ID = '2010785535-qIFwOa8w'; // 若有獨立 LIFF 可替換，否則沿用主 LIFF
+// ⚠️ 請填入上方剛剛發布的預約面試專用 GAS API URL
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyZ-32e_ffW-Er0FRCeUC37KbJDgES-MqSMEYJ_4LF-hfh7-WAE0qH-XzfFo_xiUM-isg/exec';
+const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
-window.currentUser = null;
 window.companyData = [];
+window.isAutoBound = false;
 
-// API 呼叫工具
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
     if (method === 'GET') {
@@ -136,12 +140,10 @@ async function callGasApi(action, payload = {}, method = 'GET') {
       return await resp.json();
     }
   } catch (err) {
-    console.error('API Error:', err);
-    return { status: 'error', message: '連線失敗，請檢查網路狀態' };
+    return { success: false, message: '網路連線失敗，請稍後重試' };
   }
 }
 
-// 靜態電路背景
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
   if (!circuitBg) return;
@@ -159,7 +161,6 @@ function createCircuitBackground() {
   }
 }
 
-// 客製化 Alert
 let alertResolve = null;
 function showCustomAlert(message) {
   const customAlertMessage = document.getElementById('customAlertMessage');
@@ -174,93 +175,82 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 頁面初始化
-async function initAppointmentPage() {
+async function initPage() {
   createCircuitBackground();
   
-  // 併行載入公司職缺清單
+  // 併行載入公司職缺
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
+    renderCompanyOptions();
   });
 
+  // 初始化 LIFF 自動帶入身分
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
-      
-      if (!liff.isLoggedIn()) {
-        if (liff.isInClient()) {
-          liff.login();
-          return;
-        } else {
-          showNoResumeState();
-          return;
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile && profile.userId) {
+          window.lineUserId = profile.userId;
+          const userRes = await callGasApi('checkUserByLineUserId', { lineUserId: profile.userId });
+          if (userRes.success && userRes.data) {
+            window.isAutoBound = true;
+            document.getElementById('userInfoName').innerText = userRes.data.name;
+            document.getElementById('name').value = userRes.data.name;
+            document.getElementById('idNumber').value = userRes.data.idNumber;
+            document.getElementById('manualInputFields').classList.add('hidden');
+            document.getElementById('autoUserStatus').classList.remove('hidden');
+          }
         }
       }
-
-      const profile = await liff.getProfile();
-      if (profile && profile.userId) {
-        window.lineUserId = profile.userId;
-        
-        // 向後端比對 LINE UserId 履歷
-        const res = await callGasApi('queryByLineUserId', { lineUserId: profile.userId });
-
-        document.getElementById('loadingBox').classList.add('hidden');
-
-        if (res.status === 'found' && res.data) {
-          window.currentUser = res.data;
-          document.getElementById('userInfoName').innerText = res.data.name;
-          renderCompanyOptions();
-          document.getElementById('appointmentSection').classList.remove('hidden');
-        } else {
-          showNoResumeState();
-        }
-      }
-    } else {
-      showNoResumeState();
     }
-  } catch (err) {
-    console.warn('LIFF 讀取失敗:', err);
-    showNoResumeState();
-  }
-}
-
-function showNoResumeState() {
-  document.getElementById('loadingBox').classList.add('hidden');
-  document.getElementById('noResumeBox').classList.remove('hidden');
+  } catch (e) { console.warn('LIFF 無法自動驗證，切換為手動輸入'); }
 }
 
 function renderCompanyOptions() {
   const container = document.getElementById('companyListContainer');
   container.innerHTML = '';
-
   if (window.companyData && window.companyData.length > 0) {
-    window.companyData.forEach((c) => {
+    window.companyData.forEach(c => {
       const d = document.createElement('div');
       d.className = 'company-group space-y-3';
       d.innerHTML = `<h3 class="company-title text-xl font-semibold text-circuitCyan">${c.company}</h3>`;
       if (c.positions && c.positions.length > 0) {
         const s = document.createElement('select');
         s.dataset.company = c.company;
-        s.className = 'w-full px-4 py-3 text-lg md:text-base rounded-lg';
-        s.innerHTML = '<option value="" selected>請選擇職務 </option>' + c.positions.map(p => `<option value="${p}">${p}</option>`).join('');
+        s.className = 'w-full px-4 py-3 text-lg rounded-lg';
+        s.innerHTML = '<option value="" selected>請選擇職務</option>' + c.positions.map(p => `<option value="${p}">${p}</option>`).join('');
         d.appendChild(s);
-      } else {
-        d.innerHTML += '<p class="text-gray-400 italic mt-2">目前無提供職務</p>';
       }
       container.appendChild(d);
     });
   } else {
-    container.innerHTML = '<p class="text-center text-red-500">無法載入職務清單，請重新整理。</p>';
+    container.innerHTML = '<p class="text-center text-lightPurple">載入職缺清單中...</p>';
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  initAppointmentPage();
-
+  initPage();
   document.getElementById('customAlertOkBtn').addEventListener('click', hideCustomAlert);
 
-  // 送出預約
-  document.getElementById('confirmAppointmentBtn').addEventListener('click', async function() {
+  const nameInput = document.getElementById('name');
+  const idInput = document.getElementById('idNumber');
+
+  idInput.addEventListener('input', function() {
+    this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  });
+
+  // 提交預約
+  document.getElementById('reservationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const nameVal = nameInput.value.trim();
+    const idVal = idInput.value.trim().toUpperCase();
+
+    if (!nameVal || !idVal) {
+      showCustomAlert('請填寫姓名與身分證號');
+      return;
+    }
+
     const sels = document.querySelectorAll('select[data-company]');
     const pos = [];
     sels.forEach(s => { if(s.value) pos.push({ company: s.dataset.company, position: s.value }); });
@@ -271,26 +261,26 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     document.getElementById('appointmentError').classList.add('hidden');
 
-    const btn = document.getElementById('confirmAppointmentBtn');
-    btn.disabled = true;
-    btn.innerHTML = '預約中... <span class="spinner"></span>';
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    document.getElementById('submitBtnText').innerHTML = '預約中... <span class="spinner"></span>';
 
-    const r = await callGasApi('bookAppointments', {
+    const r = await callGasApi('processFormData', {
       appointmentData: {
-        name: window.currentUser.name,
-        id: window.currentUser.idNumber,
+        name: nameVal,
+        idNumber: idVal,
         companyPositions: pos,
         lineUserId: window.lineUserId
       }
     }, 'POST');
 
-    btn.disabled = false;
-    btn.innerHTML = '確認預約面試';
+    submitBtn.disabled = false;
+    document.getElementById('submitBtnText').innerText = '提交預約面試';
 
-    if (r.status === 'success') {
-      const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
-      let h = `<div class="text-center text-3xl font-bold mb-4 text-success-green">🎉 預約面試成功！</div>`;
-      h += `<p class="text-center text-lg mb-6 text-nearWhite">感謝您！已成功為 <span class="text-circuitCyan font-bold">${window.currentUser.name}</span> 完成預約：</p>`;
+    if (r.success || r.status === 'success') {
+      const bItems = (r.data && (r.data.companyPositionPairs || r.data.bookedItemsArray)) ? (r.data.companyPositionPairs || r.data.bookedItemsArray) : pos;
+      let h = `<div class="text-center text-3xl font-bold mb-4 text-successGreen">🎉 預約面試成功！</div>`;
+      h += `<p class="text-center text-lg mb-6 text-nearWhite">感謝您！已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
       h += '<div class="space-y-3 bg-darkPurple/60 p-4 rounded-lg border border-lightPurple/30 mb-6">';
       bItems.forEach(i => {
         h += `<div class="border-b border-lightPurple/20 pb-2 last:border-b-0"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
@@ -303,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('successMessageContainer').classList.remove('hidden');
       window.scrollTo(0,0);
     } else {
-      showCustomAlert(r.message || '預約失敗，請重試');
+      showCustomAlert(r.message || '預約失敗，請確認是否已填寫個人履歷');
     }
   });
 });
