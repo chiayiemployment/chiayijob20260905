@@ -120,7 +120,6 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-// ⚠️ 請填入上方剛剛發布的預約面試專用 GAS API URL
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyZ-32e_ffW-Er0FRCeUC37KbJDgES-MqSMEYJ_4LF-hfh7-WAE0qH-XzfFo_xiUM-isg/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
@@ -178,13 +177,12 @@ function hideCustomAlert() {
 async function initPage() {
   createCircuitBackground();
   
-  // 併行載入公司職缺
-  callGasApi('getCompanyData', {}, 'GET').then(res => {
-    window.companyData = Array.isArray(res) ? res : [];
-    renderCompanyOptions();
-  });
+  // 1. 先讀取公司職缺清單並立刻渲染
+  const compRes = await callGasApi('getCompanyData', {}, 'GET');
+  window.companyData = Array.isArray(compRes) ? compRes : [];
+  renderCompanyOptions();
 
-  // 初始化 LIFF 自動帶入身分
+  // 2. 初始化 LIFF 自動帶入身分
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -204,7 +202,9 @@ async function initPage() {
         }
       }
     }
-  } catch (e) { console.warn('LIFF 無法自動驗證，切換為手動輸入'); }
+  } catch (e) { 
+    console.warn('LIFF 無法自動驗證，切換為手動輸入'); 
+  }
 }
 
 function renderCompanyOptions() {
@@ -221,11 +221,13 @@ function renderCompanyOptions() {
         s.className = 'w-full px-4 py-3 text-lg rounded-lg';
         s.innerHTML = '<option value="" selected>請選擇職務</option>' + c.positions.map(p => `<option value="${p}">${p}</option>`).join('');
         d.appendChild(s);
+      } else {
+        d.innerHTML += '<p class="text-gray-400 italic mt-2">目前無提供職務</p>';
       }
       container.appendChild(d);
     });
   } else {
-    container.innerHTML = '<p class="text-center text-lightPurple">載入職缺清單中...</p>';
+    container.innerHTML = '<p class="text-center text-red-500">無法載入職缺清單，請重新整理。</p>';
   }
 }
 
