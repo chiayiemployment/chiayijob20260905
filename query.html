@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>個人履歷與預約查詢系統</title>
+    <title>個人履歷與預約紀錄查詢</title>
     <!-- LIFF SDK -->
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -26,144 +26,155 @@
         .form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
         .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
         .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
-        input[type="text"], input[type="date"], input[type="tel"], input[type="email"], select, textarea { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; transition: all 0.3s ease !important; border-radius: 8px !important; }
-        .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); transition: all 0.3s ease; border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-        .secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; font-weight: 500; }
+        input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
+        .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
+        .secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; }
         .query-result-container { background: linear-gradient(135deg, rgba(41, 86, 168, 0.7), rgba(76, 35, 124, 0.7)); border: 1px solid var(--light-purple); border-radius: 12px; }
         .query-result-item { background-color: rgba(31, 29, 83, 0.6); padding: 0.75rem 1rem; border-radius: 0.375rem; border: 1px solid var(--light-purple); }
-        .hidden { display: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen py-8 text-lg">
     <div class="circuit-background" id="circuitBackground"></div>
     <div class="left-gradient"></div>
-    <div class="main-content-area max-w-3xl mx-auto">
-        <div id="generalMessageArea" class="status-message hidden"></div>
-        <div id="searchContainer" class="form-container p-5 sm:p-7 md:p-9">
-            <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 sm:mb-10 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
-                <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">個人履歷與預約紀錄查詢</h1>
+    <div class="main-content-area max-w-3xl mx-auto px-4">
+        
+        <div id="loadingBox" class="form-container p-8 text-center my-10">
+            <p class="text-2xl text-circuitCyan animate-pulse">⚡ 正在讀取您的 LINE 身份資訊...</p>
+        </div>
+
+        <div id="resultBox" class="form-container p-6 sm:p-8 hidden">
+            <div class="form-header -mx-6 -mt-6 mb-6 py-5 px-6 rounded-t-lg">
+                <h1 class="form-title text-3xl font-bold text-center">個人預約面試紀錄</h1>
             </div>
-            <form id="searchForm" class="space-y-6 md:space-y-5">
-                <div class="space-y-2">
-                    <label for="searchName" class="block text-lg md:text-base font-medium">姓名：<span class="text-red-500">*</span></label>
-                    <input type="text" id="searchName" name="searchName" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
+            
+            <div class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30">
+                <p class="text-lg">應徵者姓名：<span id="displayName" class="text-circuitCyan font-bold"></span></p>
+                <p class="text-sm text-lightPurple mt-1">身份驗證狀態：<span class="text-green-400">✅ LINE 帳號已驗證</span></p>
+            </div>
+
+            <h2 class="text-xl font-semibold mb-3 text-nearWhite">已預約職務清單：</h2>
+            <div id="appointmentList" class="space-y-3 mb-6"></div>
+
+            <button id="manualToggleBtn" class="secondary-btn w-full py-2 text-sm">切換為手動查詢 (使用身分證)</button>
+        </div>
+
+        <div id="manualSearchBox" class="form-container p-5 sm:p-7 md:p-9 hidden">
+            <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 rounded-t-lg">
+                <h1 class="form-title text-2xl font-bold text-center">手動查詢履歷與紀錄</h1>
+            </div>
+            <form id="searchForm" class="space-y-4">
+                <div>
+                    <label class="block text-base font-medium mb-1">姓名：</label>
+                    <input type="text" id="searchName" class="w-full px-4 py-2 rounded-lg" required>
                 </div>
-                <div class="space-y-2">
-                    <label for="searchIdNumber" class="block text-lg md:text-base font-medium">身份證字號(居留證號)：<span class="text-red-500">*</span></label>
-                    <input type="text" id="searchIdNumber" name="searchIdNumber" class="w-full px-4 py-3 text-lg md:text-base rounded-lg uppercase" required pattern="^[A-Z][1-2A-D8-9]\d{8}$">
-                    <div id="searchIdNumberError" class="error-message-inline hidden">格式錯誤，請檢查輸入</div>
+                <div>
+                    <label class="block text-base font-medium mb-1">身份證字號(居留證號)：</label>
+                    <input type="text" id="searchIdNumber" class="w-full px-4 py-2 rounded-lg uppercase" required>
                 </div>
-                <div class="pt-5 space-y-4">
-                    <button type="button" id="searchResumeBtn" class="submit-btn w-full px-4 py-3 text-xl lg:text-2xl md:text-lg">查詢個人履歷</button>
-                    <button type="button" id="searchAppointmentsBtn" class="submit-btn w-full px-4 py-3 text-xl lg:text-2xl md:text-lg">查詢預約面試紀錄</button>
-                </div>
+                <button type="button" id="manualSearchBtn" class="submit-btn w-full py-3 text-lg mt-4">進行手動查詢</button>
             </form>
         </div>
-        <div id="query-status-message" class="hidden mt-6"></div>
-        <div id="query-results-container" class="hidden query-result-container mt-10 p-5 sm:p-6">
-            <h2 class="text-2xl md:text-xl font-bold mb-5 text-center text-white">您的預約面試記錄</h2>
-            <div id="query-results-list" class="space-y-4 max-h-96 overflow-y-auto pr-2"></div>
-        </div>
+
     </div>
 
 <script>
-// 全域變數配置
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwGGF6OqYpSwemLFrfm5cVXFSOgYsBLT4b8iVGoJXZy2rZ1tdFJO2r5gi9Aqdw2-7B4jQ/exec'; // 請貼上部署好的 GAS Web App URL
-const LIFF_ID = '2010785535-mhv97vPS'; // 請確認為最新的 LIFF ID
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzq1TYCAlybCatNy3GyN-B1HwQ042ZycPBHzMRcbfiRHSPbzyt8tcFjlGR9Ed552ghclw/exec';
+const LIFF_ID = '2010785535-D0SuLqWN'; // 貼上剛剛新建的第二個 LIFF ID
 
-// 通用 API 呼叫工具
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
-    if (method === 'GET') {
-      const query = new URLSearchParams({ action, ...payload }).toString();
-      const resp = await fetch(`${GAS_API_URL}?${query}`);
-      return await resp.json();
-    } else {
-      const resp = await fetch(GAS_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, ...payload })
-      });
-      return await resp.json();
-    }
+    const query = new URLSearchParams({ action, ...payload }).toString();
+    const resp = await fetch(`${GAS_API_URL}?${query}`);
+    return await resp.json();
   } catch (err) {
-    console.error('API 呼叫失敗:', err);
-    return { status: 'error', message: '網路連線失敗，請稍後再試' };
+    return { status: 'error', message: '連線失敗' };
   }
 }
 
-async function initLiff() {
+async function initQueryPage() {
+  const loadingBox = document.getElementById('loadingBox');
+  const resultBox = document.getElementById('resultBox');
+  const manualSearchBox = document.getElementById('manualSearchBox');
+  const displayName = document.getElementById('displayName');
+  const appointmentList = document.getElementById('appointmentList');
+
   try {
-    if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
-      if (liff.isInClient() && !liff.isLoggedIn()) {
-        liff.login();
+      
+      if (!liff.isLoggedIn()) {
+        if (liff.isInClient()) {
+          liff.login();
+          return;
+        } else {
+          // 在一般瀏覽器顯示手動查詢模式
+          loadingBox.classList.add('hidden');
+          manualSearchBox.classList.remove('hidden');
+          return;
+        }
       }
-    }
-  } catch (err) {
-    console.warn('LIFF 初始化失敗或跳過:', err);
-  }
-}
 
-document.addEventListener('DOMContentLoaded', async function() {
-    await initLiff();
-    
-    const searchResumeBtn = document.getElementById('searchResumeBtn');
-    const searchAppointmentsBtn = document.getElementById('searchAppointmentsBtn');
-    const searchNameInput = document.getElementById('searchName');
-    const searchIdNumberInput = document.getElementById('searchIdNumber');
-    const queryResultsContainer = document.getElementById('query-results-container');
-    const queryResultsList = document.getElementById('query-results-list');
+      // 已登入 LINE，自動用 UserId 向 GAS 查資料
+      const profile = await liff.getProfile();
+      if (profile && profile.userId) {
+        const res = await callGasApi('queryByLineUserId', { lineUserId: profile.userId });
 
-    // 查詢個人履歷 (使用 fetch API)
-    searchResumeBtn.addEventListener('click', async function() {
-        const nameVal = searchNameInput.value.trim();
-        const idVal = searchIdNumberInput.value.trim().toUpperCase();
-        if (!nameVal || !idVal) { alert('請填寫姓名與身分證字號'); return; }
-        
-        searchResumeBtn.disabled = true;
-        searchResumeBtn.innerText = '查詢中...';
-        
-        const res = await callGasApi('queryResumeData', { name: nameVal, id: idVal }, 'GET');
-        
-        searchResumeBtn.disabled = false;
-        searchResumeBtn.innerText = '查詢個人履歷';
+        loadingBox.classList.add('hidden');
 
         if (res.status === 'found') {
-            alert(`查獲履歷資料！姓名：${res.data.name}`);
-        } else {
-            alert(res.message || '查無資料');
-        }
-    });
-
-    // 查詢預約紀錄 (使用 fetch API)
-    searchAppointmentsBtn.addEventListener('click', async function() {
-        const nameVal = searchNameInput.value.trim();
-        const idVal = searchIdNumberInput.value.trim().toUpperCase();
-        if (!nameVal || !idVal) { alert('請填寫姓名與身分證字號'); return; }
-        
-        searchAppointmentsBtn.disabled = true;
-        searchAppointmentsBtn.innerText = '查詢中...';
-
-        const res = await callGasApi('queryAppointments', { name: nameVal, id: idVal }, 'GET');
-
-        searchAppointmentsBtn.disabled = false;
-        searchAppointmentsBtn.innerText = '查詢預約面試紀錄';
-
-        if (res.status === 'found' && res.appointments) {
-            queryResultsList.innerHTML = res.appointments.map(a => `
-                <div class="query-result-item">
-                    <p class="text-circuitCyan font-semibold">公司：${a.company}</p>
-                    <p class="text-nearWhite">職位：${a.position}</p>
-                    <p class="text-lightPurple text-sm">預約時間：${a.timestamp}</p>
-                </div>
+          displayName.innerText = res.data.name;
+          
+          if (res.data.appointments && res.data.appointments.length > 0) {
+            appointmentList.innerHTML = res.data.appointments.map(a => `
+              <div class="query-result-item">
+                <p class="text-circuitCyan font-semibold">公司：${a.company}</p>
+                <p class="text-nearWhite">職位：${a.position}</p>
+                <p class="text-lightPurple text-sm">預約時間：${a.timestamp}</p>
+              </div>
             `).join('');
-            queryResultsContainer.classList.remove('hidden');
+          } else {
+            appointmentList.innerHTML = '<p class="text-lightPurple">目前查有履歷資料，但尚未預約任何職務面試。</p>';
+          }
+
+          resultBox.classList.remove('hidden');
         } else {
-            queryResultsContainer.classList.add('hidden');
-            alert(res.message || '查無預約紀錄');
+          // 查無履歷，引導前往填寫
+          alert('提示：系統尚未查到您的線上履歷，將為您切換至手動查詢或請先進行履歷填寫。');
+          manualSearchBox.classList.remove('hidden');
         }
-    });
+      }
+    } else {
+      loadingBox.classList.add('hidden');
+      manualSearchBox.classList.remove('hidden');
+    }
+  } catch (e) {
+    console.warn('一鍵查詢失敗，切換手動模式:', e);
+    loadingBox.classList.add('hidden');
+    manualSearchBox.classList.remove('hidden');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initQueryPage();
+
+  document.getElementById('manualToggleBtn').addEventListener('click', function() {
+    document.getElementById('resultBox').classList.add('hidden');
+    document.getElementById('manualSearchBox').classList.remove('hidden');
+  });
+
+  document.getElementById('manualSearchBtn').addEventListener('click', async function() {
+    const nameVal = document.getElementById('searchName').value.trim();
+    const idVal = document.getElementById('searchIdNumber').value.trim().toUpperCase();
+    if (!nameVal || !idVal) { alert('請填寫姓名與身分證號'); return; }
+
+    const res = await callGasApi('queryAppointments', { name: nameVal, id: idVal });
+    if (res.status === 'found') {
+      alert(`查獲預約紀錄 ${res.appointments.length} 筆！`);
+    } else {
+      alert(res.message || '查無資料');
+    }
+  });
 });
 </script>
 </body>
