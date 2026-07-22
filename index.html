@@ -333,7 +333,7 @@ window.formData = {};
 window.companyData = []; 
 window.currentBookingInfo = {};
 
-// 2. 超高相容性 API 呼叫工具 (無 CORS 預檢攔截問題)
+// 2. 超高相容性 API 呼叫工具 (完整支援跨網域 POST 與自動跟隨重導向)
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
     if (method === 'GET') {
@@ -341,16 +341,18 @@ async function callGasApi(action, payload = {}, method = 'GET') {
       const resp = await fetch(`${GAS_API_URL}?${query}`);
       return await resp.json();
     } else {
-      // POST 請求使用相容性最高之格式傳送
+      // 關鍵修復：補齊 Content-Type 與 redirect: 'follow'，確保手機瀏覽器不被 CORS 攔截
       const resp = await fetch(GAS_API_URL, {
         method: 'POST',
-        body: JSON.stringify({ action, ...payload })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload }),
+        redirect: 'follow'
       });
       return await resp.json();
     }
   } catch (err) {
     console.error('API 呼叫失敗:', err);
-    return { status: 'error', message: '資料傳輸過程發生網路錯誤，請稍後重試。' };
+    return { status: 'error', message: '資料傳輸失敗：' + (err.message || '請檢查網路連線') };
   }
 }
 
@@ -646,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.companyData = Array.isArray(res) ? res : [];
   });
 
-  // 關鍵卡關 1：點擊「提交檢查履歷」時的嚴格驗證
+  // 點擊「提交檢查履歷」時的嚴格驗證
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
     
@@ -656,7 +658,7 @@ document.addEventListener('DOMContentLoaded', function() {
       return; 
     }
     
-    // 關鍵修復：嚴格檢核身分證字號與生日，若錯誤直接 return 攔截！
+    // 嚴格檢核身分證字號與生日
     const isIdValid = validateIdField(true);
     const isBirthValid = validateBirthdateYear();
 
@@ -700,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
 
-  // 關鍵卡關 2：確認送出履歷 (修正 POST Payload 與覆蓋)
+  // 確認送出履歷
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
     confirmBtn.disabled = true; 
