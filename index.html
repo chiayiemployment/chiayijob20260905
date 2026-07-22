@@ -81,22 +81,26 @@ font-weight: 500; cursor: pointer; text-align: center; }
 .booked-list { padding-top: 0.5rem; text-align: left; }
 .booked-list .booked-item { margin-bottom: 0.75rem; padding-left: 1.5em; position: relative; }
 .booked-list .booked-item::before { content: " ♦ "; position: absolute; left: 0; top: 0.05em; color: var(--success-green); line-height: inherit; }
-.booked-list .company-name { display: block; color: var(--success-green); margin-bottom: 0.1rem; }
-.booked-list .position-name { display: block; color: var(--success-green); }
+.booked-list .company-name { display: block; color: var(--bright-cyan); margin-bottom: 0.1rem; }
+.booked-list .position-name { display: block; color: var(--white); }
 </style>
 <base target="_top">
 </head>
 <body class="min-h-screen py-8 text-lg">
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
-<div class="main-content-area max-w-3xl mx-auto">
+<div class="main-content-area max-w-3xl mx-auto px-4">
 <div id="generalMessageArea" class="status-message hidden"></div>
+
+<!-- 表單主體 -->
 <div id="formContainer" class="form-container p-5 sm:p-7 md:p-9">
 <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 sm:mb-10 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
 <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷填寫與預約面試</h1>
 </div>
 <form id="dataForm" class="space-y-6 md:space-y-5">
 <input type="hidden" id="lineUserId" name="lineUserId" value="" />
+
+<!-- 個資宣告區塊 -->
 <div class="text-lg md:text-base border-b border-lightPurple/30 pb-6 space-y-4">
 <p class="font-semibold text-xl text-circuitCyan mb-2">【個資宣告】</p>
 <p>本表單蒐集之個人資料，僅限於應徵「嘉義就業中心」所刊登職缺，與嘉義就業中心查詢個資使用，不轉做其他用途，亦不會公佈任何資訊，並遵循本中心資料保存與安全控管辦理。</p>
@@ -112,31 +116,46 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <div id="agreementError" class="error-message-inline hidden">請先同意才能繼續填寫</div>
 </div>
 </div>
+
+<!-- 表單填寫區 -->
 <div id="formFields" class="space-y-6 md:space-y-5 hidden">
 <div class="space-y-2">
 <label for="infoSource" class="block text-lg md:text-base font-medium">如何得知活動訊息：<span class="text-red-500">*</span></label>
 <select id="infoSource" name="infoSource" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
-<option value="" disabled selected>請選擇...</option><option value="就業中心告知(臨櫃、電話)">就業中心告知(臨櫃、電話)</option><option value="台灣就業通">台灣就業通</option><option value="Line群組">Line群組</option><option value="FaceBook/Instagram">FaceBook/Instagram</option><option value="親友告知">親友告知</option><option value="手機簡訊">手機簡訊</option><option value="報紙新聞">報紙新聞</option><option value="求才令">求才令</option><option value="路上廣告(宣傳車/旗幟)">路上廣告(宣傳車/旗幟)</option>
+<option value="" disabled selected>請選擇...</option>
+<option value="就業中心告知(臨櫃、電話)">就業中心告知(臨櫃、電話)</option>
+<option value="台灣就業通">台灣就業通</option>
+<option value="Line群組">Line群組</option>
+<option value="FaceBook/Instagram">FaceBook/Instagram</option>
+<option value="親友告知">親友告知</option>
+<option value="手機簡訊">手機簡訊</option>
+<option value="報紙新聞">報紙新聞</option>
+<option value="求才令">求才令</option>
+<option value="路上廣告(宣傳車/旗幟)">路上廣告(宣傳車/旗幟)</option>
 <option value="其他">其他</option>
 </select>
 <div id="otherInfoSourceContainer" class="hidden mt-3">
 <input type="text" id="otherInfoSourceText" name="otherInfoSourceText" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" placeholder="請說明其他來源...">
 </div>
 </div>
+
 <div class="space-y-2">
 <label for="name" class="block text-lg md:text-base font-medium">姓名：<span class="text-red-500">*</span></label>
 <input type="text" id="name" name="name" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
 </div>
+
 <div class="space-y-2">
 <label for="birthdate" class="block text-lg md:text-base font-medium">出生日期：<span class="text-red-500">*</span></label>
 <input type="text" id="birthdate" name="birthdate" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required maxlength="7" placeholder="請輸入民國日期，如：0801010">
 <div id="birthdateError" class="error-message-inline hidden mt-1"></div>
 </div>
+
 <div class="space-y-2">
 <label for="idNumber" class="block text-lg md:text-base font-medium">身份證字號(居留證號)：<span class="text-red-500">*</span></label>
-<input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 text-lg md:text-base rounded-lg uppercase" required pattern="^[A-Z][1-2A-D8-9]\d{8}$" title="請輸入有效的身份證字號或居留證號格式">
-<div id="idNumberError" class="error-message-inline hidden">格式錯誤，請檢查輸入</div>
+<input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 text-lg md:text-base rounded-lg uppercase" required placeholder="如: A123456789">
+<div id="idNumberError" class="error-message-inline hidden">身份證字號(居留證號)格式錯誤</div>
 </div>
+
 <div class="space-y-2">
 <label class="block text-lg md:text-base font-medium">婚姻狀況：</label>
 <div class="flex flex-wrap gap-x-6 gap-y-3 pt-1">
@@ -144,6 +163,7 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <label class="flex items-center gap-2"><input type="radio" name="maritalStatus" value="已婚" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">已婚</span></label>
 </div>
 </div>
+
 <div class="space-y-2">
 <label class="block text-lg md:text-base font-medium">兵役狀況：</label>
 <div class="flex flex-wrap gap-x-6 gap-y-3 pt-1">
@@ -152,37 +172,46 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <label class="flex items-center gap-2"><input type="radio" name="militaryStatus" value="免役" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">免役</span></label>
 </div>
 </div>
+
 <div class="space-y-2">
 <label for="address" class="block text-lg md:text-base font-medium">聯絡地址：<span class="text-red-500">*</span></label>
 <input type="text" id="address" name="address" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
 </div>
+
 <div class="space-y-2">
 <label for="phone" class="block text-lg md:text-base font-medium">聯絡電話：<span class="text-red-500">*</span></label>
 <input type="tel" id="phone" name="phone" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
 </div>
+
 <div class="space-y-2">
 <label for="email" class="block text-lg md:text-base font-medium">E-mail：</label>
 <input type="email" id="email" name="email" class="w-full px-4 py-3 text-lg md:text-base rounded-lg">
 </div>
+
 <div class="space-y-2">
 <label for="education" class="block text-lg md:text-base font-medium">最高學歷(畢業)：<span class="text-red-500">*</span></label>
 <select id="education" name="education" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
-<option value="" disabled selected>請選擇...</option><option value="國小">國小</option><option value="國中">國中</option><option value="高中(職)">高中(職)</option><option value="專科">專科</option><option value="大學">大學</option><option value="碩士">碩士</option><option value="博士">博士</option>
+<option value="" disabled selected>請選擇...</option>
+<option value="國小">國小</option><option value="國中">國中</option><option value="高中(職)">高中(職)</option><option value="專科">專科</option><option value="大學">大學</option><option value="碩士">碩士</option><option value="博士">博士</option>
 </select>
 </div>
+
 <div class="space-y-2">
 <label for="school" class="block text-lg md:text-base font-medium">畢(肄)業學校：<span class="text-red-500">*</span></label>
 <input type="text" id="school" name="school" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
 </div>
+
 <div class="space-y-2">
 <label for="major" class="block text-lg md:text-base font-medium">畢業科系：<span class="text-red-500">*</span></label>
 <input type="text" id="major" name="major" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
 </div>
+
 <div class="space-y-2">
 <label for="workExperience" class="block text-lg md:text-base font-medium">工作經歷：<span class="text-red-500">*</span></label>
 <p class="text-lg md:text-base text-lightPurple mb-2">請依照「公司名稱/擔任職務/年資」順序填寫，最多三筆</p>
 <textarea id="workExperience" name="workExperience" rows="4" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required></textarea>
 </div>
+
 <div class="space-y-2">
 <label class="block text-lg md:text-base font-medium">駕照種類：</label>
 <div class="flex flex-wrap gap-x-6 gap-y-3 pt-1">
@@ -198,9 +227,10 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <label class="flex items-center gap-2"><input type="checkbox" name="license" value="職業聯結車" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">職業聯結車</span></label>
 </div>
 </div>
+
 <div class="space-y-2">
 <label class="block text-lg md:text-base font-medium">電腦能力：</label>
-<p class="text-lg md:text-base text-lightPurple mb-2">如需詳述軟體名稱請勾選「其他」選項中說明 (如：CorelDraw、Mastercam、鼎新等..)</p>
+<p class="text-lg md:text-base text-lightPurple mb-2">如需詳述軟體名稱請勾選「其他」選項中說明</p>
 <div class="flex flex-wrap gap-x-6 gap-y-3 pt-1">
 <label class="flex items-center gap-2"><input type="checkbox" name="computerSkill" value="文書處理" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">文書處理</span></label>
 <label class="flex items-center gap-2"><input type="checkbox" name="computerSkill" value="會計系統" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">會計系統</span></label>
@@ -213,21 +243,33 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <input type="text" id="otherComputerSkillText" name="otherComputerSkillText" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" placeholder="請說明其他電腦能力...">
 </div>
 </div>
+
 <div class="space-y-2">
 <label class="block text-lg md:text-base font-medium">語文能力：</label>
 <div class="flex flex-wrap gap-x-6 gap-y-3 pt-1">
-<label class="flex items-center gap-2"><input type="checkbox" name="language" value="國語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">國語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="台語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">台語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="英語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">英語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="日語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">日語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="韓語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">韓語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="越語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">越語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="泰語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">泰語</span></label><label class="flex items-center gap-2"><input type="checkbox" name="language" value="印尼語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">印尼語</span></label><label class="flex items-center gap-2"><input type="checkbox" id="otherLanguageCheckbox" name="language" value="其他" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">其他</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="國語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">國語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="台語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">台語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="英語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">英語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="日語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">日語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="韓語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">韓語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="越語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">越語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="泰語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">泰語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" name="language" value="印尼語" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">印尼語</span></label>
+<label class="flex items-center gap-2"><input type="checkbox" id="otherLanguageCheckbox" name="language" value="其他" class="h-5 w-5 md:h-4 md:w-4"><span class="text-lg md:text-base">其他</span></label>
 </div>
 <div id="otherLanguageContainer" class="hidden mt-3">
 <input type="text" id="otherLanguageText" name="otherLanguageText" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" placeholder="請說明其他語文能力...">
 </div>
 </div>
+
 <div class="pt-5">
 <button type="submit" id="submitBtn" class="submit-btn w-full px-4 py-3 text-2xl lg:text-3xl md:text-xl md:py-3">提交檢查履歷</button>
 </div>
 </div>
 </form>
 </div>
+
+<!-- 預覽區塊 -->
 <div id="reviewSection" class="form-container mt-10 p-6 sm:p-8 hidden">
 <div class="form-header -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 sm:mb-8 py-5 px-6 sm:py-6 sm:px-8 rounded-t-lg">
 <h2 id="reviewTitle" class="text-2xl md:text-xl font-bold text-center">請確認您的履歷資料</h2>
@@ -236,9 +278,10 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <div class="review-buttons mt-8 flex flex-col md:flex-row justify-center gap-4 md:gap-6">
 <button id="editBtn" class="secondary-btn w-full md:w-auto px-4 py-3 text-xl md:text-lg">重新編輯履歷</button>
 <button id="confirmBtn" class="submit-btn w-full md:w-auto px-4 py-3 text-xl md:text-lg">確認履歷並預約面試</button>
-<button id="exitReviewBtn" class="secondary-btn w-full md:w-auto px-4 py-3 text-xl md:text-lg hidden">離開查閱</button>
 </div>
 </div>
+
+<!-- 預約職缺選擇區 -->
 <div id="appointmentSection" class="form-container mt-10 p-6 sm:p-8 hidden">
 <div class="form-header -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 sm:mb-8 py-5 px-6 sm:py-6 sm:px-8 rounded-t-lg">
 <h2 id="appointmentTitle" class="text-2xl md:text-xl font-bold text-center">選擇預約面試職務名稱</h2>
@@ -253,12 +296,14 @@ font-weight: 500; cursor: pointer; text-align: center; }
 <button id="confirmAppointmentBtn" class="submit-btn w-full md:w-auto px-4 py-3 text-xl md:text-lg">確認預約</button>
 </div>
 </div>
+
+<!-- 預約成功容器 -->
 <div id="successMessageContainer" class="status-message-container hidden mt-10">
 <div id="successMessageContent" class="status-message success form-container p-6"></div>
 </div>
 </div>
 
-<!-- 客製化確認對話框 (完全取代原生 confirm，消除網址標題) -->
+<!-- 客製化確認 Modal -->
 <div id="customConfirmModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
 <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
 <p id="customConfirmMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
@@ -269,7 +314,7 @@ font-weight: 500; cursor: pointer; text-align: center; }
 </div>
 </div>
 
-<!-- 客製化警告對話框 (完全取代原生 alert，消除網址標題) -->
+<!-- 客製化 Alert Modal (完全替代原生 alert) -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
 <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
 <p id="customAlertMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
@@ -280,15 +325,15 @@ font-weight: 500; cursor: pointer; text-align: center; }
 </div>
 
 <script>
-// 1. 全域變數與 API 設定
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxIVOAgJzJHDqLQ31e8MiBm9N3MGj1DieppZ9-ayd2W7WeLHbU1Q8odPf7FOONvkaUs/exec';
+// 1. API 配置
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxen8Fx0Mk665skRt7TiCGwQj7_eO424TF9ei2dFbEkz8RM41Q7E9FFuhEy29sYNomfqA/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
 window.companyData = []; 
 window.currentBookingInfo = {};
 
-// 2. 通用 API 呼叫工具
+// 2. 超高相容性 API 呼叫工具 (無 CORS 預檢攔截問題)
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
     if (method === 'GET') {
@@ -296,16 +341,16 @@ async function callGasApi(action, payload = {}, method = 'GET') {
       const resp = await fetch(`${GAS_API_URL}?${query}`);
       return await resp.json();
     } else {
+      // POST 請求使用相容性最高之格式傳送
       const resp = await fetch(GAS_API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, ...payload })
       });
       return await resp.json();
     }
   } catch (err) {
     console.error('API 呼叫失敗:', err);
-    return { status: 'error', message: '連線逾時，請檢查網路狀態' };
+    return { status: 'error', message: '資料傳輸過程發生網路錯誤，請稍後重試。' };
   }
 }
 
@@ -346,7 +391,7 @@ function createCircuitBackground() {
   }
 }
 
-// 5. 身分證與居留證檢核邏輯 (完整補回)
+// 5. 嚴格身分證與居留證檢核邏輯
 function validateTaiwanID(id) {
   if(!id || typeof id !== 'string') return false;
   const m={"A":10,"B":11,"C":12,"D":13,"E":14,"F":15,"G":16,"H":17,"I":34,"J":18,"K":19,"L":20,"M":21,"N":22,"O":35,"P":23,"Q":24,"R":25,"S":26,"T":27,"U":28,"V":29,"W":32,"X":30,"Y":31,"Z":33};
@@ -376,7 +421,25 @@ function validateResidentID(id) {
   return s % 10 === 0;
 }
 
-// 6. 生日檢核邏輯 (民國轉西元)
+function validateIdField(showError = true) {
+  const idNumberInput = document.getElementById('idNumber');
+  const idNumberError = document.getElementById('idNumberError');
+  if (!idNumberInput) return true; 
+  const idValue = idNumberInput.value.trim().toUpperCase(); 
+  
+  const isValid = (validateTaiwanID(idValue) || validateResidentID(idValue));
+  
+  if (idNumberError) { 
+    if (isValid || idValue === '') {
+      idNumberError.classList.add('hidden');
+    } else {
+      if (showError) idNumberError.classList.remove('hidden');
+    }
+  }
+  return isValid;
+}
+
+// 6. 民國生日轉碼與檢核
 function validateBirthdateYear() {
   const birthdateInput = document.getElementById('birthdate');
   const birthdateError = document.getElementById('birthdateError');
@@ -397,23 +460,15 @@ function validateBirthdateYear() {
       else if (year > new Date().getFullYear()) { isValid = false; errorMessage = "日期不可超過西元今日"; }
     }
   } else if (birthdateInput.required) { isValid = false; errorMessage = "出生日期為必填。"; }
-  birthdateInput.setCustomValidity(isValid ? "" : errorMessage);
-  if (birthdateError) { birthdateError.textContent = errorMessage; birthdateError.classList.toggle('hidden', isValid); }
+  
+  if (birthdateError) { 
+    birthdateError.textContent = errorMessage; 
+    birthdateError.classList.toggle('hidden', isValid); 
+  }
   return isValid;
 }
 
-function validateIdField(showError = true) {
-  const idNumberInput = document.getElementById('idNumber');
-  const idNumberError = document.getElementById('idNumberError');
-  if (!idNumberInput) return true; 
-  const idValue = idNumberInput.value.trim().toUpperCase(); 
-  let isValid = (idValue === '') ? !idNumberInput.required : (validateTaiwanID(idValue) || validateResidentID(idValue));
-  if (showError && idNumberError) { idNumberError.classList.toggle('hidden', isValid); idNumberError.textContent = isValid ? "" : "身份證/居留證號格式錯誤。"; }
-  idNumberInput.setCustomValidity(isValid ? "" : "格式不符"); 
-  return isValid;
-}
-
-// 7. 客製化 Modal 彈窗控制 (完全不使用原生 alert/confirm)
+// 7. 客製化 Modal 控制 (解決 joying830.github.io 跳窗問題)
 let confirmResolve = null;
 let alertResolve = null;
 
@@ -449,24 +504,7 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 8. 頁面切換與復原
-function fullFormReset() {
-  const form = document.getElementById('dataForm');
-  if(form) form.reset();
-  ['agreementError', 'idNumberError', 'birthdateError'].forEach(e => {
-    const el = document.getElementById(e); if(el) el.classList.add('hidden');
-  });
-  const agreementRadios = document.getElementsByName('agreement');
-  if(agreementRadios) Array.from(agreementRadios).forEach(r => r.checked = false);
-  document.getElementById('formFields').classList.add('hidden');
-  document.getElementById('formContainer').classList.remove('hidden');
-  ['reviewSection', 'appointmentSection', 'successMessageContainer'].forEach(s => {
-    const el = document.getElementById(s); if(el) el.classList.add('hidden');
-  });
-  window.formData = {};
-  window.scrollTo(0,0);
-}
-
+// 8. 表單資料載入與預覽
 function populateFormWithData(data) {
   if (!data) return;
   const agreementRadios = document.getElementsByName('agreement');
@@ -488,11 +526,8 @@ function populateFormWithData(data) {
   ['address', 'phone', 'email', 'education', 'school', 'major', 'workExperience'].forEach(k => { 
     const el = document.getElementById(k); if(el) el.value = data[k] || ""; 
   });
-  validateIdField(false); 
-  validateBirthdateYear();
 }
 
-// 9. 履歷預覽渲染
 const reviewOrder = [
   {key:'agreement',label:'個資同意'},
   {key:'infoSource',label:'如何得知訊息'},
@@ -518,7 +553,6 @@ function displayDataInReview(dataObject) {
   window.scrollTo(0, 0);
 }
 
-// 10. 預約職缺區域渲染
 function displayAppointmentSection(resumeInfo) {
   const companyListContainer = document.getElementById('companyListContainer');
   if(!companyListContainer) return; 
@@ -546,7 +580,6 @@ function displayAppointmentSection(resumeInfo) {
   window.scrollTo(0, 0);
 }
 
-// 11. 最終預約成功畫面渲染 (不跳出任何原生 Alert，完全沒有網址標題)
 function handleFinalSuccess(r) {
   const successMessageContent = document.getElementById('successMessageContent');
   const successMessageContainer = document.getElementById('successMessageContainer');
@@ -566,7 +599,7 @@ function handleFinalSuccess(r) {
   window.scrollTo(0,0);
 }
 
-// 12. 事件監聽與 DOM 初始化
+// 9. 事件綁定與主流程
 document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initLiff();
@@ -586,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if(customConfirmCancelBtn) customConfirmCancelBtn.addEventListener('click', () => { if (confirmResolve) confirmResolve(false); hideCustomConfirm(); });
   if(customAlertOkBtn) customAlertOkBtn.addEventListener('click', hideCustomAlert);
 
-  // 個資同意切換
+  // 個資宣告切換
   if (agreementRadios && agreementRadios.length > 0) {
     Array.from(agreementRadios).forEach(r => {
       r.addEventListener('change', function() {
@@ -597,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 身分證與生日即時轉碼/驗證
+  // 身分證即時強制轉大寫與檢核
   if(idNumberInput) {
     idNumberInput.addEventListener('input', function() {
       this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -608,23 +641,34 @@ document.addEventListener('DOMContentLoaded', function() {
     birthdateInput.addEventListener('input', validateBirthdateYear);
   }
 
-  // 取得公司列表
+  // 初始化取得職缺清單
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
 
-  // 表單預覽提交
+  // 關鍵卡關 1：點擊「提交檢查履歷」時的嚴格驗證
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
+    
+    // 檢查個資同意
     if(!Array.from(agreementRadios).some(r => r.checked && r.value === '同意')) { 
       showCustomAlert('請先同意個資宣告。'); 
       return; 
     }
-    if (!validateBirthdateYear() || !validateIdField(true)) { 
-      showCustomAlert('請檢查出生日期或身份證字號格式是否正確。'); 
-      return; 
-    }
     
+    // 關鍵修復：嚴格檢核身分證字號與生日，若錯誤直接 return 攔截！
+    const isIdValid = validateIdField(true);
+    const isBirthValid = validateBirthdateYear();
+
+    if (!isIdValid) {
+      showCustomAlert('身份證字號(居留證號)格式錯誤，請重新檢查輸入。');
+      return;
+    }
+    if (!isBirthValid) {
+      showCustomAlert('出生日期格式錯誤，請輸入 6 或 7 位數民國日期 (如 0801010)。');
+      return;
+    }
+
     const f = new FormData(this); 
     const b = birthdateInput.value; 
     let xb = "";
@@ -656,7 +700,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
 
-  // 確認送出履歷 (含舊履歷覆蓋處理)
+  // 關鍵卡關 2：確認送出履歷 (修正 POST Payload 與覆蓋)
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
     confirmBtn.disabled = true; 
@@ -667,11 +711,10 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmBtn.innerHTML = '確認履歷並預約面試';
 
     if (r.status === 'resume_saved') {
-      showCustomAlert(r.message).then(() => {
-        displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
-      });
+      await showCustomAlert(r.message || '履歷提交成功！');
+      displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
     } else if (r.status === 'duplicate_found') {
-      const isOverwrite = await showCustomConfirm(r.message);
+      const isOverwrite = await showCustomConfirm(r.message || '發現舊履歷，是否覆蓋？');
       if (isOverwrite) {
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '覆蓋更新中... <span class="spinner"></span>';
