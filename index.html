@@ -1,0 +1,253 @@
+<script>
+// 1. 全域變數設定
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwGGF6OqYpSwemLFrfm5cVXFSOgYsBLT4b8iVGoJXZy2rZ1tdFJO2r5gi9Aqdw2-7B4jQ/exec'; // 貼上部署好的 Web App URL
+const LIFF_ID = '2010785535-mhv97vPS'; // LIFF ID
+window.lineUserId = '';
+
+// 2. 通用 API 呼叫工具函式 (取代原本的 google.script.run)
+async function callGasApi(action, payload = {}, method = 'GET') {
+  try {
+    if (method === 'GET') {
+      const query = new URLSearchParams({ action, ...payload }).toString();
+      const resp = await fetch(`${GAS_API_URL}?${query}`);
+      return await resp.json();
+    } else {
+      const resp = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload })
+      });
+      return await resp.json();
+    }
+  } catch (err) {
+    console.error('API 呼叫失敗:', err);
+    return { status: 'error', message: '網路連線失敗，請稍後再試' };
+  }
+}
+
+// 3. 改良版 LIFF 初始化
+async function initLiff() {
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+      await liff.init({ liffId: LIFF_ID });
+      
+      if (liff.isInClient()) {
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          window.lineUserId = profile.userId;
+          const lineUserIdInput = document.getElementById('lineUserId');
+          if (lineUserIdInput) lineUserIdInput.value = profile.userId;
+        } else {
+          liff.login();
+        }
+      } else {
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          window.lineUserId = profile.userId;
+          const lineUserIdInput = document.getElementById('lineUserId');
+          if (lineUserIdInput) lineUserIdInput.value = profile.userId;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('LIFF 初始化失敗或跳過:', err);
+  }
+}
+
+// 4. 特效與驗證工具
+function createCircuitBackground() {
+  const circuitBg = document.getElementById('circuitBackground');
+  if (!circuitBg) return;
+  circuitBg.innerHTML = '';
+  const lineCount = Math.floor(window.innerWidth / 100) * 5 + 10;
+  for (let i = 0; i < lineCount; i++) {
+    const line = document.createElement('div');
+    line.className = 'circuit-line';
+    line.style.height = `${Math.random() * 1 + 1}px`;
+    line.style.width = `${Math.random() * 30 + 10}%`;
+    line.style.top = `${Math.random() * 100}%`;
+    line.style.left = `${Math.random() * 70}%`;
+    line.style.opacity = `${Math.random() * 0.3 + 0.1}`;
+    if (Math.random() > 0.8) {
+      line.style.backgroundColor = 'var(--bright-cyan)';
+      line.style.boxShadow = '0 0 8px var(--bright-cyan)';
+      line.style.opacity = `${Math.random() * 0.4 + 0.3}`;
+    }
+    circuitBg.appendChild(line);
+  }
+}
+
+window.formData = {}; 
+window.companyData = []; 
+window.currentBookingInfo = {};
+
+// 5. 主 DOM 載入與事件處理
+document.addEventListener('DOMContentLoaded', function() {
+  createCircuitBackground();
+  initLiff();
+
+  const mainFormContainer = document.getElementById('formContainer');
+  const form = document.getElementById('dataForm');
+  const formFields = document.getElementById('formFields');
+  const agreementRadios = document.getElementsByName('agreement');
+  const agreementError = document.getElementById('agreementError');
+  const reviewSection = document.getElementById('reviewSection');
+  const reviewContent = document.getElementById('reviewContent');
+  const editBtn = document.getElementById('editBtn');
+  const confirmBtn = document.getElementById('confirmBtn');
+  const appointmentSection = document.getElementById('appointmentSection');
+  const companyListContainer = document.getElementById('companyListContainer');
+  const appointmentError = document.getElementById('appointmentError');
+  const confirmAppointmentBtn = document.getElementById('confirmAppointmentBtn');
+  const infoSource = document.getElementById('infoSource');
+  const otherInfoSourceContainer = document.getElementById('otherInfoSourceContainer');
+  const otherInfoSourceInput = document.getElementById('otherInfoSourceText');
+  const birthdateInput = document.getElementById('birthdate');
+
+  // 個資同意切換
+  if (agreementRadios && agreementRadios.length > 0) {
+    Array.from(agreementRadios).forEach(r => {
+      r.addEventListener('change', function() {
+        const isAgree = this.value === '同意' && this.checked;
+        if (formFields) formFields.classList.toggle('hidden', !isAgree);
+        if (agreementError) agreementError.classList.toggle('hidden', isAgree);
+      });
+    });
+  }
+
+  function handleOtherOptionToggle(selectElementOrCheckbox, otherContainer, otherInput) {
+    if (!selectElementOrCheckbox || !otherContainer || !otherInput) return;
+    const isOtherSelected = selectElementOrCheckbox.type === 'checkbox' ? (selectElementOrCheckbox.checked && selectElementOrCheckbox.value === '其他') : (selectElementOrCheckbox.value === '其他');
+    otherContainer.classList.toggle('hidden', !isOtherSelected); otherInput.required = isOtherSelected; if (!isOtherSelected) otherInput.value = '';
+  }
+
+  [infoSource, document.getElementById('otherComputerSkillCheckbox'), document.getElementById('otherLanguageCheckbox')].forEach((el, idx) => {
+    if(!el) return;
+    const targets = [
+      [otherInfoSourceContainer, otherInfoSourceInput], 
+      [document.getElementById('otherComputerSkillContainer'), document.getElementById('otherComputerSkillText')], 
+      [document.getElementById('otherLanguageContainer'), document.getElementById('otherLanguageText')]
+    ];
+    el.addEventListener('change', () => handleOtherOptionToggle(el, targets[idx][0], targets[idx][1]));
+  });
+
+  // 取得職缺清單 (已改為 fetch API)
+  async function fetchCompanyData() { 
+    const res = await callGasApi('getCompanyData', {}, 'GET');
+    window.companyData = Array.isArray(res) ? res : [];
+  }
+  fetchCompanyData();
+
+  // 履歷表單預覽
+  form.addEventListener('submit', function(e) {
+    e.preventDefault(); 
+    if(!Array.from(agreementRadios).some(r => r.checked && r.value === '同意')) { alert('請先同意個資宣告。'); return; }
+    
+    const f = new FormData(form); 
+    const b = birthdateInput.value; 
+    let xb = "";
+    if (b.length >= 6) { const r = parseInt(b.slice(0, -4), 10); xb = `${r + 1911}-${b.slice(-4, -2)}-${b.slice(-2)}`; }
+    
+    const dReview = {}; 
+    f.forEach((v, k) => { if(!['license', 'computerSkill', 'language'].includes(k)) dReview[k] = v; });
+    dReview['birthdate'] = xb; 
+    dReview['license'] = f.getAll('license'); 
+    dReview['computerSkill'] = f.getAll('computerSkill'); 
+    dReview['language'] = f.getAll('language');
+    dReview['lineUserId'] = window.lineUserId;
+    
+    window.formData = dReview; 
+    displayDataInReview(dReview);
+  });
+
+  function displayDataInReview(dataObject) {
+    if(reviewContent) reviewContent.innerHTML = '';
+    const reviewOrder = [ {key:'agreement',label:'個資同意'},{key:'infoSource',label:'如何得知訊息'},{key:'name',label:'姓名'},{key:'birthdate',label:'出生日期'},{key:'idNumber',label:'身份證(居留證)'},{key:'phone',label:'聯絡電話'},{key:'workExperience',label:'工作經歷'} ];
+    reviewOrder.forEach(item => {
+      const val = Array.isArray(dataObject[item.key]) ? dataObject[item.key].join(', ') : (dataObject[item.key] || '未填寫');
+      const row = document.createElement('div'); 
+      row.className = 'review-item flex flex-col md:flex-row border-b border-lightPurple/30 pb-4';
+      row.innerHTML = `<div class="review-label w-full md:w-1/3 text-lightPurple">${item.label}:</div><div class="review-value md:w-2/3 text-nearWhite">${val}</div>`;
+      reviewContent.appendChild(row);
+    });
+    mainFormContainer.classList.add('hidden'); 
+    reviewSection.classList.remove('hidden'); 
+    window.scrollTo(0, 0);
+  }
+
+  editBtn.addEventListener('click', () => { 
+    reviewSection.classList.add('hidden'); 
+    mainFormContainer.classList.remove('hidden'); 
+  });
+
+  // 確認履歷 (已改為 fetch API)
+  confirmBtn.addEventListener('click', async function() {
+    const d = { ...window.formData };
+    confirmBtn.disabled = true; 
+    confirmBtn.innerHTML = '處理中...';
+
+    const r = await callGasApi('processFormData', { formData: d }, 'POST');
+    confirmBtn.disabled = false; 
+    confirmBtn.innerHTML = '確認履歷並預約面試';
+    
+    if (r.status === 'resume_saved' || r.status === 'duplicate_found') {
+      displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
+    } else {
+      alert(r.message || '儲存失敗');
+    }
+  });
+
+  function displayAppointmentSection(resumeInfo) {
+    window.currentBookingInfo = { name: resumeInfo.name, id: resumeInfo.idNumber };
+    companyListContainer.innerHTML = '';
+    if (window.companyData && window.companyData.length > 0) {
+      window.companyData.forEach((c) => {
+        const d = document.createElement('div'); d.className = 'company-group space-y-3 mb-4';
+        d.innerHTML = `<h3 class="company-title text-xl font-semibold text-circuitCyan">${c.company}</h3>`;
+        if (c.positions && c.positions.length > 0) {
+          const s = document.createElement('select'); s.dataset.company = c.company; s.className = 'w-full px-4 py-3 rounded-lg bg-darkPurple text-white';
+          s.innerHTML = '<option value="" selected>請選擇職務 </option>' + c.positions.map(p => `<option value="${p}">${p}</option>`).join('');
+          d.appendChild(s);
+        }
+        companyListContainer.appendChild(d);
+      });
+    }
+    reviewSection.classList.add('hidden'); 
+    appointmentSection.classList.remove('hidden'); 
+    window.scrollTo(0, 0);
+  }
+
+  // 確認預約面試 (已改為 fetch API)
+  confirmAppointmentBtn.addEventListener('click', async function() {
+    const sels = companyListContainer.querySelectorAll('select[data-company]'); 
+    const pos = [];
+    sels.forEach(s => { if(s.value) pos.push({ company: s.dataset.company, position: s.value }); });
+    if (pos.length === 0) { appointmentError.classList.remove('hidden'); return; }
+    
+    confirmAppointmentBtn.disabled = true; 
+    confirmAppointmentBtn.innerHTML = '預約中...';
+
+    const r = await callGasApi('bookAppointments', { 
+      appointmentData: {
+        name: window.currentBookingInfo.name, 
+        id: window.currentBookingInfo.id, 
+        companyPositions: pos, 
+        lineUserId: window.lineUserId 
+      }
+    }, 'POST');
+
+    confirmAppointmentBtn.disabled = false; 
+    confirmAppointmentBtn.innerHTML = '確認預約';
+    
+    if (r.status === 'success') {
+      alert('預約面試成功！');
+      if (typeof liff !== 'undefined' && liff.isInClient()) {
+        liff.closeWindow();
+      }
+    } else {
+      alert(r.message || '預約失敗');
+    }
+  });
+});
+</script>
+

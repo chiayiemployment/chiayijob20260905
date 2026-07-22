@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職缺詳細資訊</title>
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deepPurple: '#1F1D53', midPurple: '#6B257F', darkPurple: '#4C237C',
+                        deepBlue: '#053D88', blue: '#01529F', royalBlue: '#2956A8',
+                        lightPurple: '#A48DCD', nearWhite: '#EDEEF7', circuitCyan: '#28C4FF',
+                        dateBlockBg: '#7E2AFF', buttonGradStart: '#AC3FFF', buttonGradEnd: '#6A1BCB',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #1F1D53; color: #FFFFFF; position: relative; overflow-x: hidden; min-height: 100vh; }
+        .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .circuit-line { position: absolute; background-color: #4C237C; box-shadow: 0 0 5px #01529F; }
+        .circuit-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background-color: #28C4FF; box-shadow: 0 0 8px #28C4FF; }
+        .left-gradient { position: fixed; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, #053D88 0%, rgba(5, 61, 136, 0) 100%); z-index: 1; pointer-events: none; }
+        .content { position: relative; z-index: 10; padding-bottom: 80px; }
+        .company-title-text { text-shadow: 0 4px 8px #6B257F; }
+        
+        table { border-collapse: separate; border-spacing: 0; }
+        th { background: linear-gradient(135deg, #2956A8, #4C237C); position: sticky; top: 0; z-index: 20; border-bottom: 2px solid #28C4FF; font-weight: 700; letter-spacing: 0.5px; text-align: center; color: #FFFFFF; padding: 0.75rem 1rem; }
+        th::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 1px; background-color: #28C4FF; box-shadow: 0 0 8px #28C4FF; }
+        tr:nth-child(odd) { background-color: rgba(31, 29, 83, 0.9); }
+        tr:nth-child(even) { background-color: rgba(76, 35, 124, 0.7); }
+        tr:hover { background-color: rgba(108, 37, 127, 0.7); }
+        td { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); color: #EDEEF7; }
+        
+        .table-container {
+            background-color: rgba(31, 29, 83, 0.8); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px); 
+            border: 1px solid rgba(164, 141, 205, 0.3); 
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            overflow: hidden; 
+        }
+        .table-container.responsive-active { max-height: none; overflow-y: visible; }
+        .table-container:not(.responsive-active) { max-height: 70vh; overflow-y: auto; overflow-x: auto; }
+        footer { position: fixed; bottom: 0; left: 0; width: 100%; z-index: 15; background-color: rgba(31, 29, 83, 0.9); padding: 10px 0; }
+        @media (max-width: 767px) {
+            .responsive-table thead { display: none; }
+            .responsive-table tr { display: block; background-color: rgba(76, 35, 124, 0.6); margin-bottom: 1rem; border-radius: 8px; padding: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+            .responsive-table tr:nth-child(odd), .responsive-table tr:nth-child(even) { background-color: rgba(50, 30, 90, 0.7); }
+            .responsive-table td { display: block; text-align: right; padding-left: 45% !important; padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; padding-right: 0.75rem !important; position: relative; border-bottom: 1px solid rgba(164, 141, 205, 0.15); min-height: 2.5em; }
+            .responsive-table td:last-child { border-bottom: none; }
+            .responsive-table td:before { content: attr(data-label); position: absolute; left: 0.75rem; top: 0.75rem; width: 40%; padding-right: 0.5rem; white-space: pre-line; text-align: left; font-weight: bold; color: #A48DCD; }
+            .responsive-table td[data-label="職務名稱\n需求人數\n工作地點"], .responsive-table td[data-label="學經歷"], .responsive-table td[data-label="工作內容"], .responsive-table td[data-label="工作班別\n休假方式"] { text-align: left; }
+            .responsive-table td[data-label="職缺編號"], .responsive-table td[data-label="薪資"] { text-align: right; }
+        }
+    </style>
+</head>
+<body>
+    <div class="circuit-background" id="circuitBackground"></div>
+    <div class="left-gradient"></div>
+    <div class="content container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="company-title-text text-4xl md:text-5xl font-bold text-center mb-2">
+                <span id="dynamicCompanyMainTitle" class="text-white text-shadow">職缺列表</span>
+            </h1>
+            <div class="w-32 h-1 mx-auto bg-gradient-to-r from-buttonGradStart to-buttonGradEnd rounded-full"></div>
+        </header>
+        <div class="bg-darkPurple bg-opacity-70 rounded-lg p-2 sm:p-6 backdrop-blur-sm border border-lightPurple border-opacity-30 shadow-lg">
+            <div class="mb-6">
+                <h2 id="dynamicListTitle" class="text-2xl font-bold text-center text-circuitCyan">載入中...</h2>
+            </div>
+            <div class="table-container responsive-table">
+                <table class="w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-3 text-center">職缺編號</th>
+                            <th class="px-4 py-3 text-center">職務名稱<br>需求人數<br>工作地點</th>
+                            <th class="px-4 py-3 text-center">學經歷</th>
+                            <th class="px-4 py-3 text-center">工作內容</th>
+                            <th class="px-4 py-3 text-center">工作班別<br>休假方式</th>
+                            <th class="px-4 py-3 text-center">薪資</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <footer class="mt-8 text-center text-sm text-lightPurple">
+            <p id="copyright-year">© 嘉義就業中心 版權所有</p>
+        </footer>
+    </div>
+
+<script>
+// 全域變數配置
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwGGF6OqYpSwemLFrfm5cVXFSOgYsBLT4b8iVGoJXZy2rZ1tdFJO2r5gi9Aqdw2-7B4jQ/exec'; // 請貼上部署好的 GAS Web App URL
+const LIFF_ID = '2010785535-mhv97vPS';
+
+// 從網址參數自動抓取公司名稱 (例如: job.html?company=01晶成材料股份有限公司)
+const urlParams = new URLSearchParams(window.location.search);
+const companyDisplayName = urlParams.get('company') || '未指定公司';
+
+async function callGasApi(action, payload = {}, method = 'GET') {
+  try {
+    if (method === 'GET') {
+      const query = new URLSearchParams({ action, ...payload }).toString();
+      const resp = await fetch(`${GAS_API_URL}?${query}`);
+      return await resp.json();
+    } else {
+      const resp = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload })
+      });
+      return await resp.json();
+    }
+  } catch (err) {
+    console.error('API 呼叫失敗:', err);
+    return [];
+  }
+}
+
+async function initLiff() {
+    try {
+        if (typeof liff !== 'undefined' && LIFF_ID && LIFF_ID !== 'YOUR_LIFF_ID_HERE') {
+            await liff.init({ liffId: LIFF_ID });
+            if (liff.isInClient() && !liff.isLoggedIn()) {
+                liff.login();
+            }
+        }
+    } catch (err) {
+        console.warn('LIFF 初始化失敗或跳過:', err);
+    }
+}
+
+function createCircuitBackground() {
+    const circuitBg = document.getElementById('circuitBackground');
+    if (!circuitBg) return;
+    circuitBg.innerHTML = ''; 
+    for (let i = 0; i < 15; i++) { 
+        const line = document.createElement('div'); line.className = 'circuit-line'; line.style.height = '2px'; line.style.width = `${Math.random() * 30 + 10}%`; line.style.top = `${Math.random() * 100}%`; line.style.left = `${Math.random() * 70}%`; circuitBg.appendChild(line); 
+    }
+    for (let i = 0; i < 30; i++) { 
+        const dot = document.createElement('div'); dot.className = 'circuit-dot'; dot.style.top = `${Math.random() * 100}%`; dot.style.left = `${Math.random() * 100}%`; circuitBg.appendChild(dot); 
+    }
+}
+
+function renderTable(data) {
+    const tableBody = document.getElementById('jobTableBody');
+    tableBody.innerHTML = ''; 
+    if (!data || data.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-lightPurple">目前 ${companyDisplayName} 沒有可用的職缺資料。</td></tr>`;
+        return;
+    }
+    data.forEach(job => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td data-label="職缺編號" class="px-4 py-4 text-center align-top">${job.id || ''}</td>
+            <td data-label="職務名稱\n需求人數\n工作地點" class="px-4 py-4 whitespace-pre-line align-top">${job.title || ''}</td>
+            <td data-label="學經歷" class="px-4 py-4 whitespace-pre-line align-top">${job.education || ''}</td>
+            <td data-label="工作內容" class="px-4 py-4 whitespace-pre-line align-top">${job.description || ''}</td>
+            <td data-label="工作班別\n休假方式" class="px-4 py-4 whitespace-pre-line align-top">${job.shift || ''}</td>
+            <td data-label="薪資" class="px-4 py-4 text-center align-top">${job.salary || ''}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function showError(error) {
+    document.getElementById('jobTableBody').innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">載入資料失敗：${error.message || error}</td></tr>`;
+}
+
+async function init() {
+    createCircuitBackground();
+    await initLiff();
+    document.getElementById('dynamicListTitle').textContent = companyDisplayName;
+    
+    // 向 GAS 發送 API 請求抓取該公司職缺
+    try {
+        const data = await callGasApi('getJobData', { company: companyDisplayName }, 'GET');
+        renderTable(data);
+    } catch(err) {
+        showError(err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+
