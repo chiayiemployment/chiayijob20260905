@@ -65,14 +65,20 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">預約面試</h1>
     </div>
 
-    <!-- 驗證狀態提示 -->
-    <div id="autoUserStatus" class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30 hidden">
-      <p class="text-lg">應徵者姓名：<span id="userInfoName" class="text-circuitCyan font-bold"></span></p>
-      <p class="text-sm text-lightPurple mt-1">身份驗證：<span class="text-successGreen font-medium">✅ 已登入 LINE 並比對履歷成功</span></p>
+    <!-- 驗證狀態提示 (預設顯示比對中，不遮擋下方選單) -->
+    <div id="statusBanner" class="bg-darkPurple/50 p-4 rounded-lg mb-6 border border-lightPurple/30">
+      <div id="verifyingStatus" class="flex items-center gap-2 text-circuitCyan">
+        <span class="spinner"></span>
+        <span class="text-base font-medium">⚡ 正在識別您的 LINE 身份與履歷紀錄...</span>
+      </div>
+      <div id="autoUserStatus" class="hidden">
+        <p class="text-lg">應徵者姓名：<span id="userInfoName" class="text-circuitCyan font-bold"></span></p>
+        <p class="text-sm text-lightPurple mt-1">身份驗證：<span class="text-successGreen font-medium">✅ 已登入 LINE 並比對履歷成功</span></p>
+      </div>
     </div>
 
     <form id="reservationForm" class="space-y-6 md:space-y-5">
-      <!-- 手動輸入區 (若自動抓不到時顯示) -->
+      <!-- 手動輸入區 (若背景比對成功會自動藏起) -->
       <div id="manualInputFields" class="space-y-4">
         <div>
           <label for="name" class="block text-lg md:text-base font-medium mb-1">姓名<span class="text-errorRed">*</span></label>
@@ -87,9 +93,9 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 
       <p class="text-lg font-bold text-left text-[#FFC72C] my-4">如欲應徵兩項以上職務，請於面試時告知。</p>
 
-      <!-- 公司職缺選擇列表 -->
+      <!-- 公司職缺選擇列表 (立刻渲染) -->
       <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
-        <p class="text-center text-lightPurple">載入職缺清單中...</p>
+        <p class="text-center text-lightPurple">⚡ 載入職缺清單中...</p>
       </div>
 
       <div id="appointmentError" class="error-message-inline hidden mb-4 text-center">請至少選擇一個職務進行預約。</div>
@@ -120,8 +126,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-// ⚠️ 請確認此處為您的「預約面試」專用 GAS API URL
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwJA7nS9TSzFy6SAL6wbI2HyZLDPusvph_bwzfuSer2em9LPWbClz90hmt2szeYZvyB-w/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxo8dVEUnoCfvhCa77uJTUNfg-syrTUVghDjRhvPYrnvP5GRsMZNVnnWY2w58tZ6l9Eog/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -174,46 +179,50 @@ function hideCustomAlert() {
   if (alertResolve) { alertResolve(); alertResolve = null; }
 }
 
-// 🌟 極速優化：單次 API 請求同時抓取職缺與身分比對
+// 🌟 體感 0 秒「先顯後驗」非同步體驗
 async function initPage() {
   createCircuitBackground();
 
-  let uid = '';
+  // 1. ⚡ 立即請求快取的職缺清單 (0.5秒內渲染畫面)
+  callGasApi('getCompanyData', {}, 'GET').then(compRes => {
+    if (Array.isArray(compRes) && compRes.length > 0) {
+      window.companyData = compRes;
+      renderCompanyOptions();
+    }
+  });
+
+  // 2. ⚡ 背景同時執行 LIFF 比對
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
         if (profile && profile.userId) {
-          uid = profile.userId;
-          window.lineUserId = uid;
+          window.lineUserId = profile.userId;
+          
+          // 向後端請求比對履歷
+          const userRes = await callGasApi('getInitialData', { lineUserId: profile.userId }, 'GET');
+          
+          if (userRes.success && userRes.userData) {
+            document.getElementById('userInfoName').innerText = userRes.userData.name;
+            document.getElementById('name').value = userRes.userData.name;
+            document.getElementById('idNumber').value = userRes.userData.idNumber;
+            
+            // 驗證成功：切換標頭卡片，隱藏手動輸入框
+            document.getElementById('verifyingStatus').classList.add('hidden');
+            document.getElementById('manualInputFields').classList.add('hidden');
+            document.getElementById('autoUserStatus').classList.remove('hidden');
+            return;
+          }
         }
       }
     }
   } catch (e) {
-    console.warn('LIFF 驗證跳過，使用手動輸入模式');
+    console.warn('LIFF 比對跳過，保持手動輸入');
   }
 
-  // ⚡ 單次請求同步取回職缺與使用者驗證資料
-  const initRes = await callGasApi('getInitialData', { lineUserId: uid }, 'GET');
-
-  if (initRes.success) {
-    window.companyData = Array.isArray(initRes.companyData) ? initRes.companyData : [];
-    renderCompanyOptions();
-
-    if (initRes.userData) {
-      document.getElementById('userInfoName').innerText = initRes.userData.name;
-      document.getElementById('name').value = initRes.userData.name;
-      document.getElementById('idNumber').value = initRes.userData.idNumber;
-      document.getElementById('manualInputFields').classList.add('hidden');
-      document.getElementById('autoUserStatus').classList.remove('hidden');
-    }
-  } else {
-    // 萬一 API 失敗仍嘗試單獨載入職缺
-    const compRes = await callGasApi('getCompanyData', {}, 'GET');
-    window.companyData = Array.isArray(compRes) ? compRes : [];
-    renderCompanyOptions();
-  }
+  // 若未登入 LINE 或查無履歷，隱藏驗證中提示，顯示手動輸入框
+  document.getElementById('statusBanner').classList.add('hidden');
 }
 
 function renderCompanyOptions() {
