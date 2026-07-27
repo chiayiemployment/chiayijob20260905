@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>快速預約面試</title>
+<!-- LIFF SDK -->
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        deepPurple: "#1F1D53", midPurple: "#6B257F", darkPurple: "#4C237C",
+        deepBlue: "#053D88", blue: "#01529F", royalBlue: "#2956A8",
+        lightPurple: "#A48DCD", nearWhite: "#EDEEF7", circuitCyan: "#28C4FF",
+        buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
+        errorRed: "#ff6b6b", successGreen: "#4ade80",
+      },
+    },
+  },
+};
+</script>
+<style>
+:root {
+  --deep-purple: #1F1D53; --mid-purple: #6B257F; --dark-purple: #4C237C;
+  --deep-blue: #053D88; --blue: #01529F; --royal-blue: #2956A8;
+  --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
+  --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
+}
+body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; overflow-x: hidden; min-height: 100vh; }
+.circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
+.left-gradient { position: fixed; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, var(--deep-blue) 0%, rgba(5, 61, 136, 0) 100%); z-index: 1; pointer-events: none; }
+.main-content-area { position: relative; z-index: 10; }
+.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
+.form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
+.form-title { text-shadow: 0 2px 4px var(--mid-purple); }
+.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
+.secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; }
+.hidden { display: none !important; }
+.spinner { border: 4px solid rgba(255, 255, 255, 0.2); border-radius: 50%; border-top-color: var(--bright-cyan); width: 3rem; height: 3rem; animation: spin 1s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<base target="_top">
+</head>
+<body class="min-h-screen py-12 text-lg">
+<div class="circuit-background" id="circuitBackground"></div>
+<div class="left-gradient"></div>
+<div class="main-content-area max-w-xl mx-auto px-4">
+
+  <div class="form-container p-6 sm:p-8">
+    <div class="form-header -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 py-5 px-6 rounded-t-lg">
+      <h1 class="form-title text-2xl sm:text-3xl font-bold text-center">快速預約面試</h1>
+    </div>
+
+    <!-- 1. 處理中狀態 -->
+    <div id="loadingState" class="text-center py-8 space-y-4">
+      <div class="spinner"></div>
+      <p class="text-xl font-bold text-circuitCyan">⚡ 正在識別身分並寫入預約資料...</p>
+      <p id="targetDetails" class="text-sm text-lightPurple"></p>
+    </div>
+
+    <!-- 2. 預約成功畫面 -->
+    <div id="successState" class="hidden text-center space-y-6 py-4">
+      <div class="text-4xl font-bold text-successGreen">🎉 預約面試成功！</div>
+      
+      <div class="bg-darkPurple/60 p-5 rounded-xl border border-lightPurple/30 text-left space-y-3">
+        <p class="text-lightPurple text-sm">應徵者：<span id="resUserName" class="text-white font-bold text-lg"></span></p>
+        <div class="border-t border-lightPurple/20 pt-2">
+          <p class="text-sm text-lightPurple">預約廠商：</p>
+          <p id="resCompany" class="text-xl font-bold text-circuitCyan"></p>
+        </div>
+        <div>
+          <p class="text-sm text-lightPurple">預約職物：</p>
+          <p id="resPosition" class="text-lg font-bold text-yellow-300"></p>
+        </div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3 pt-2">
+        <a href="job.html" class="secondary-btn flex-1 py-3 text-base font-bold">💼 繼續瀏覽其他職缺</a>
+        <a href="query.html" class="submit-btn flex-1 py-3 text-base font-bold">🔍 查看我的預約紀錄</a>
+      </div>
+    </div>
+
+    <!-- 3. 未填寫履歷/失敗畫面 -->
+    <div id="errorState" class="hidden text-center space-y-6 py-4">
+      <div class="text-3xl font-bold text-errorRed">⚠️ 無法完成預約</div>
+      <p id="errorMessage" class="text-lg text-nearWhite leading-relaxed"></p>
+
+      <div id="errorActions" class="pt-2">
+        <a id="errorPrimaryBtn" href="index.html" class="submit-btn inline-block px-8 py-3 text-lg font-bold">前往填寫求職登記表</a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// 指向「預約面試 API」網址
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWHYU5EAJMNoOdoK2Yj5_Kv3darcDWQ1iWwDLMKWIivRBVkIGl8Gsne-HG4JhFJTF8Jw/exec';
+const LIFF_ID = '2010785535-qIFwOa8w'; // 預約面試 LIFF ID
+
+async function callGasApi(action, payload = {}, method = 'POST') {
+  try {
+    const params = new URLSearchParams();
+    params.append('postData', JSON.stringify({ action, ...payload }));
+    const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
+    return await resp.json();
+  } catch (err) {
+    return { success: false, message: '網路連線失敗，請稍後重試' };
+  }
+}
+
+function createCircuitBackground() {
+  const circuitBg = document.getElementById('circuitBackground');
+  if (!circuitBg) return;
+  circuitBg.innerHTML = '';
+  for (let i = 0; i < 15; i++) {
+    const line = document.createElement('div');
+    line.className = 'circuit-line';
+    line.style.height = '2px';
+    line.style.width = `${Math.random() * 30 + 10}%`;
+    line.style.top = `${Math.random() * 100}%`;
+    line.style.left = `${Math.random() * 70}%`;
+    circuitBg.appendChild(line);
+  }
+}
+
+async function startQuickBook() {
+  createCircuitBackground();
+
+  // 1. 解析 URL 帶過來的公司與職位
+  const urlParams = new URLSearchParams(window.location.search);
+  const company = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')) : '';
+  const position = urlParams.get('position') ? decodeURIComponent(urlParams.get('position')) : '';
+
+  if (!company || !position) {
+    showError('參數不完整，請從職缺頁面重新點選預約。', false);
+    return;
+  }
+
+  document.getElementById('targetDetails').innerText = `【${company}】 - ${position}`;
+
+  // 2. 初始化 LIFF 取得 lineUserId
+  let lineUserId = '';
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile) lineUserId = profile.userId;
+      }
+    }
+  } catch (e) {
+    console.warn('LIFF 無法自動驗證');
+  }
+
+  if (!lineUserId) {
+    showError('無法自動取得您的 LINE 身份。請點擊下方按鈕前往手動預約或填寫履歷。', true);
+    return;
+  }
+
+  // 3. 發送 API 給預約面試後端
+  const res = await callGasApi('quickBookFromJob', {
+    lineUserId: lineUserId,
+    company: company,
+    position: position
+  }, 'POST');
+
+  if (res.success) {
+    document.getElementById('loadingState').classList.add('hidden');
+    document.getElementById('resUserName').innerText = res.data.name || '';
+    document.getElementById('resCompany').innerText = company;
+    document.getElementById('resPosition').innerText = position;
+    document.getElementById('successState').classList.remove('hidden');
+  } else {
+    showError(res.message || '預約失敗，請先填寫求職登記表。', res.needResume);
+  }
+}
+
+function showError(msg, needResume) {
+  document.getElementById('loadingState').classList.add('hidden');
+  document.getElementById('errorMessage').innerText = msg;
+  const actionsEl = document.getElementById('errorActions');
+
+  if (needResume) {
+    actionsEl.innerHTML = `<a href="index.html" class="submit-btn inline-block px-8 py-3 text-lg font-bold">前往填寫求職登記表</a>`;
+  } else {
+    actionsEl.innerHTML = `<a href="job.html" class="secondary-btn inline-block px-8 py-3 text-lg font-bold">返回職缺清單</a>`;
+  }
+
+  document.getElementById('errorState').classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', startQuickBook);
+</script>
+</body>
+</html>
