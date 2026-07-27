@@ -108,8 +108,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-// ⚠️ 請填入您的「紀錄查詢 API」網址
-const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwNiMLLNC6FuoOoOiIKlAnV2at6uw80CuSq03juXzAmaXssUOeFdV1GjgnaCqgku3M3wQ/exec'; 
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx4Jc6msEKQnDHTX7AZXXdgTe3O_F8rJjaQAIEWbeD_w3kjgOZRtbmzhMrBFLz_fCe-rQ/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
@@ -150,7 +149,6 @@ async function initQueryPage() {
     return;
   }
 
-  // 發送 API 查詢該 LINE ID 的所有紀錄
   try {
     const resp = await fetch(`${QUERY_GAS_API_URL}?action=queryByLineUserId&lineUserId=${encodeURIComponent(lineUserId)}`);
     const res = await resp.json();
@@ -170,7 +168,7 @@ async function initQueryPage() {
   }
 }
 
-// 渲染多筆履歷卡片
+// 渲染多筆履歷詳細資料卡片 (完整對應 D~R 欄)
 function renderResumes(resumes) {
   const container = document.getElementById('resumeContainer');
   document.getElementById('resumeCountBadge').innerText = `${resumes.length} 筆`;
@@ -183,22 +181,30 @@ function renderResumes(resumes) {
       card.innerHTML = `
         <div class="flex justify-between items-center border-b border-lightPurple/20 pb-2">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">紀錄 #${idx + 1}</span>
+            <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
             <h3 class="text-xl font-bold text-white">${r.name}</h3>
           </div>
-          <span class="text-xs text-lightPurple">填寫時間: ${r.timestamp}</span>
+          <span class="text-xs text-lightPurple">登記時間: ${r.timestamp}</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
-          <div><span class="text-lightPurple font-medium">🪪 身分證/居留證：</span>${r.idNumber ? (r.idNumber.substring(0, 4) + '***' + r.idNumber.substring(7)) : '未填'}</div>
+          <div><span class="text-lightPurple font-medium">🎂 出生日期：</span>${r.birth || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">🪪 身分證/居留證：</span>${r.idNumber || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">💍 婚姻狀況：</span>${r.maritalStatus || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">🪖 兵役狀況：</span>${r.military || '未填'}</div>
           <div><span class="text-lightPurple font-medium">📱 聯絡電話：</span>${r.phone || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">🎓 學歷：</span>${r.education || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">🎂 出生年月日：</span>${r.birth || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">📧 E-mail：</span>${r.email || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🏠 聯絡地址：</span>${r.address || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🎓 最高學歷：</span>${r.education || '未填'} - ${r.school || ''} (${r.department || ''})</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🚗 駕照種類：</span>${r.license || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">💻 電腦能力：</span>${r.computer || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🗣️ 語文能力：</span>${r.language || '未填'}</div>
         </div>
 
-        ${r.targetJob ? `
-          <div class="text-sm bg-darkPurple/40 p-2.5 rounded-lg border border-lightPurple/10 text-gray-200">
-            <span class="text-lightPurple font-medium">🎯 希望求職意願：</span> ${r.targetJob}
+        ${r.experience ? `
+          <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200">
+            <span class="text-lightPurple font-medium block mb-1">💼 工作經歷：</span>
+            <p class="whitespace-pre-line leading-relaxed">${r.experience}</p>
           </div>
         ` : ''}
       `;
@@ -222,14 +228,14 @@ function renderAppointments(appointments) {
       card.innerHTML = `
         <div class="flex justify-between items-start border-b border-lightPurple/20 pb-2">
           <div>
-            <span class="text-xs text-lightPurple">預約對象：${a.userName} (${a.idNumber ? (a.idNumber.substring(0, 4) + '***') : ''})</span>
+            <span class="text-xs text-lightPurple">應徵者：${a.userName} (${a.idNumber})</span>
             <h3 class="text-xl font-bold text-circuitCyan mt-1">${a.company}</h3>
           </div>
           <span class="text-xs text-lightPurple">${a.timestamp}</span>
         </div>
 
         <div class="text-base text-white">
-          <span class="text-lightPurple font-medium">💼 應徵職面：</span>
+          <span class="text-lightPurple font-medium">💼 應徵職務：</span>
           <span class="font-bold text-yellow-300">${a.position}</span>
         </div>
 
