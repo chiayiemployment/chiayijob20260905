@@ -108,7 +108,8 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx4Jc6msEKQnDHTX7AZXXdgTe3O_F8rJjaQAIEWbeD_w3kjgOZRtbmzhMrBFLz_fCe-rQ/exec'; 
+// ⚠️ 請填入發布後的最新紀錄查詢 API 網址
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyXrQjx_KxvbrQDH5pfZYkDZdQFf1sFpqYoV9RBBE3cWov3d7ymcTHBoza5rtH6RU_o3Q/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
@@ -164,11 +165,10 @@ async function initQueryPage() {
     }
 
   } catch (err) {
-    showError('網路連線失敗，請稍後重新整理。');
+    showError('讀取資料時發生錯誤或連線逾時，請稍後重試。');
   }
 }
 
-// 渲染多筆履歷詳細資料卡片 (完整對應 D~R 欄)
 function renderResumes(resumes) {
   const container = document.getElementById('resumeContainer');
   document.getElementById('resumeCountBadge').innerText = `${resumes.length} 筆`;
@@ -184,7 +184,7 @@ function renderResumes(resumes) {
             <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
             <h3 class="text-xl font-bold text-white">${r.name}</h3>
           </div>
-          <span class="text-xs text-lightPurple">登記時間: ${r.timestamp}</span>
+          <span class="text-xs text-lightPurple">${r.timestamp}</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
@@ -215,7 +215,6 @@ function renderResumes(resumes) {
   }
 }
 
-// 渲染多筆預約紀錄卡片
 function renderAppointments(appointments) {
   const container = document.getElementById('apptContainer');
   document.getElementById('apptCountBadge').innerText = `${appointments.length} 筆`;
