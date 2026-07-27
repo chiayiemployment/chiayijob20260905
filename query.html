@@ -16,7 +16,7 @@ tailwind.config = {
         deepPurple: "#1F1D53", midPurple: "#6B257F", darkPurple: "#4C237C",
         deepBlue: "#053D88", blue: "#01529F", royalBlue: "#2956A8",
         lightPurple: "#A48DCD", nearWhite: "#EDEEF7", circuitCyan: "#28C4FF",
-        dateBlockBg: "#7E2AFF", buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
+        buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
         errorRed: "#ff6b6b", successGreen: "#4ade80",
       },
     },
@@ -28,24 +28,25 @@ tailwind.config = {
   --deep-purple: #1F1D53; --mid-purple: #6B257F; --dark-purple: #4C237C;
   --deep-blue: #053D88; --blue: #01529F; --royal-blue: #2956A8;
   --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
-  --bright-cyan: #28C4FF; --date-purple: #7E2AFF;
-  --button-start: #AC3FFF; --button-end: #6A1BCB;
-  --error-red: #ff6b6b; --success-green: #4ade80;
+  --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
 }
 body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; overflow-x: hidden; min-height: 100vh; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
-.circuit-dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background-color: var(--bright-cyan); box-shadow: 0 0 8px var(--bright-cyan); }
 .left-gradient { position: fixed; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, var(--deep-blue) 0%, rgba(5, 61, 136, 0) 100%); z-index: 1; pointer-events: none; }
 .main-content-area { position: relative; z-index: 10; }
 .form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
-input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-.card-box { background: rgba(31, 29, 83, 0.6); border: 1px solid rgba(164, 141, 205, 0.3); border-radius: 12px; }
+
+.record-card {
+  background: rgba(31, 29, 83, 0.65);
+  border: 1px solid rgba(164, 141, 205, 0.3);
+  border-radius: 12px;
+}
 .hidden { display: none !important; }
-.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; margin-left: 0.5rem; vertical-align: middle; }
+.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.5rem; height: 1.5rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <base target="_top">
@@ -55,117 +56,61 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border:
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-3xl mx-auto px-4 space-y-6">
 
-  <!-- 頂部卡片區塊 -->
+  <!-- 頂部標題與狀態 -->
   <div class="form-container p-5 sm:p-7 md:p-9">
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-6 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">個人履歷與紀錄查詢</h1>
     </div>
 
-    <!-- 驗證狀態 -->
-    <div id="verifyingStatus" class="flex items-center justify-center gap-2 text-circuitCyan my-4">
+    <div id="loadingStatus" class="text-center py-6 text-circuitCyan flex items-center justify-center gap-2 text-lg">
       <span class="spinner"></span>
-      <span>⚡ 正在自動識別 LINE 身份並查詢紀錄...</span>
+      <span>正在讀取您的 LINE 身份與資料...</span>
     </div>
 
-    <!-- 手動查詢表單 (備用) -->
-    <form id="searchForm" class="space-y-4 hidden">
-      <p class="text-sm text-lightPurple text-center mb-2">請輸入個人資料進行查詢：</p>
+    <!-- 查詢結果區域 -->
+    <div id="queryResults" class="hidden space-y-8">
+      
+      <!-- 📄 1. 個人履歷清單區塊 -->
       <div>
-        <label for="searchName" class="block text-base font-medium mb-1">姓名<span class="text-errorRed">*</span></label>
-        <input type="text" id="searchName" class="w-full px-4 py-2.5 text-base rounded-lg" placeholder="請輸入姓名" required />
-      </div>
-      <div>
-        <label for="searchId" class="block text-base font-medium mb-1">身份證字號/居留證號<span class="text-errorRed">*</span></label>
-        <input type="text" id="searchId" class="w-full px-4 py-2.5 text-base rounded-lg uppercase" placeholder="請輸入身分證字號" required />
-      </div>
-      <button type="submit" id="searchBtn" class="submit-btn w-full py-3 text-lg font-bold mt-2">查詢資料</button>
-    </form>
-  </div>
-
-  <!-- 查詢結果 (兩張精美卡片) -->
-  <div id="resultContainer" class="hidden space-y-6">
-
-    <!-- 👤 個人履歷摘要卡片 -->
-    <div class="form-container p-6">
-      <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-4">
-        <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">👤 個人履歷摘要</h2>
-        <span class="px-3 py-1 bg-successGreen/20 text-successGreen border border-successGreen/40 rounded-full text-sm font-medium">已建檔</span>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-nearWhite text-base">
-        <div><span class="text-lightPurple">姓名：</span><span id="resName" class="font-bold text-white"></span></div>
-        <div><span class="text-lightPurple">聯絡電話：</span><span id="resPhone"></span></div>
-        <div><span class="text-lightPurple">最高學歷：</span><span id="resEducation"></span></div>
-        <div><span class="text-lightPurple">畢業學校：</span><span id="resSchool"></span></div>
-        <div class="md:col-span-2"><span class="text-lightPurple">畢業科系：</span><span id="resMajor"></span></div>
-        <div class="md:col-span-2"><span class="text-lightPurple">工作經歷：</span>
-          <div id="resWork" class="mt-1 p-3 card-box text-sm text-gray-200 whitespace-pre-line"></div>
+        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-2 mb-4">
+          <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">
+            📄 已填寫履歷紀錄
+          </h2>
+          <span id="resumeCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 筆</span>
         </div>
+        <div id="resumeContainer" class="space-y-4"></div>
       </div>
-      <div class="mt-4 text-right">
-        <a href="index.html" class="text-sm text-circuitCyan hover:underline">✏️ 修改/重新填寫履歷</a>
+
+      <!-- 📅 2. 預約面試紀錄區塊 -->
+      <div>
+        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-2 mb-4">
+          <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">
+            📅 預約面試紀錄
+          </h2>
+          <span id="apptCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 筆</span>
+        </div>
+        <div id="apptContainer" class="space-y-4"></div>
       </div>
+
     </div>
 
-    <!-- 📅 面試預約紀錄卡片 -->
-    <div class="form-container p-6">
-      <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-4">
-        <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">📅 面試預約紀錄</h2>
-        <span id="apptCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 項預約</span>
-      </div>
-
-      <!-- 預約紀錄列表 -->
-      <div id="appointmentList" class="space-y-4"></div>
-
-      <!-- 未預約之引導 -->
-      <div id="noApptBanner" class="card-box p-6 text-center space-y-4 hidden">
-        <p class="text-lg text-nearWhite">您目前尚未預約任何廠商的面試職缺。</p>
-        <a href="appointment.html" class="submit-btn inline-block px-8 py-3 text-lg font-bold">🚀 前往預約面試職缺</a>
+    <!-- 查無資料/錯誤訊息 -->
+    <div id="errorBox" class="hidden text-center py-8 space-y-4">
+      <div class="text-4xl">⚠️</div>
+      <p id="errorMsgText" class="text-xl text-nearWhite leading-relaxed"></p>
+      <div class="pt-2">
+        <a href="index.html" class="submit-btn inline-block px-8 py-2.5 text-lg font-bold">前往填寫求職登記表</a>
       </div>
     </div>
 
   </div>
 
-  <!-- 查無資料提示 -->
-  <div id="noResumeContainer" class="form-container p-8 text-center hidden space-y-4">
-    <h2 class="text-2xl font-bold text-errorRed">⚠️ 查無您的個人履歷資料</h2>
-    <p class="text-nearWhite">系統庫中尚未找到您的線上履歷。請先完成「求職登記表」填寫。</p>
-    <a href="index.html" class="submit-btn inline-block px-8 py-3 text-xl font-bold">前往填寫求職登記表</a>
-  </div>
-
-</div>
-
-<!-- 客製化 Alert Modal -->
-<div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
-  <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto">
-    <p id="customAlertMessage" class="text-white mb-6 text-lg md:text-xl text-center leading-relaxed"></p>
-    <div class="flex justify-center">
-      <button id="customAlertOkBtn" class="submit-btn px-8 py-2.5 text-base md:text-lg font-medium rounded-lg min-w-[120px]">知道了</button>
-    </div>
-  </div>
 </div>
 
 <script>
-// ⚠️ 請填入專屬「查詢 API」的發布網址
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx3u-1JYgTQ13jyNpTNIEOIJA8pzNIk096T7LZlCwvSILGG6we-mBSYAA4qaFQM3kRYfQ/exec';
-const LIFF_ID = '2010785535-D0SuLqWN';
-
-async function callGasApi(action, payload = {}, method = 'GET') {
-  try {
-    if (method === 'GET') {
-      const query = new URLSearchParams({ action, ...payload }).toString();
-      const resp = await fetch(`${GAS_API_URL}?${query}`);
-      return await resp.json();
-    } else {
-      const params = new URLSearchParams();
-      params.append('postData', JSON.stringify({ action, ...payload }));
-      const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
-      return await resp.json();
-    }
-  } catch (err) {
-    return { status: 'error', message: '連線失敗，請檢查網路' };
-  }
-}
+// ⚠️ 請填入您的「紀錄查詢 API」網址
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx3u-1JYgTQ13jyNpTNIEOIJA8pzNIk096T7LZlCwvSILGG6we-mBSYAA4qaFQM3kRYfQ/exec'; 
+const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -184,141 +129,126 @@ function createCircuitBackground() {
   }
 }
 
-let alertResolve = null;
-function showCustomAlert(message) {
-  const customAlertMessage = document.getElementById('customAlertMessage');
-  const customAlertModal = document.getElementById('customAlertModal');
-  if(customAlertMessage) customAlertMessage.innerHTML = String(message).replace(/\n/g, '<br>');
-  if(customAlertModal) customAlertModal.classList.remove('hidden');
-  return new Promise((resolve) => { alertResolve = resolve; });
-}
-
-function hideCustomAlert() {
-  document.getElementById('customAlertModal').classList.add('hidden');
-  if (alertResolve) { alertResolve(); alertResolve = null; }
-}
-
 async function initQueryPage() {
   createCircuitBackground();
 
-  let uid = '';
+  let lineUserId = '';
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        if (profile && profile.userId) {
-          uid = profile.userId;
-        }
+        if (profile) lineUserId = profile.userId;
       }
     }
   } catch (e) {
-    console.warn('LIFF 初始化跳過');
+    console.warn('LIFF 驗證跳過');
   }
 
-  if (uid) {
-    // 透過 LINE UserId 比對
-    const res = await callGasApi('queryByLineUserId', { lineUserId: uid }, 'GET');
-    document.getElementById('verifyingStatus').classList.add('hidden');
+  if (!lineUserId) {
+    showError('無法自動驗證您的 LINE 身份，請確認是否透過 LINE 選單開啟。');
+    return;
+  }
 
-    if (res.status === 'found' && res.data) {
-      renderUserData(res.data);
+  // 發送 API 查詢該 LINE ID 的所有紀錄
+  try {
+    const resp = await fetch(`${QUERY_GAS_API_URL}?action=queryByLineUserId&lineUserId=${encodeURIComponent(lineUserId)}`);
+    const res = await resp.json();
+
+    document.getElementById('loadingStatus').classList.add('hidden');
+
+    if (res.success) {
+      renderResumes(res.resumes || []);
+      renderAppointments(res.appointments || []);
+      document.getElementById('queryResults').classList.remove('hidden');
     } else {
-      showNoResumeState();
+      showError(res.message || '查無相關履歷與預約紀錄。');
     }
-  } else {
-    // 無法取得 LIFF 身份，降級為手動輸入
-    document.getElementById('verifyingStatus').classList.add('hidden');
-    document.getElementById('searchForm').classList.remove('hidden');
+
+  } catch (err) {
+    showError('網路連線失敗，請稍後重新整理。');
   }
 }
 
-function showNoResumeState() {
-  document.getElementById('resultContainer').classList.add('hidden');
-  document.getElementById('noResumeContainer').classList.remove('hidden');
-}
+// 渲染多筆履歷卡片
+function renderResumes(resumes) {
+  const container = document.getElementById('resumeContainer');
+  document.getElementById('resumeCountBadge').innerText = `${resumes.length} 筆`;
+  container.innerHTML = '';
 
-function renderUserData(data) {
-  document.getElementById('noResumeContainer').classList.add('hidden');
-  document.getElementById('searchForm').classList.add('hidden');
-  
-  // 1. 填入履歷摘要
-  document.getElementById('resName').innerText = data.name || '未填寫';
-  document.getElementById('resPhone').innerText = data.phone || '未填寫';
-  document.getElementById('resEducation').innerText = data.education || '未填寫';
-  document.getElementById('resSchool').innerText = data.school || '未填寫';
-  document.getElementById('resMajor').innerText = data.major || '未填寫';
-  document.getElementById('resWork').innerText = data.workExperience || '尚無填寫工作經歷';
-
-  // 2. 填入預約清單
-  const apptList = document.getElementById('appointmentList');
-  const appts = Array.isArray(data.appointments) ? data.appointments : [];
-  
-  document.getElementById('apptCountBadge').innerText = `${appts.length} 項預約`;
-  apptList.innerHTML = '';
-
-  if (appts.length > 0) {
-    document.getElementById('noApptBanner').classList.add('hidden');
-    appts.forEach((item) => {
+  if (resumes.length > 0) {
+    resumes.forEach((r, idx) => {
       const card = document.createElement('div');
-      card.className = 'card-box p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-l-4 border-l-circuitCyan';
+      card.className = 'record-card p-5 space-y-3';
       card.innerHTML = `
-        <div class="space-y-1">
-          <div class="text-xl font-bold text-circuitCyan">${item.company}</div>
-          <div class="text-lg text-white font-medium">應徵職務：<span class="text-yellow-300">${item.position}</span></div>
-          <div class="text-xs text-lightPurple">預約登記時間：${item.timestamp}</div>
+        <div class="flex justify-between items-center border-b border-lightPurple/20 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">紀錄 #${idx + 1}</span>
+            <h3 class="text-xl font-bold text-white">${r.name}</h3>
+          </div>
+          <span class="text-xs text-lightPurple">填寫時間: ${r.timestamp}</span>
         </div>
-        <div class="self-end sm:self-center">
-          <span class="px-3 py-1 bg-successGreen/20 text-successGreen border border-successGreen/40 rounded-lg text-sm font-semibold">已完成預約</span>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
+          <div><span class="text-lightPurple font-medium">🪪 身分證/居留證：</span>${r.idNumber ? (r.idNumber.substring(0, 4) + '***' + r.idNumber.substring(7)) : '未填'}</div>
+          <div><span class="text-lightPurple font-medium">📱 聯絡電話：</span>${r.phone || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">🎓 學歷：</span>${r.education || '未填'}</div>
+          <div><span class="text-lightPurple font-medium">🎂 出生年月日：</span>${r.birth || '未填'}</div>
         </div>
+
+        ${r.targetJob ? `
+          <div class="text-sm bg-darkPurple/40 p-2.5 rounded-lg border border-lightPurple/10 text-gray-200">
+            <span class="text-lightPurple font-medium">🎯 希望求職意願：</span> ${r.targetJob}
+          </div>
+        ` : ''}
       `;
-      apptList.appendChild(card);
+      container.appendChild(card);
     });
   } else {
-    document.getElementById('noApptBanner').classList.remove('hidden');
+    container.innerHTML = '<p class="text-center py-4 text-gray-400">目前尚無履歷登記紀錄。</p>';
   }
-
-  document.getElementById('resultContainer').classList.remove('hidden');
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  initQueryPage();
-  document.getElementById('customAlertOkBtn').addEventListener('click', hideCustomAlert);
+// 渲染多筆預約紀錄卡片
+function renderAppointments(appointments) {
+  const container = document.getElementById('apptContainer');
+  document.getElementById('apptCountBadge').innerText = `${appointments.length} 筆`;
+  container.innerHTML = '';
 
-  const searchIdInput = document.getElementById('searchId');
-  if (searchIdInput) {
-    searchIdInput.addEventListener('input', function() {
-      this.value = this.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (appointments.length > 0) {
+    appointments.forEach((a, idx) => {
+      const card = document.createElement('div');
+      card.className = 'record-card p-5 space-y-2 border-l-4 border-l-circuitCyan';
+      card.innerHTML = `
+        <div class="flex justify-between items-start border-b border-lightPurple/20 pb-2">
+          <div>
+            <span class="text-xs text-lightPurple">預約對象：${a.userName} (${a.idNumber ? (a.idNumber.substring(0, 4) + '***') : ''})</span>
+            <h3 class="text-xl font-bold text-circuitCyan mt-1">${a.company}</h3>
+          </div>
+          <span class="text-xs text-lightPurple">${a.timestamp}</span>
+        </div>
+
+        <div class="text-base text-white">
+          <span class="text-lightPurple font-medium">💼 應徵職面：</span>
+          <span class="font-bold text-yellow-300">${a.position}</span>
+        </div>
+
+        ${a.note ? `<div class="text-xs text-gray-300">📝 備註：${a.note}</div>` : ''}
+      `;
+      container.appendChild(card);
     });
+  } else {
+    container.innerHTML = '<p class="text-center py-4 text-gray-400">目前尚無面試預約紀錄。</p>';
   }
+}
 
-  // 手動查詢
-  document.getElementById('searchForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const nameVal = document.getElementById('searchName').value.trim();
-    const idVal = searchIdInput.value.trim().toUpperCase();
+function showError(msg) {
+  document.getElementById('loadingStatus').classList.add('hidden');
+  document.getElementById('errorMsgText').innerText = msg;
+  document.getElementById('errorBox').classList.remove('hidden');
+}
 
-    if (!nameVal || !idVal) {
-      showCustomAlert('請輸入姓名與身份證字號');
-      return;
-    }
-
-    const btn = document.getElementById('searchBtn');
-    btn.disabled = true;
-    btn.innerHTML = '查詢中... <span class="spinner"></span>';
-
-    const res = await callGasApi('queryResumeData', { name: nameVal, idNumber: idVal }, 'GET');
-
-    btn.disabled = false;
-    btn.innerHTML = '查詢資料';
-
-    if (res.status === 'found' && res.data) {
-      renderUserData(res.data);
-    } else {
-      showCustomAlert('查無您的履歷或預約紀錄，請確認姓名與身分證字號是否正確。');
-    }
-  });
-});
+document.addEventListener('DOMContentLoaded', initQueryPage);
 </script>
 </body>
 </html>
