@@ -98,35 +98,18 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 
 </div>
 
-<!-- 客製化 Modal -->
-<div id="customModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
-  <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-6">
-    <p id="modalMessage" class="text-white text-lg md:text-xl leading-relaxed whitespace-pre-line"></p>
-    <div id="modalButtons" class="flex justify-center gap-4">
-      <button id="modalCloseBtn" class="submit-btn px-8 py-2.5 text-base font-medium rounded-lg">知道了</button>
-    </div>
-  </div>
-</div>
-
 <script>
+// ⚠️ 請填入您發布的「職缺專用 GAS API」網址
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwKAarqKDv66GCX6pCJNRCtfGgscfsjtTWClVb39zErgppUtgl-I9B3am7lccChHv9F/exec';
 const LIFF_ID = '2010785535-6BsUuSEy'; 
-window.lineUserId = '';
 
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
-    if (method === 'GET') {
-      const query = new URLSearchParams({ action, ...payload }).toString();
-      const resp = await fetch(`${GAS_API_URL}?${query}`);
-      return await resp.json();
-    } else {
-      const params = new URLSearchParams();
-      params.append('postData', JSON.stringify({ action, ...payload }));
-      const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
-      return await resp.json();
-    }
+    const query = new URLSearchParams({ action, ...payload }).toString();
+    const resp = await fetch(`${GAS_API_URL}?${query}`);
+    return await resp.json();
   } catch (err) {
-    return { success: false, message: '連線失敗' };
+    return [];
   }
 }
 
@@ -147,43 +130,18 @@ function createCircuitBackground() {
   }
 }
 
-function showModal(msg, needResume = false) {
-  const modal = document.getElementById('customModal');
-  const msgEl = document.getElementById('modalMessage');
-  const btnsEl = document.getElementById('modalButtons');
-
-  msgEl.innerText = msg;
-  
-  if (needResume) {
-    btnsEl.innerHTML = `
-      <a href="index.html" class="submit-btn px-6 py-2.5 text-base font-bold">填寫求職登記表</a>
-      <button onclick="hideModal()" class="px-4 py-2.5 text-sm text-lightPurple">取消</button>
-    `;
-  } else {
-    btnsEl.innerHTML = `<button onclick="hideModal()" class="submit-btn px-8 py-2.5 text-base font-bold">知道了</button>`;
-  }
-
-  modal.classList.remove('hidden');
-}
-
-function hideModal() {
-  document.getElementById('customModal').classList.add('hidden');
-}
-
+// 初始化頁面
 async function initJobPage() {
   createCircuitBackground();
 
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile) window.lineUserId = profile.userId;
-      }
     }
   } catch (e) { console.warn('LIFF 初始化跳過'); }
 
   const companySelect = document.getElementById('companySelect');
+
   const res = await callGasApi('getCompanyList', {}, 'GET');
   let companies = Array.isArray(res) ? res : (res.data || []);
 
@@ -204,10 +162,13 @@ async function initJobPage() {
   }
 
   companySelect.addEventListener('change', function() {
-    if (this.value) loadJobsForCompany(this.value);
+    if (this.value) {
+      loadJobsForCompany(this.value);
+    }
   });
 }
 
+// 載入指定公司的職缺細節 (帶參數跳轉至 quick_book.html)
 async function loadJobsForCompany(companyName) {
   const container = document.getElementById('jobCardsContainer');
   document.getElementById('currentCompanyName').innerText = companyName;
@@ -221,13 +182,18 @@ async function loadJobsForCompany(companyName) {
   `;
 
   const jobs = await callGasApi('getJobData', { company: companyName }, 'GET');
+  
   document.getElementById('jobCountBadge').innerText = `${jobs.length} 個職缺`;
   container.innerHTML = '';
 
   if (Array.isArray(jobs) && jobs.length > 0) {
     jobs.forEach(job => {
-      // 提取職務名稱的第一行作為預約標題
-      const rawTitle = job.title ? job.title.split('\n')[0] : '一般職務';
+      // 提取職務名稱第一行作為標題
+      const rawTitle = job.title ? job.title.split('\n')[0] : '';
+      
+      // 🌟 點擊跳轉至專屬一鍵快速預約頁面 (quick_book.html)
+      const targetUrl = `quick_book.html?company=${encodeURIComponent(companyName)}&position=${encodeURIComponent(rawTitle)}`;
+
       const card = document.createElement('div');
       card.className = 'job-card p-5 space-y-3';
       card.innerHTML = `
@@ -253,40 +219,15 @@ async function loadJobsForCompany(companyName) {
         ` : ''}
 
         <div class="pt-2 text-right">
-          <button onclick="handleQuickBook('${companyName}', '${rawTitle}')" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
+          <a href="${targetUrl}" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
             🚀 預約面試本職缺
-          </button>
+          </a>
         </div>
       `;
       container.appendChild(card);
     });
   } else {
     container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無詳細職缺說明。</p>`;
-  }
-}
-
-// 🌟 一鍵直接預約按鈕點擊處置
-async function handleQuickBook(company, position) {
-  const btn = event.currentTarget;
-  const originalText = btn.innerText;
-  btn.disabled = true;
-  btn.innerHTML = '預約中... <span class="spinner"></span>';
-
-  const res = await callGasApi('quickBookJob', {
-    lineUserId: window.lineUserId,
-    company: company,
-    position: position
-  }, 'POST');
-
-  btn.disabled = false;
-  btn.innerText = originalText;
-
-  if (res.success) {
-    showModal(res.message, false);
-  } else if (res.needResume) {
-    showModal(res.message, true);
-  } else {
-    showModal(res.message || '預約失敗，請重試', false);
   }
 }
 
