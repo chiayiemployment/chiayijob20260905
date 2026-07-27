@@ -101,7 +101,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 
 <script>
 // 指向「預約面試 API」網址
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWHYU5EAJMNoOdoK2Yj5_Kv3darcDWQ1iWwDLMKWIivRBVkIGl8Gsne-HG4JhFJTF8Jw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';
 const LIFF_ID = '2010785535-qIFwOa8w'; // 預約面試 LIFF ID
 
 async function callGasApi(action, payload = {}, method = 'POST') {
