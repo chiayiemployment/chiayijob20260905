@@ -108,7 +108,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-// ⚠️ 請填入發布後的最新紀錄查詢 API 網址
+// ⚠️ 請填入您的「紀錄查詢 API」發布後的 Web App 網址
 const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyXrQjx_KxvbrQDH5pfZYkDZdQFf1sFpqYoV9RBBE3cWov3d7ymcTHBoza5rtH6RU_o3Q/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
@@ -142,7 +142,7 @@ async function initQueryPage() {
       }
     }
   } catch (e) {
-    console.warn('LIFF 驗證跳過');
+    console.warn('LIFF 驗證跳過:', e);
   }
 
   if (!lineUserId) {
@@ -165,7 +165,8 @@ async function initQueryPage() {
     }
 
   } catch (err) {
-    showError('讀取資料時發生錯誤或連線逾時，請稍後重試。');
+    console.error('Fetch error:', err);
+    showError('連線發生錯誤：' + err.message + '，請確認 GAS API 部署網址是否正確。');
   }
 }
 
@@ -184,7 +185,7 @@ function renderResumes(resumes) {
             <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
             <h3 class="text-xl font-bold text-white">${r.name}</h3>
           </div>
-          <span class="text-xs text-lightPurple">${r.timestamp}</span>
+          <span class="text-xs text-lightPurple">登記時間: ${r.timestamp}</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
@@ -195,7 +196,7 @@ function renderResumes(resumes) {
           <div><span class="text-lightPurple font-medium">📱 聯絡電話：</span>${r.phone || '未填'}</div>
           <div><span class="text-lightPurple font-medium">📧 E-mail：</span>${r.email || '未填'}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🏠 聯絡地址：</span>${r.address || '未填'}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🎓 最高學歷：</span>${r.education || '未填'} - ${r.school || ''} (${r.department || ''})</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🎓 最高學歷：</span>${r.education || '未填'} ${r.school ? '- ' + r.school : ''} ${r.department ? '(' + r.department + ')' : ''}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🚗 駕照種類：</span>${r.license || '未填'}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-medium">💻 電腦能力：</span>${r.computer || '未填'}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🗣️ 語文能力：</span>${r.language || '未填'}</div>
@@ -215,6 +216,7 @@ function renderResumes(resumes) {
   }
 }
 
+// 🌟 已移除備註欄位顯示
 function renderAppointments(appointments) {
   const container = document.getElementById('apptContainer');
   document.getElementById('apptCountBadge').innerText = `${appointments.length} 筆`;
@@ -233,12 +235,10 @@ function renderAppointments(appointments) {
           <span class="text-xs text-lightPurple">${a.timestamp}</span>
         </div>
 
-        <div class="text-base text-white">
+        <div class="text-base text-white pt-1">
           <span class="text-lightPurple font-medium">💼 應徵職務：</span>
           <span class="font-bold text-yellow-300">${a.position}</span>
         </div>
-
-        ${a.note ? `<div class="text-xs text-gray-300">📝 備註：${a.note}</div>` : ''}
       `;
       container.appendChild(card);
     });
