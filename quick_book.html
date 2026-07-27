@@ -56,16 +56,16 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
       <h1 class="form-title text-2xl sm:text-3xl font-bold text-center">快速預約面試</h1>
     </div>
 
-    <!-- 1. 處理中狀態 -->
+    <!-- 處理中狀態 -->
     <div id="loadingState" class="text-center py-8 space-y-4">
       <div class="spinner"></div>
       <p class="text-xl font-bold text-circuitCyan">⚡ 正在識別身分並寫入預約資料...</p>
       <p id="targetDetails" class="text-sm text-lightPurple"></p>
     </div>
 
-    <!-- 2. 預約成功畫面 -->
+    <!-- 預約成功畫面 -->
     <div id="successState" class="hidden text-center space-y-6 py-4">
-      <div class="text-4xl font-bold text-successGreen">🎉 預約面試成功！</div>
+      <div class="text-3xl sm:text-4xl font-bold text-successGreen">🎉 預約面試成功！</div>
       
       <div class="bg-darkPurple/60 p-5 rounded-xl border border-lightPurple/30 text-left space-y-3">
         <p class="text-lightPurple text-sm">應徵者：<span id="resUserName" class="text-white font-bold text-lg"></span></p>
@@ -74,7 +74,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
           <p id="resCompany" class="text-xl font-bold text-circuitCyan"></p>
         </div>
         <div>
-          <p class="text-sm text-lightPurple">預約職物：</p>
+          <p class="text-sm text-lightPurple">預約職務：</p>
           <p id="resPosition" class="text-lg font-bold text-yellow-300"></p>
         </div>
       </div>
@@ -85,7 +85,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
       </div>
     </div>
 
-    <!-- 3. 未填寫履歷/失敗畫面 -->
+    <!-- 未填寫履歷/失敗畫面 -->
     <div id="errorState" class="hidden text-center space-y-6 py-4">
       <div class="text-3xl font-bold text-errorRed">⚠️ 無法完成預約</div>
       <p id="errorMessage" class="text-lg text-nearWhite leading-relaxed"></p>
@@ -100,8 +100,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-// 指向「預約面試 API」網址
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';// 預約面試API
 const LIFF_ID = '2010785535-qIFwOa8w'; // 預約面試 LIFF ID
 
 async function callGasApi(action, payload = {}, method = 'POST') {
@@ -133,38 +132,46 @@ function createCircuitBackground() {
 async function startQuickBook() {
   createCircuitBackground();
 
-  // 1. 解析 URL 帶過來的公司與職位
+  // 1. 安全解析 URL 參數
   const urlParams = new URLSearchParams(window.location.search);
-  const company = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')) : '';
-  const position = urlParams.get('position') ? decodeURIComponent(urlParams.get('position')) : '';
+  const company = urlParams.get('company') || '';
+  const position = urlParams.get('position') || '';
+  let lineUserId = urlParams.get('uid') || '';
 
   if (!company || !position) {
-    showError('參數不完整，請從職缺頁面重新點選預約。', false);
+    showError('參數不完整，請回到職缺頁面重新選擇。', false);
     return;
   }
 
   document.getElementById('targetDetails').innerText = `【${company}】 - ${position}`;
 
-  // 2. 初始化 LIFF 取得 lineUserId
-  let lineUserId = '';
-  try {
-    if (typeof liff !== 'undefined' && LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile) lineUserId = profile.userId;
-      }
+  // 2. 若網址無 uid，嘗試向 LIFF SDK 獲取 (設置 3 秒超時防止無限轉圈)
+  if (!lineUserId) {
+    try {
+      const liffPromise = (async () => {
+        if (typeof liff !== 'undefined' && LIFF_ID) {
+          await liff.init({ liffId: LIFF_ID });
+          if (liff.isLoggedIn()) {
+            const profile = await liff.getProfile();
+            return profile ? profile.userId : '';
+          }
+        }
+        return '';
+      })();
+
+      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(''), 3000));
+      lineUserId = await Promise.race([liffPromise, timeoutPromise]);
+    } catch (e) {
+      console.warn('LIFF 讀取跳過');
     }
-  } catch (e) {
-    console.warn('LIFF 無法自動驗證');
   }
 
   if (!lineUserId) {
-    showError('無法自動取得您的 LINE 身份。請點擊下方按鈕前往手動預約或填寫履歷。', true);
+    showError('無法識別您的 LINE 身份，請確認是否已點選選單或登入 LINE。', true);
     return;
   }
 
-  // 3. 發送 API 給預約面試後端
+  // 3. 發送快速預約 API
   const res = await callGasApi('quickBookFromJob', {
     lineUserId: lineUserId,
     company: company,
@@ -173,12 +180,12 @@ async function startQuickBook() {
 
   if (res.success) {
     document.getElementById('loadingState').classList.add('hidden');
-    document.getElementById('resUserName').innerText = res.data.name || '';
+    document.getElementById('resUserName').innerText = (res.data && res.data.name) ? res.data.name : '求職者';
     document.getElementById('resCompany').innerText = company;
     document.getElementById('resPosition').innerText = position;
     document.getElementById('successState').classList.remove('hidden');
   } else {
-    showError(res.message || '預約失敗，請先填寫求職登記表。', res.needResume);
+    showError(res.message || '預約失敗，請確認是否已填寫求職登記表。', res.needResume);
   }
 }
 
