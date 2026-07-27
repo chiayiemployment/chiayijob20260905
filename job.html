@@ -28,7 +28,8 @@ tailwind.config = {
   --deep-purple: #1F1D53; --mid-purple: #6B257F; --dark-purple: #4C237C;
   --deep-blue: #053D88; --blue: #01529F; --royal-blue: #2956A8;
   --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
-  --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
+  --bright-cyan: #28C4FF; --date-purple: #7E2AFF;
+  --button-start: #AC3FFF; --button-end: #6A1BCB;
 }
 body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; overflow-x: hidden; min-height: 100vh; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -39,7 +40,6 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-.secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; }
 
 select {
   background-color: rgba(31, 29, 83, 0.7) !important;
@@ -78,7 +78,7 @@ select option { background-color: var(--dark-purple); color: var(--white); }
     </div>
 
     <div class="space-y-3">
-      <label for="companySelect" class="block text-lg font-medium text-circuitCyan">請選擇欲瀏覽公司名稱</label>
+      <label for="companySelect" class="block text-lg font-medium text-circuitCyan">廠商名稱</label>
       <select id="companySelect" class="w-full px-4 py-3 text-lg rounded-lg">
         <option value="" disabled selected>載入廠商清單中...</option>
       </select>
@@ -98,34 +98,9 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 
 </div>
 
-<!-- 背景一鍵預約彈窗 (Modal) -->
-<div id="quickBookModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
-  <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-5">
-    <div id="modalStatusIcon" class="text-4xl font-bold">🎉</div>
-    <h3 id="modalTitle" class="text-2xl font-bold text-successGreen">預約面試成功！</h3>
-    
-    <div class="bg-darkPurple/60 p-4 rounded-xl border border-lightPurple/30 text-left space-y-2 text-base">
-      <p class="text-lightPurple text-sm">應徵者：<span id="modalUserName" class="text-white font-bold"></span></p>
-      <p class="text-lightPurple text-sm">預約廠商：<span id="modalCompany" class="text-circuitCyan font-bold"></span></p>
-      <p class="text-lightPurple text-sm">預約職務：<span id="modalPosition" class="text-yellow-300 font-bold"></span></p>
-    </div>
-
-    <p id="modalMsg" class="text-sm text-nearWhite leading-relaxed hidden"></p>
-
-    <div id="modalActions" class="flex flex-col sm:flex-row gap-3 pt-2">
-      <button onclick="closeModal()" class="secondary-btn flex-1 py-2.5 text-base font-bold">關閉，繼續看職缺</button>
-      <a href="query.html" class="submit-btn flex-1 py-2.5 text-base font-bold inline-block leading-normal">查看預約紀錄</a>
-    </div>
-  </div>
-</div>
-
 <script>
-// ⚠️ 1. 「職缺資訊專用 API」網址 (讀取試算表分頁公司與職缺細節)
+// ⚠️ 職缺資訊 API URL
 const JOB_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwKAarqKDv66GCX6pCJNRCtfGgscfsjtTWClVb39zErgppUtgl-I9B3am7lccChHv9F/exec';
-
-// ⚠️ 2. 「預約面試專用 API」網址 (背景直接寫入預約)
-const APPT_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';
-
 const LIFF_ID = '2010785535-6BsUuSEy'; 
 window.lineUserId = '';
 
@@ -149,7 +124,7 @@ function createCircuitBackground() {
 async function initJobPage() {
   createCircuitBackground();
 
-  // 1. 初始化 LIFF 取得身份
+  // 1. 初始化 LIFF 取得用戶 LINE ID
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -162,19 +137,12 @@ async function initJobPage() {
 
   const companySelect = document.getElementById('companySelect');
 
-  // 2. 向 JOB_GAS_API_URL 抓取公司分頁列表
+  // 2. 載入公司列表
   try {
     const resp = await fetch(`${JOB_GAS_API_URL}?action=getCompanyList`);
     const res = await resp.json();
 
-    let companies = [];
-    if (Array.isArray(res)) {
-      companies = res;
-    } else if (res && Array.isArray(res.data)) {
-      companies = res.data;
-    } else if (res && Array.isArray(res.companyList)) {
-      companies = res.companyList;
-    }
+    let companies = Array.isArray(res) ? res : (res.data || res.companyList || []);
 
     if (companies.length > 0) {
       companySelect.innerHTML = '<option value="" disabled selected>請選擇公司廠商...</option>';
@@ -188,7 +156,6 @@ async function initJobPage() {
         }
       });
 
-      // 預設載入第一家公司
       const firstComp = companySelect.options[1] ? companySelect.options[1].value : '';
       if (firstComp) {
         companySelect.value = firstComp;
@@ -198,11 +165,9 @@ async function initJobPage() {
       companySelect.innerHTML = '<option value="" disabled>目前尚無廠商資料</option>';
     }
   } catch (err) {
-    console.error('Fetch getCompanyList error:', err);
     companySelect.innerHTML = '<option value="" disabled>載入廠商失敗，請重新整理</option>';
   }
 
-  // 下拉選單變動監聽
   companySelect.addEventListener('change', function() {
     if (this.value) loadJobsForCompany(this.value);
   });
@@ -233,6 +198,15 @@ async function loadJobsForCompany(companyName) {
       jobList.forEach(job => {
         const rawTitle = job.title ? job.title.split('\n')[0] : '';
 
+        // 🌟 核心：點擊後安全帶參跳轉至 quick_book.html 進行身份選擇與預約
+        const queryParams = new URLSearchParams({
+          company: companyName,
+          position: rawTitle,
+          uid: window.lineUserId || ''
+        }).toString();
+
+        const targetUrl = `quick_book.html?${queryParams}`;
+
         const card = document.createElement('div');
         card.className = 'job-card p-5 space-y-3';
         card.innerHTML = `
@@ -258,9 +232,9 @@ async function loadJobsForCompany(companyName) {
           ` : ''}
 
           <div class="pt-2 text-right">
-            <button onclick="handleDirectBooking('${companyName}', '${rawTitle}', this)" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
+            <a href="${targetUrl}" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
               🚀 預約面試本職缺
-            </button>
+            </a>
           </div>
         `;
         container.appendChild(card);
@@ -269,92 +243,8 @@ async function loadJobsForCompany(companyName) {
       container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無詳細職缺說明。</p>`;
     }
   } catch (err) {
-    console.error('Fetch getJobData error:', err);
     container.innerHTML = `<p class="text-center py-6 text-red-400">讀取職缺失敗，請稍後重試。</p>`;
   }
-}
-
-// 🌟 免跳轉背景一鍵預約
-async function handleDirectBooking(company, position, btnEl) {
-  const originalText = btnEl.innerText;
-  btnEl.disabled = true;
-  btnEl.innerHTML = '預約中... <span class="spinner"></span>';
-
-  let res = { success: false, message: '網路連線失敗' };
-  try {
-    const params = new URLSearchParams();
-    params.append('postData', JSON.stringify({
-      action: 'quickBookFromJob',
-      lineUserId: window.lineUserId,
-      company: company,
-      position: position
-    }));
-
-    const resp = await fetch(APPT_GAS_API_URL, { method: 'POST', body: params });
-    res = await resp.json();
-  } catch (err) {
-    console.error('Booking Error:', err);
-  }
-
-  btnEl.disabled = false;
-  btnEl.innerText = originalText;
-
-  const modal = document.getElementById('quickBookModal');
-  const modalIcon = document.getElementById('modalStatusIcon');
-  const modalTitle = document.getElementById('modalTitle');
-  const modalUser = document.getElementById('modalUserName');
-  const modalComp = document.getElementById('modalCompany');
-  const modalPos = document.getElementById('modalPosition');
-  const modalMsg = document.getElementById('modalMsg');
-  const modalActions = document.getElementById('modalActions');
-
-  if (res.success) {
-    modalIcon.innerText = '🎉';
-    modalTitle.className = 'text-2xl font-bold text-successGreen';
-    modalTitle.innerText = '預約面試成功！';
-    modalUser.innerText = (res.data && res.data.name) ? res.data.name : '求職者';
-    modalComp.innerText = company;
-    modalPos.innerText = position;
-    modalMsg.classList.add('hidden');
-    
-    modalActions.innerHTML = `
-      <button onclick="closeModal()" class="secondary-btn flex-1 py-2.5 text-base font-bold">關閉，繼續看職缺</button>
-      <a href="query.html" class="submit-btn flex-1 py-2.5 text-base font-bold inline-block leading-normal">查看預約紀錄</a>
-    `;
-  } else if (res.needResume) {
-    modalIcon.innerText = '⚠️';
-    modalTitle.className = 'text-2xl font-bold text-errorRed';
-    modalTitle.innerText = '尚未建立個人履歷';
-    modalUser.innerText = '未建檔';
-    modalComp.innerText = company;
-    modalPos.innerText = position;
-    modalMsg.innerText = res.message || '請先完成「求職登記表」後，即可直接預約面試！';
-    modalMsg.classList.remove('hidden');
-
-    modalActions.innerHTML = `
-      <a href="index.html" class="submit-btn flex-1 py-2.5 text-base font-bold inline-block leading-normal">前往填寫求職登記表</a>
-      <button onclick="closeModal()" class="secondary-btn flex-1 py-2.5 text-base font-bold">取消</button>
-    `;
-  } else {
-    modalIcon.innerText = '❌';
-    modalTitle.className = 'text-2xl font-bold text-errorRed';
-    modalTitle.innerText = '預約失敗';
-    modalUser.innerText = '未知';
-    modalComp.innerText = company;
-    modalPos.innerText = position;
-    modalMsg.innerText = res.message || '預約失敗，請確認網路連線或重試。';
-    modalMsg.classList.remove('hidden');
-
-    modalActions.innerHTML = `
-      <button onclick="closeModal()" class="submit-btn w-full py-2.5 text-base font-bold">知道了</button>
-    `;
-  }
-
-  modal.classList.remove('hidden');
-}
-
-function closeModal() {
-  document.getElementById('quickBookModal').classList.add('hidden');
 }
 
 document.addEventListener('DOMContentLoaded', initJobPage);
