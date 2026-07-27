@@ -28,8 +28,7 @@ tailwind.config = {
   --deep-purple: #1F1D53; --mid-purple: #6B257F; --dark-purple: #4C237C;
   --deep-blue: #053D88; --blue: #01529F; --royal-blue: #2956A8;
   --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
-  --bright-cyan: #28C4FF; --date-purple: #7E2AFF;
-  --button-start: #AC3FFF; --button-end: #6A1BCB;
+  --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
 }
 body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; overflow-x: hidden; min-height: 100vh; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
@@ -99,7 +98,7 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 
 </div>
 
-<!-- 🌟 背景一鍵預約彈窗 (Modal) -->
+<!-- 背景一鍵預約彈窗 (Modal) -->
 <div id="quickBookModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
   <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-5">
     <div id="modalStatusIcon" class="text-4xl font-bold">🎉</div>
@@ -121,30 +120,14 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 </div>
 
 <script>
-// ⚠️ 「職缺資訊」用來讀選單的 API
+// ⚠️ 1. 「職缺資訊專用 API」網址 (讀取試算表分頁公司與職缺細節)
 const JOB_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwKAarqKDv66GCX6pCJNRCtfGgscfsjtTWClVb39zErgppUtgl-I9B3am7lccChHv9F/exec';
-// ⚠️ 「預約面試」用來寫入預約的 API
+
+// ⚠️ 2. 「預約面試專用 API」網址 (背景直接寫入預約)
 const APPT_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';
 
 const LIFF_ID = '2010785535-6BsUuSEy'; 
 window.lineUserId = '';
-
-async function callGasApi(url, action, payload = {}, method = 'GET') {
-  try {
-    if (method === 'GET') {
-      const query = new URLSearchParams({ action, ...payload }).toString();
-      const resp = await fetch(`${url}?${query}`);
-      return await resp.json();
-    } else {
-      const params = new URLSearchParams();
-      params.append('postData', JSON.stringify({ action, ...payload }));
-      const resp = await fetch(url, { method: 'POST', body: params });
-      return await resp.json();
-    }
-  } catch (err) {
-    return { success: false, message: '網路連線失敗' };
-  }
-}
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -166,6 +149,7 @@ function createCircuitBackground() {
 async function initJobPage() {
   createCircuitBackground();
 
+  // 1. 初始化 LIFF 取得身份
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -177,25 +161,48 @@ async function initJobPage() {
   } catch (e) { console.warn('LIFF 初始化跳過'); }
 
   const companySelect = document.getElementById('companySelect');
-  const res = await callGasApi(JOB_GAS_API_URL, 'getCompanyList', {}, 'GET');
-  let companies = Array.isArray(res) ? res : (res.data || []);
 
-  if (companies.length > 0) {
-    companySelect.innerHTML = '<option value="" disabled selected>請選擇公司廠商...</option>';
-    companies.forEach(comp => {
-      const opt = document.createElement('option');
-      opt.value = comp.company;
-      opt.innerText = comp.company;
-      companySelect.appendChild(opt);
-    });
+  // 2. 向 JOB_GAS_API_URL 抓取公司分頁列表
+  try {
+    const resp = await fetch(`${JOB_GAS_API_URL}?action=getCompanyList`);
+    const res = await resp.json();
 
-    companySelect.value = companies[0].company;
-    loadJobsForCompany(companies[0].company);
+    let companies = [];
+    if (Array.isArray(res)) {
+      companies = res;
+    } else if (res && Array.isArray(res.data)) {
+      companies = res.data;
+    } else if (res && Array.isArray(res.companyList)) {
+      companies = res.companyList;
+    }
 
-  } else {
-    companySelect.innerHTML = '<option value="" disabled>目前尚無廠商資料</option>';
+    if (companies.length > 0) {
+      companySelect.innerHTML = '<option value="" disabled selected>請選擇公司廠商...</option>';
+      companies.forEach(comp => {
+        const compName = typeof comp === 'string' ? comp : (comp.company || comp.name || '');
+        if (compName) {
+          const opt = document.createElement('option');
+          opt.value = compName;
+          opt.innerText = compName;
+          companySelect.appendChild(opt);
+        }
+      });
+
+      // 預設載入第一家公司
+      const firstComp = companySelect.options[1] ? companySelect.options[1].value : '';
+      if (firstComp) {
+        companySelect.value = firstComp;
+        loadJobsForCompany(firstComp);
+      }
+    } else {
+      companySelect.innerHTML = '<option value="" disabled>目前尚無廠商資料</option>';
+    }
+  } catch (err) {
+    console.error('Fetch getCompanyList error:', err);
+    companySelect.innerHTML = '<option value="" disabled>載入廠商失敗，請重新整理</option>';
   }
 
+  // 下拉選單變動監聽
   companySelect.addEventListener('change', function() {
     if (this.value) loadJobsForCompany(this.value);
   });
@@ -213,64 +220,81 @@ async function loadJobsForCompany(companyName) {
     </div>
   `;
 
-  const jobs = await callGasApi(JOB_GAS_API_URL, 'getJobData', { company: companyName }, 'GET');
-  
-  document.getElementById('jobCountBadge').innerText = `${jobs.length} 個職缺`;
-  container.innerHTML = '';
+  try {
+    const query = new URLSearchParams({ action: 'getJobData', company: companyName }).toString();
+    const resp = await fetch(`${JOB_GAS_API_URL}?${query}`);
+    const jobs = await resp.json();
 
-  if (Array.isArray(jobs) && jobs.length > 0) {
-    jobs.forEach(job => {
-      const rawTitle = job.title ? job.title.split('\n')[0] : '';
+    const jobList = Array.isArray(jobs) ? jobs : (jobs.data || []);
+    document.getElementById('jobCountBadge').innerText = `${jobList.length} 個職缺`;
+    container.innerHTML = '';
 
-      const card = document.createElement('div');
-      card.className = 'job-card p-5 space-y-3';
-      card.innerHTML = `
-        <div class="border-b border-lightPurple/20 pb-3">
-          <h3 class="text-2xl font-bold text-white whitespace-pre-line leading-snug">${job.title}</h3>
-          <div class="mt-2">
-            <span class="inline-block text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3 py-1 rounded-lg border border-yellow-300/30">
-              💰 ${job.salary || '面議'}
-            </span>
+    if (jobList.length > 0) {
+      jobList.forEach(job => {
+        const rawTitle = job.title ? job.title.split('\n')[0] : '';
+
+        const card = document.createElement('div');
+        card.className = 'job-card p-5 space-y-3';
+        card.innerHTML = `
+          <div class="border-b border-lightPurple/20 pb-3">
+            <h3 class="text-2xl font-bold text-white whitespace-pre-line leading-snug">${job.title}</h3>
+            <div class="mt-2">
+              <span class="inline-block text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3 py-1 rounded-lg border border-yellow-300/30">
+                💰 ${job.salary || '面議'}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div class="space-y-1.5 text-base text-nearWhite pt-1">
-          <div><span class="text-lightPurple font-medium">🎓 學經歷：</span>${job.education || '不限'}</div>
-          <div><span class="text-lightPurple font-medium">⏰ 工作班別/休假：</span>${job.shift || '依公司規定'}</div>
-        </div>
-
-        ${job.description ? `
-          <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200 mt-2">
-            <span class="text-lightPurple block font-medium mb-1">📋 工作內容：</span>
-            <p class="whitespace-pre-line leading-relaxed">${job.description}</p>
+          <div class="space-y-1.5 text-base text-nearWhite pt-1">
+            <div><span class="text-lightPurple font-medium">🎓 學經歷：</span>${job.education || '不限'}</div>
+            <div><span class="text-lightPurple font-medium">⏰ 工作班別/休假：</span>${job.shift || '依公司規定'}</div>
           </div>
-        ` : ''}
 
-        <div class="pt-2 text-right">
-          <button onclick="handleDirectBooking('${companyName}', '${rawTitle}', this)" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
-            🚀 預約面試本職缺
-          </button>
-        </div>
-      `;
-      container.appendChild(card);
-    });
-  } else {
-    container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無詳細職缺說明。</p>`;
+          ${job.description ? `
+            <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200 mt-2">
+              <span class="text-lightPurple block font-medium mb-1">📋 工作內容：</span>
+              <p class="whitespace-pre-line leading-relaxed">${job.description}</p>
+            </div>
+          ` : ''}
+
+          <div class="pt-2 text-right">
+            <button onclick="handleDirectBooking('${companyName}', '${rawTitle}', this)" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
+              🚀 預約面試本職缺
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    } else {
+      container.innerHTML = `<p class="text-center py-6 text-gray-400">目前 ${companyName} 暫無詳細職缺說明。</p>`;
+    }
+  } catch (err) {
+    console.error('Fetch getJobData error:', err);
+    container.innerHTML = `<p class="text-center py-6 text-red-400">讀取職缺失敗，請稍後重試。</p>`;
   }
 }
 
-// 🌟 免跳轉背景一鍵預約核心邏輯
+// 🌟 免跳轉背景一鍵預約
 async function handleDirectBooking(company, position, btnEl) {
   const originalText = btnEl.innerText;
   btnEl.disabled = true;
   btnEl.innerHTML = '預約中... <span class="spinner"></span>';
 
-  // 直接在背景呼叫預約面試 API
-  const res = await callGasApi(APPT_GAS_API_URL, 'quickBookFromJob', {
-    lineUserId: window.lineUserId,
-    company: company,
-    position: position
-  }, 'POST');
+  let res = { success: false, message: '網路連線失敗' };
+  try {
+    const params = new URLSearchParams();
+    params.append('postData', JSON.stringify({
+      action: 'quickBookFromJob',
+      lineUserId: window.lineUserId,
+      company: company,
+      position: position
+    }));
+
+    const resp = await fetch(APPT_GAS_API_URL, { method: 'POST', body: params });
+    res = await resp.json();
+  } catch (err) {
+    console.error('Booking Error:', err);
+  }
 
   btnEl.disabled = false;
   btnEl.innerText = originalText;
@@ -332,6 +356,8 @@ async function handleDirectBooking(company, position, btnEl) {
 function closeModal() {
   document.getElementById('quickBookModal').classList.add('hidden');
 }
+
+document.addEventListener('DOMContentLoaded', initJobPage);
 </script>
 </body>
 </html>
