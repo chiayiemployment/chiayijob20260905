@@ -99,9 +99,9 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 </div>
 
 <script>
-// ⚠️ 請填入您發布的「職缺專用 GAS API」網址
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwKAarqKDv66GCX6pCJNRCtfGgscfsjtTWClVb39zErgppUtgl-I9B3am7lccChHv9F/exec';
 const LIFF_ID = '2010785535-6BsUuSEy'; 
+window.lineUserId = '';
 
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
@@ -130,13 +130,16 @@ function createCircuitBackground() {
   }
 }
 
-// 初始化頁面
 async function initJobPage() {
   createCircuitBackground();
 
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile) window.lineUserId = profile.userId;
+      }
     }
   } catch (e) { console.warn('LIFF 初始化跳過'); }
 
@@ -168,7 +171,6 @@ async function initJobPage() {
   });
 }
 
-// 載入指定公司的職缺細節 (帶參數跳轉至 quick_book.html)
 async function loadJobsForCompany(companyName) {
   const container = document.getElementById('jobCardsContainer');
   document.getElementById('currentCompanyName').innerText = companyName;
@@ -188,11 +190,16 @@ async function loadJobsForCompany(companyName) {
 
   if (Array.isArray(jobs) && jobs.length > 0) {
     jobs.forEach(job => {
-      // 提取職務名稱第一行作為標題
       const rawTitle = job.title ? job.title.split('\n')[0] : '';
       
-      // 🌟 點擊跳轉至專屬一鍵快速預約頁面 (quick_book.html)
-      const targetUrl = `quick_book.html?company=${encodeURIComponent(companyName)}&position=${encodeURIComponent(rawTitle)}`;
+      // 🌟 安全的 URL 參數建構，並傳遞當前已取得的 lineUserId
+      const queryParams = new URLSearchParams({
+        company: companyName,
+        position: rawTitle,
+        uid: window.lineUserId || ''
+      }).toString();
+
+      const targetUrl = `quick_book.html?${queryParams}`;
 
       const card = document.createElement('div');
       card.className = 'job-card p-5 space-y-3';
