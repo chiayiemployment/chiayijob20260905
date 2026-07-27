@@ -40,6 +40,23 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
 .secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 8px; font-weight: 500; cursor: pointer; text-align: center; }
+
+/* 多人選擇卡片樣式 */
+.user-card {
+  background: rgba(31, 29, 83, 0.6);
+  border: 1px solid rgba(164, 141, 205, 0.3);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.user-card:hover { border-color: var(--bright-cyan); }
+.user-card.active {
+  background: rgba(40, 196, 255, 0.2);
+  border-color: var(--bright-cyan);
+  box-shadow: 0 0 10px rgba(40, 196, 255, 0.4);
+}
+
 .hidden { display: none !important; }
 .spinner { border: 4px solid rgba(255, 255, 255, 0.2); border-radius: 50%; border-top-color: var(--bright-cyan); width: 3rem; height: 3rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -56,14 +73,30 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
       <h1 class="form-title text-2xl sm:text-3xl font-bold text-center">快速預約面試</h1>
     </div>
 
-    <!-- 處理中狀態 -->
+    <!-- 1. 處理中狀態 -->
     <div id="loadingState" class="text-center py-8 space-y-4">
       <div class="spinner"></div>
-      <p class="text-xl font-bold text-circuitCyan">⚡ 正在識別身分並寫入預約資料...</p>
+      <p class="text-xl font-bold text-circuitCyan">⚡ 正在讀取 LINE 身份並比對履歷...</p>
       <p id="targetDetails" class="text-sm text-lightPurple"></p>
     </div>
 
-    <!-- 預約成功畫面 -->
+    <!-- 2. 多人選擇身份介面 -->
+    <div id="multiUserSelectState" class="hidden space-y-6 py-2">
+      <div class="text-center">
+        <h3 class="text-xl font-bold text-circuitCyan">偵測到此帳號有多筆履歷登記</h3>
+        <p class="text-sm text-lightPurple mt-1">請點選要預約面試的求職者身份：</p>
+      </div>
+
+      <div id="userCardsList" class="space-y-3"></div>
+
+      <div class="pt-2">
+        <button id="confirmSelectBtn" onclick="submitSelectedUserBooking()" class="submit-btn w-full py-3 text-lg font-bold">
+          確認以選取身份預約
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. 預約成功畫面 -->
     <div id="successState" class="hidden text-center space-y-6 py-4">
       <div class="text-3xl sm:text-4xl font-bold text-successGreen">🎉 預約面試成功！</div>
       
@@ -85,7 +118,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
       </div>
     </div>
 
-    <!-- 未填寫履歷/失敗畫面 -->
+    <!-- 4. 未填寫履歷/失敗畫面 -->
     <div id="errorState" class="hidden text-center space-y-6 py-4">
       <div class="text-3xl font-bold text-errorRed">⚠️ 無法完成預約</div>
       <p id="errorMessage" class="text-lg text-nearWhite leading-relaxed"></p>
@@ -100,19 +133,15 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';// 預約面試API
-const LIFF_ID = '2010785535-qIFwOa8w'; // 預約面試 LIFF ID
+// 指向「預約面試 API」網址
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzWM4Nw98E3Sjh769GMMv0jrdnnU3aj8NFw44KxSDTNDD3sjt6KLeqWiUenfs0P-yxA/exec';
+const LIFF_ID = '2010785535-qIFwOa8w';
 
-async function callGasApi(action, payload = {}, method = 'POST') {
-  try {
-    const params = new URLSearchParams();
-    params.append('postData', JSON.stringify({ action, ...payload }));
-    const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
-    return await resp.json();
-  } catch (err) {
-    return { success: false, message: '網路連線失敗，請稍後重試' };
-  }
-}
+window.targetCompany = '';
+window.targetPosition = '';
+window.lineUserId = '';
+window.selectedProfile = null;
+window.userProfilesList = [];
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -132,60 +161,131 @@ function createCircuitBackground() {
 async function startQuickBook() {
   createCircuitBackground();
 
-  // 1. 安全解析 URL 參數
+  // 1. 安全解析網址參數
   const urlParams = new URLSearchParams(window.location.search);
-  const company = urlParams.get('company') || '';
-  const position = urlParams.get('position') || '';
-  let lineUserId = urlParams.get('uid') || '';
+  window.targetCompany = urlParams.get('company') || '';
+  window.targetPosition = urlParams.get('position') || '';
+  let uid = urlParams.get('uid') || '';
 
-  if (!company || !position) {
-    showError('參數不完整，請回到職缺頁面重新選擇。', false);
+  if (!window.targetCompany || !window.targetPosition) {
+    showError('預約參數不完整，請回到職缺頁面重新選擇。', false);
     return;
   }
 
-  document.getElementById('targetDetails').innerText = `【${company}】 - ${position}`;
+  document.getElementById('targetDetails').innerText = `【${window.targetCompany}】 - ${window.targetPosition}`;
 
-  // 2. 若網址無 uid，嘗試向 LIFF SDK 獲取 (設置 3 秒超時防止無限轉圈)
-  if (!lineUserId) {
+  // 2. 獲取 LINE UserId
+  if (!uid) {
     try {
-      const liffPromise = (async () => {
-        if (typeof liff !== 'undefined' && LIFF_ID) {
-          await liff.init({ liffId: LIFF_ID });
-          if (liff.isLoggedIn()) {
-            const profile = await liff.getProfile();
-            return profile ? profile.userId : '';
-          }
+      if (typeof liff !== 'undefined' && LIFF_ID) {
+        await liff.init({ liffId: LIFF_ID });
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          if (profile) uid = profile.userId;
         }
-        return '';
-      })();
-
-      const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(''), 3000));
-      lineUserId = await Promise.race([liffPromise, timeoutPromise]);
-    } catch (e) {
-      console.warn('LIFF 讀取跳過');
-    }
+      }
+    } catch (e) { console.warn('LIFF 驗證跳過'); }
   }
 
-  if (!lineUserId) {
-    showError('無法識別您的 LINE 身份，請確認是否已點選選單或登入 LINE。', true);
+  window.lineUserId = uid;
+  if (!uid) {
+    showError('無法自動取得您的 LINE 身份，請先透過選單開啟。', false);
     return;
   }
 
-  // 3. 發送快速預約 API
-  const res = await callGasApi('quickBookFromJob', {
-    lineUserId: lineUserId,
-    company: company,
-    position: position
-  }, 'POST');
+  // 3. 向後端查詢該 LINE ID 的所有履歷名單
+  try {
+    const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
+    const res = await resp.json();
 
-  if (res.success) {
+    const profiles = (res && res.userProfiles) ? res.userProfiles : [];
+
+    if (profiles.length === 0) {
+      showError('系統查無您的求職登記履歷。請先完成「求職登記表」填寫後，即可進行預約面試！', true);
+    } else if (profiles.length === 1) {
+      // 🌟 單人履歷：直接發送預約寫入
+      executeBooking(profiles[0].name, profiles[0].idNumber);
+    } else {
+      // 🌟 多人履歷：顯示選擇選單
+      window.userProfilesList = profiles;
+      renderUserCards(profiles);
+    }
+
+  } catch (err) {
+    showError('連線伺服器失敗，請稍後重新嘗試。', false);
+  }
+}
+
+// 渲染多人切換選擇卡片
+function renderUserCards(profiles) {
+  document.getElementById('loadingState').classList.add('hidden');
+  const list = document.getElementById('userCardsList');
+  list.innerHTML = '';
+
+  profiles.forEach((p, idx) => {
+    const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
+    const card = document.createElement('div');
+    card.className = `user-card ${idx === 0 ? 'active' : ''}`;
+    card.onclick = () => selectProfile(p, card);
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-white text-lg">${p.name}</span>
+        <span class="text-xs text-circuitCyan border border-circuitCyan/40 px-2 py-0.5 rounded">${maskedId}</span>
+      </div>
+      <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
+    `;
+    list.appendChild(card);
+  });
+
+  window.selectedProfile = profiles[0];
+  document.getElementById('multiUserSelectState').classList.remove('hidden');
+}
+
+function selectProfile(p, cardEl) {
+  document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
+  if (cardEl) cardEl.classList.add('active');
+  window.selectedProfile = p;
+}
+
+// 按下確認按鈕提交選中的身分
+function submitSelectedUserBooking() {
+  if (!window.selectedProfile) return;
+  document.getElementById('multiUserSelectState').classList.add('hidden');
+  document.getElementById('loadingState').classList.remove('hidden');
+  executeBooking(window.selectedProfile.name, window.selectedProfile.idNumber);
+}
+
+// 執行預約寫入
+async function executeBooking(name, idNumber) {
+  try {
+    const params = new URLSearchParams();
+    params.append('postData', JSON.stringify({
+      action: 'processFormData',
+      appointmentData: {
+        name: name,
+        idNumber: idNumber,
+        companyPositions: [{ company: window.targetCompany, position: window.targetPosition }],
+        lineUserId: window.lineUserId
+      }
+    }));
+
+    const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
+    const res = await resp.json();
+
     document.getElementById('loadingState').classList.add('hidden');
-    document.getElementById('resUserName').innerText = (res.data && res.data.name) ? res.data.name : '求職者';
-    document.getElementById('resCompany').innerText = company;
-    document.getElementById('resPosition').innerText = position;
-    document.getElementById('successState').classList.remove('hidden');
-  } else {
-    showError(res.message || '預約失敗，請確認是否已填寫求職登記表。', res.needResume);
+
+    if (res.success) {
+      document.getElementById('resUserName').innerText = name;
+      document.getElementById('resCompany').innerText = window.targetCompany;
+      document.getElementById('resPosition').innerText = window.targetPosition;
+      document.getElementById('successState').classList.remove('hidden');
+    } else {
+      showError(res.message || '預約失敗，請重試', res.needResume);
+    }
+
+  } catch (err) {
+    showError('預約過程連線失敗，請稍後重試', false);
   }
 }
 
