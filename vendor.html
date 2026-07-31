@@ -3,538 +3,105 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>廠商面試管理系統</title>
+<title>廠商身分驗證與試算表入口</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        deepPurple: "#1F1D53", midPurple: "#6B257F", darkPurple: "#4C237C",
-        deepBlue: "#053D88", blue: "#01529F", royalBlue: "#2956A8",
-        lightPurple: "#A48DCD", nearWhite: "#EDEEF7", circuitCyan: "#28C4FF",
-        buttonGradStart: "#AC3FFF", buttonGradEnd: "#6A1BCB",
-        errorRed: "#ff6b6b", successGreen: "#4ade80",
-      },
-    },
-  },
-};
-</script>
 <style>
-:root {
-  --deep-purple: #1F1D53; --mid-purple: #6B257F; --dark-purple: #4C237C;
-  --deep-blue: #053D88; --blue: #01529F; --royal-blue: #2956A8;
-  --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
-  --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
-}
-body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; min-height: 100vh; font-size: 18px; }
-.circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-.circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
-.main-content-area { position: relative; z-index: 10; width: 100%; }
-.form-container { background: linear-gradient(135deg, rgba(31, 29, 83, 0.95) 0%, rgba(76, 35, 124, 0.85) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.25); }
-.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); border-radius: 8px; color: var(--white); font-weight: 700; }
-
-select, input[type="text"], input[type="password"], textarea {
-  background-color: rgba(31, 29, 83, 0.8) !important;
-  border: 1.5px solid var(--light-purple) !important;
-  color: var(--white) !important;
-  border-radius: 8px !important;
-}
-
-.table-row-hover:hover { background-color: rgba(164, 141, 205, 0.18); }
-.status-pill { transition: all 0.2s ease; cursor: pointer; font-weight: bold; }
-.status-pill.active-accepted { background-color: #15803d !important; color: #ffffff !important; border-color: #22c55e !important; }
-.status-pill.active-rejected { background-color: #b91c1c !important; color: #ffffff !important; border-color: #ef4444 !important; }
-
-.hidden { display: none !important; }
-.spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--bright-cyan); width: 1.75rem; height: 1.75rem; animation: spin 1s linear infinite; display: inline-block; }
+body { font-family: 'Noto Sans TC', sans-serif; background-color: #1F1D53; color: #FFFFFF; min-height: 100vh; }
+.form-container { background: linear-gradient(135deg, rgba(31, 29, 83, 0.95) 0%, rgba(76, 35, 124, 0.85) 100%); border-radius: 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4); border: 2px solid #28C4FF; }
+.submit-btn { background: linear-gradient(135deg, #AC3FFF, #6A1BCB); border-radius: 12px; color: #FFFFFF; font-weight: 700; }
+input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; border: 2px solid #A48DCD !important; color: #FFFFFF !important; }
+.spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #28C4FF; width: 2rem; height: 2rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body class="min-h-screen py-6 px-4 sm:px-10">
-<div class="circuit-background" id="circuitBackground"></div>
+<body class="flex items-center justify-center p-4">
 
-<!-- 🔐 8位數 PIN 碼驗證彈窗 Modal -->
-<div id="pinAuthModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-  <div class="form-container p-8 max-w-md w-full text-center space-y-6 border-2 border-circuitCyan">
-    <div class="text-4xl">🔐</div>
-    <div>
-      <h2 class="text-2xl font-bold text-white">攤位身分安全驗證</h2>
-      <p id="pinModalSubtext" class="text-sm text-lightPurple mt-1">請輸入貴攤位 8 位數 PIN 碼密碼：</p>
-    </div>
-    <div>
-      <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan">
-    </div>
-    <button onclick="submitPinAuth()" class="submit-btn w-full py-3 text-xl font-bold">解鎖進入管理系統</button>
-  </div>
-</div>
-
-<!-- 📄 邊看履歷邊打字子母對照 Modal (Split Screen Lightbox) -->
-<div id="resumeViewerModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex flex-col p-2 sm:p-6">
-  <div class="flex justify-between items-center bg-darkPurple/90 px-6 py-3 rounded-t-2xl border-t border-x border-circuitCyan">
-    <h3 id="resumeModalTitle" class="text-xl font-bold text-circuitCyan">📄 履歷對照與即時評語填寫</h3>
-    <div class="flex items-center gap-3">
-      <a id="openNewTabBtn" href="#" target="_blank" class="px-3 py-1 text-sm bg-blue/60 text-white rounded-lg border border-lightPurple/40">↗️ 全螢幕分頁</a>
-      <button onclick="closeResumeViewer()" class="text-2xl font-bold text-gray-300 hover:text-white px-2 py-1">❌ 關閉對照視窗</button>
-    </div>
+<div class="form-container p-8 sm:p-10 max-w-lg w-full text-center space-y-6">
+  <div class="text-5xl">🏢</div>
+  <div>
+    <h1 class="text-3xl font-bold text-white">廠商面試頁面</h1>
+    <p id="companyNameHeader" class="text-lg text-circuitCyan mt-2 font-bold">請輸入專屬 8 位數密碼</p>
   </div>
 
-  <!-- 雙欄切割核心區域 -->
-  <div class="flex-1 flex flex-col lg:flex-row gap-3 bg-darkPurple/60 rounded-b-2xl p-3 overflow-hidden border-b border-x border-circuitCyan">
-    
-    <!-- 左側 60%：履歷預覽區 -->
-    <div class="w-full lg:w-3/5 h-1/2 lg:h-full bg-white rounded-xl overflow-hidden shadow-inner">
-      <iframe id="resumeIframe" src="" class="w-full h-full border-none"></iframe>
-    </div>
-
-    <!-- 右側 40%：即時面試結果勾選與評語填寫區 -->
-    <div class="w-full lg:w-2/5 h-1/2 lg:h-full form-container p-5 flex flex-col justify-between overflow-y-auto space-y-4">
-      <div class="border-b border-lightPurple/20 pb-3">
-        <span class="text-xs text-circuitCyan block font-bold">正在面試求職者：</span>
-        <h2 id="splitCandidateName" class="text-2xl font-bold text-white"></h2>
-        <p id="splitCandidateInfo" class="text-sm text-lightPurple mt-1"></p>
-      </div>
-
-      <div class="space-y-2">
-        <label class="text-base font-bold text-lightPurple block">1. 請選擇面試結果：</label>
-        <div class="grid grid-cols-2 gap-3">
-          <button id="splitBtnAcc" onclick="toggleSplitStatus('accepted')" class="status-pill py-3 text-lg rounded-xl border border-lightPurple/30 bg-darkPurple/80 text-gray-300">👍 擬錄取</button>
-          <button id="splitBtnRej" onclick="toggleSplitStatus('rejected')" class="status-pill py-3 text-lg rounded-xl border border-lightPurple/30 bg-darkPurple/80 text-gray-300">👎 不錄取</button>
-        </div>
-      </div>
-
-      <div class="space-y-2 flex-1 flex flex-col">
-        <label for="splitNoteInput" class="text-base font-bold text-lightPurple block">2. 請輸入面試評語 / 檢核事項：</label>
-        <textarea id="splitNoteInput" rows="4" placeholder="邊看履歷邊在此打字紀錄面試情形..." class="w-full p-3 text-base rounded-xl flex-1"></textarea>
-      </div>
-
-      <button id="splitSaveBtn" onclick="saveSplitCandidateResult()" class="submit-btn w-full py-3.5 text-xl font-bold shadow-lg">
-        💾 即時儲存面試結果
-      </button>
-    </div>
-
-  </div>
-</div>
-
-<div class="main-content-area w-full mx-auto space-y-6">
-
-  <!-- 頂部標題與統計 -->
-  <div class="form-container p-6 sm:p-8">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lightPurple/20 pb-5 mb-5">
-      <div>
-        <h1 class="text-3xl sm:text-4xl font-bold text-white flex items-center gap-2">
-          🏢 廠商面試管理系統
-        </h1>
-        <p id="companySubHeader" class="text-lg text-circuitCyan mt-2 font-bold">請完成 8 位數 PIN 碼驗證以載入資料</p>
-      </div>
-
-      <div id="lockedCompanyBadge" class="hidden bg-darkPurple/90 border-2 border-circuitCyan px-6 py-3 rounded-2xl shadow-lg">
-        <span class="text-xs text-lightPurple block font-bold">當前攤位廠商：</span>
-        <span id="lockedCompanyName" class="text-2xl font-bold text-white"></span>
-      </div>
-    </div>
-
-    <!-- 大字體數據統計 -->
-    <div id="statsSummary" class="grid grid-cols-3 gap-6 text-center">
-      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-lightPurple/30">
-        <div class="text-base text-lightPurple font-bold">預約面試總人數</div>
-        <div id="statTotal" class="text-4xl font-bold text-white mt-2">0</div>
-      </div>
-      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-green-500/50">
-        <div class="text-base text-successGreen font-bold">擬錄取人數</div>
-        <div id="statAccepted" class="text-4xl font-bold text-successGreen mt-2">0</div>
-      </div>
-      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-red-500/50">
-        <div class="text-base text-errorRed font-bold">不錄取人數</div>
-        <div id="statRejected" class="text-4xl font-bold text-errorRed mt-2">0</div>
-      </div>
-    </div>
+  <div id="authBox" class="space-y-4">
+    <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-3xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan">
+    <button onclick="submitPinAuth()" class="submit-btn w-full py-4 text-2xl font-bold shadow-xl hover:opacity-90 transition">
+      🔓 解鎖並開啟專屬頁面
+    </button>
   </div>
 
-  <!-- 面試名單主區塊 (滿版化) -->
-  <div id="contentSection" class="form-container p-6 sm:p-8">
-    
-    <div id="loadingStatus" class="text-center py-16 text-circuitCyan flex items-center justify-center gap-3 text-2xl font-bold">
-      <span class="spinner"></span>
-      <span id="loadingText">請先輸入 8 位數 PIN 碼驗證密碼...</span>
+  <div id="loadingBox" class="hidden py-6 space-y-3">
+    <span class="spinner"></span>
+    <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">驗證成功！正在為您開啟專屬頁面...</p>
+    <div id="manualRedirectLink" class="hidden mt-4">
+      <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
+      <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-2 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl">📊 點此開啟 Google 試算表</a>
     </div>
-
-    <!-- 💻 電腦/平板大螢幕表格 (雙欄對照開啟版) -->
-    <div id="desktopTableView" class="hidden overflow-x-auto">
-      <table class="w-full text-left text-lg text-nearWhite border-collapse">
-        <thead>
-          <tr class="bg-darkPurple/90 border-b-2 border-circuitCyan text-circuitCyan text-xl">
-            <th class="py-4 px-4 font-bold whitespace-nowrap">姓名</th>
-            <th class="py-4 px-4 font-bold whitespace-nowrap">身分證號</th>
-            <th class="py-4 px-4 font-bold whitespace-nowrap">年齡</th>
-            <th class="py-4 px-4 font-bold whitespace-nowrap">應徵職務</th>
-            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">邊看邊寫 (雙欄對照)</th>
-            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">面試結果</th>
-            <th class="py-4 px-4 font-bold">備註 / 面試評語</th>
-            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">操作</th>
-          </tr>
-        </thead>
-        <tbody id="desktopTableBody" class="divide-y divide-lightPurple/20"></tbody>
-      </table>
-    </div>
-
-    <!-- 📱 行動版觸控卡片 -->
-    <div id="mobileCardView" class="hidden space-y-5"></div>
-
   </div>
-
-</div>
-
-<!-- 儲存成功 Toast -->
-<div id="toast" class="fixed bottom-8 right-8 bg-successGreen text-gray-900 text-xl font-bold px-8 py-5 rounded-2xl shadow-2xl hidden z-50 flex items-center gap-2">
-  <span>✅ 面試結果已成功寫入試算表！</span>
 </div>
 
 <script>
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzYbmaDXxizNgGhbZwmEIyTIS_Z7bPZ36B8QsZdUph7awFUNlMzhfaqVlYPZZrsXPpQqQ/exec';
+// ⚠️ 請在此處填入您「廠商試算表快速驗證跳轉 API」的 Web App 網址
+const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyejB-bAAGHUNMgYrJ141DoAFfW_jFkQZnQYRg8KFSH9nxeRM8mPJciqk9_mlMpxUPtGA/exec';
 
-window.currentCandidates = [];
 window.targetCompany = '';
-window.userPin = '';
-window.activeSplitRowId = null;
 
-function createCircuitBackground() {
-  const circuitBg = document.getElementById('circuitBackground');
-  if (!circuitBg) return;
-  circuitBg.innerHTML = '';
-  for (let i = 0; i < 15; i++) {
-    const line = document.createElement('div');
-    line.className = 'circuit-line';
-    line.style.height = '2px';
-    line.style.width = `${Math.random() * 30 + 10}%`;
-    line.style.top = `${Math.random() * 100}%`;
-    line.style.left = `${Math.random() * 70}%`;
-    circuitBg.appendChild(line);
-  }
-}
-
-async function initVendorPage() {
-  createCircuitBackground();
-
+document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   window.targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
 
   if (window.targetCompany) {
-    document.getElementById('lockedCompanyName').innerText = window.targetCompany;
-    document.getElementById('lockedCompanyBadge').classList.remove('hidden');
-    document.getElementById('companySubHeader').innerText = `【${window.targetCompany}】專屬面試管理面板`;
-    document.getElementById('pinModalSubtext').innerText = `【${window.targetCompany}】請輸入攤位 8 位數 PIN 碼：`;
+    document.getElementById('companyNameHeader').innerText = `【${window.targetCompany}】`;
   }
+});
 
-  const savedPin = localStorage.getItem(`vendor_pin_${window.targetCompany}`);
-  if (savedPin && savedPin.length === 8) {
-    window.userPin = savedPin;
-    document.getElementById('pinAuthModal').classList.add('hidden');
-    loadCandidatesForVendor(window.targetCompany, savedPin);
-  } else {
-    document.getElementById('pinAuthModal').classList.remove('hidden');
-  }
-}
-
-function submitPinAuth() {
+async function submitPinAuth() {
   const pinInput = document.getElementById('pinInput').value.trim();
   if (pinInput.length !== 8) {
     alert('請輸入完整的 8 位數 PIN 碼密碼！');
     return;
   }
-  window.userPin = pinInput;
-  localStorage.setItem(`vendor_pin_${window.targetCompany}`, pinInput);
-  document.getElementById('pinAuthModal').classList.add('hidden');
-  loadCandidatesForVendor(window.targetCompany, pinInput);
-}
 
-async function loadCandidatesForVendor(companyName, pin) {
-  const loadingStatus = document.getElementById('loadingStatus');
-  const desktopView = document.getElementById('desktopTableView');
-  const mobileView = document.getElementById('mobileCardView');
+  const authBox = document.getElementById('authBox');
+  const loadingBox = document.getElementById('loadingBox');
+  const loadingText = document.getElementById('loadingStatusText');
 
-  desktopView.classList.add('hidden');
-  mobileView.classList.add('hidden');
-  loadingStatus.classList.remove('hidden');
-  document.getElementById('loadingText').innerText = `驗證身分並載入【${companyName}】的名單...`;
+  authBox.classList.add('hidden');
+  loadingBox.classList.remove('hidden');
+  loadingText.innerText = '正在安全驗證 PIN 碼...';
 
   try {
     const query = new URLSearchParams({
-      action: 'getVendorCandidates',
-      company: companyName,
-      pin: pin
+      action: 'getVendorSheetUrl',
+      company: window.targetCompany,
+      pin: pinInput
     }).toString();
 
     const resp = await fetch(`${VENDOR_GAS_API_URL}?${query}`);
     const res = await resp.json();
 
-    if (res.success) {
-      window.currentCandidates = res.candidates || [];
-      updateStats();
-      renderViews();
-      loadingStatus.classList.add('hidden');
-    } else {
-      localStorage.removeItem(`vendor_pin_${window.targetCompany}`);
-      document.getElementById('loadingText').innerText = res.message || '驗證失敗';
+    if (res.success && res.sheetUrl) {
+      loadingText.innerText = '✅ 驗證成功！正在為您開啟頁面';
+      
+      document.getElementById('directSheetBtn').href = res.sheetUrl;
+      document.getElementById('manualRedirectLink').classList.remove('hidden');
+
+      // 1 秒後自動跳轉開啟 Google Sheet
       setTimeout(() => {
-        document.getElementById('pinAuthModal').classList.remove('hidden');
-      }, 1500);
-    }
-  } catch (err) {
-    document.getElementById('loadingText').innerText = '網路連線失敗，請重新整理';
-  }
-}
-
-function renderViews() {
-  const isMobile = window.innerWidth < 768;
-  const desktopView = document.getElementById('desktopTableView');
-  const mobileView = document.getElementById('mobileCardView');
-
-  if (isMobile) {
-    renderMobileCards();
-    mobileView.classList.remove('hidden');
-    desktopView.classList.add('hidden');
-  } else {
-    renderDesktopTable();
-    desktopView.classList.remove('hidden');
-    mobileView.classList.add('hidden');
-  }
-}
-
-function renderDesktopTable() {
-  const tbody = document.getElementById('desktopTableBody');
-  tbody.innerHTML = '';
-
-  if (window.currentCandidates.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-gray-400 text-xl font-bold">目前尚無此廠商的預約求職者。</td></tr>`;
-    return;
-  }
-
-  window.currentCandidates.forEach(c => {
-    const tr = document.createElement('tr');
-    tr.className = 'table-row-hover border-b border-lightPurple/20';
-
-    const docBtn = c.docEmbedUrl || c.docUrl
-      ? `<button onclick="openSplitViewer(${c.rowId}, '📝 履歷文件對照', '${c.docEmbedUrl || c.docUrl}', '${c.docUrl}')" class="px-4 py-2 text-base bg-blue/60 text-circuitCyan border border-circuitCyan/60 rounded-xl hover:bg-blue font-bold">📝 邊看文件邊打字</button>` 
-      : `<button class="px-4 py-2 text-base bg-gray-700 text-gray-400 rounded-xl cursor-not-allowed">📝 無文件</button>`;
-
-    const pdfBtn = c.pdfEmbedUrl || c.pdfUrl
-      ? `<button onclick="openSplitViewer(${c.rowId}, '📄 履歷 PDF 對照', '${c.pdfEmbedUrl || c.pdfUrl}', '${c.pdfUrl}')" class="px-4 py-2 text-base bg-midPurple/70 text-purple-200 border border-purple-400/60 rounded-xl hover:bg-midPurple font-bold">📄 邊看 PDF 邊打字</button>` 
-      : `<button class="px-4 py-2 text-base bg-gray-700 text-gray-400 rounded-xl cursor-not-allowed">📄 無 PDF</button>`;
-
-    tr.innerHTML = `
-      <td class="py-5 px-4 font-bold text-white text-xl whitespace-nowrap">${c.name}</td>
-      <td class="py-5 px-4 text-lightPurple font-medium whitespace-nowrap">${c.idNumber}</td>
-      <td class="py-5 px-4 whitespace-nowrap">${c.age ? c.age + ' 歲' : '-'}</td>
-      <td class="py-5 px-4 text-yellow-300 font-bold text-xl">${c.position}</td>
-      <td class="py-5 px-4 text-center space-x-2 whitespace-nowrap">
-        ${docBtn}
-        ${pdfBtn}
-      </td>
-      <td class="py-5 px-4 text-center whitespace-nowrap">
-        <div class="inline-flex gap-2">
-          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="btn-acc-${c.rowId}" class="status-pill px-4 py-2 text-base rounded-xl border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">擬錄取</button>
-          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="btn-rej-${c.rowId}" class="status-pill px-4 py-2 text-base rounded-xl border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">不錄取</button>
-        </div>
-      </td>
-      <td class="py-5 px-4">
-        <input type="text" id="note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入評語/備註..." class="w-full px-4 py-2.5 text-base rounded-xl">
-      </td>
-      <td class="py-5 px-4 text-center whitespace-nowrap">
-        <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn px-5 py-2.5 text-base font-bold">儲存</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function renderMobileCards() {
-  const container = document.getElementById('mobileCardView');
-  container.innerHTML = '';
-
-  if (window.currentCandidates.length === 0) {
-    container.innerHTML = `<p class="text-center py-10 text-gray-400 text-xl font-bold">目前尚無此廠商的預約求職者。</p>`;
-    return;
-  }
-
-  window.currentCandidates.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'bg-darkPurple/60 p-6 rounded-2xl border border-lightPurple/30 space-y-4';
-
-    const docBtn = c.docEmbedUrl || c.docUrl
-      ? `<button onclick="openSplitViewer(${c.rowId}, '📝 履歷文件對照', '${c.docEmbedUrl || c.docUrl}', '${c.docUrl}')" class="text-center py-3 text-base bg-blue/60 text-circuitCyan border border-circuitCyan/60 rounded-xl font-bold">📝 邊看 Docs 邊打字</button>` 
-      : `<button class="py-3 text-base bg-gray-700 text-gray-400 rounded-xl">無 Docs 檔</button>`;
-
-    const pdfBtn = c.pdfEmbedUrl || c.pdfUrl
-      ? `<button onclick="openSplitViewer(${c.rowId}, '📄 履歷 PDF 對照', '${c.pdfEmbedUrl || c.pdfUrl}', '${c.pdfUrl}')" class="text-center py-3 text-base bg-midPurple/70 text-purple-200 border border-purple-400/60 rounded-xl font-bold">📄 邊看 PDF 邊打字</button>` 
-      : `<button class="py-3 text-base bg-gray-700 text-gray-400 rounded-xl">無 PDF 檔</button>`;
-
-    card.innerHTML = `
-      <div class="flex justify-between items-start border-b border-lightPurple/20 pb-3">
-        <div>
-          <h3 class="text-2xl font-bold text-white">${c.name} <span class="text-base font-normal text-lightPurple">(${c.age ? c.age + '歲' : '年齡未填'})</span></h3>
-          <p class="text-base text-circuitCyan mt-1">身分證：${c.idNumber}</p>
-        </div>
-        <span class="text-lg font-bold text-yellow-300 bg-midPurple/60 px-4 py-2 rounded-xl border border-yellow-300/30">${c.position}</span>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        ${docBtn}
-        ${pdfBtn}
-      </div>
-
-      <div class="flex items-center justify-between pt-2">
-        <span class="text-lg text-lightPurple font-bold">面試結果：</span>
-        <div class="flex gap-2">
-          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="m-btn-acc-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">👍 擬錄取</button>
-          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="m-btn-rej-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">👎 不錄取</button>
-        </div>
-      </div>
-
-      <div class="pt-2">
-        <input type="text" id="m-note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入面試評語 / 檢核事項..." class="w-full px-4 py-3 text-base rounded-xl">
-      </div>
-
-      <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn w-full py-3.5 text-xl font-bold mt-2">💾 儲存本筆資料</button>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// 🌟 核心新功能：開啟「左邊履歷、右邊打字評語」雙欄對照 Modal
-function openSplitViewer(rowId, title, embedUrl, rawUrl) {
-  const candidate = window.currentCandidates.find(c => c.rowId === rowId);
-  if (!candidate) return;
-
-  window.activeSplitRowId = rowId;
-
-  document.getElementById('resumeModalTitle').innerText = `${candidate.name} - ${title}`;
-  document.getElementById('resumeIframe').src = embedUrl;
-  document.getElementById('openNewTabBtn').href = rawUrl;
-
-  document.getElementById('splitCandidateName').innerText = candidate.name;
-  document.getElementById('splitCandidateInfo').innerText = `身分證：${candidate.idNumber} | 應徵：${candidate.position}`;
-  document.getElementById('splitNoteInput').value = candidate.note || '';
-
-  updateSplitStatusUI(candidate);
-
-  document.getElementById('resumeViewerModal').classList.remove('hidden');
-}
-
-function updateSplitStatusUI(candidate) {
-  const btnAcc = document.getElementById('splitBtnAcc');
-  const btnRej = document.getElementById('splitBtnRej');
-
-  btnAcc.className = `status-pill py-3 text-lg rounded-xl border ${candidate.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}`;
-  btnRej.className = `status-pill py-3 text-lg rounded-xl border ${candidate.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}`;
-}
-
-function toggleSplitStatus(type) {
-  if (!window.activeSplitRowId) return;
-  const candidate = window.currentCandidates.find(c => c.rowId === window.activeSplitRowId);
-  if (!candidate) return;
-
-  if (type === 'accepted') {
-    candidate.accepted = !candidate.accepted;
-    if (candidate.accepted) candidate.notAccepted = false;
-  } else {
-    candidate.notAccepted = !candidate.notAccepted;
-    if (candidate.notAccepted) candidate.accepted = false;
-  }
-
-  updateSplitStatusUI(candidate);
-  updateStats();
-  renderViews();
-}
-
-async function saveSplitCandidateResult() {
-  if (!window.activeSplitRowId) return;
-  const candidate = window.currentCandidates.find(c => c.rowId === window.activeSplitRowId);
-  if (!candidate) return;
-
-  const noteVal = document.getElementById('splitNoteInput').value.trim();
-  candidate.note = noteVal;
-
-  const saveBtn = document.getElementById('splitSaveBtn');
-  saveBtn.innerText = '⏳ 儲存中...';
-
-  await saveCandidateResult(window.activeSplitRowId);
-
-  saveBtn.innerText = '💾 即時儲存面試結果';
-  closeResumeViewer();
-}
-
-function closeResumeViewer() {
-  document.getElementById('resumeViewerModal').classList.add('hidden');
-  document.getElementById('resumeIframe').src = '';
-  window.activeSplitRowId = null;
-}
-
-function toggleStatus(rowId, type) {
-  const candidate = window.currentCandidates.find(c => c.rowId === rowId);
-  if (!candidate) return;
-
-  if (type === 'accepted') {
-    candidate.accepted = !candidate.accepted;
-    if (candidate.accepted) candidate.notAccepted = false;
-  } else {
-    candidate.notAccepted = !candidate.notAccepted;
-    if (candidate.notAccepted) candidate.accepted = false;
-  }
-
-  updateStats();
-  renderViews();
-}
-
-function updateStats() {
-  document.getElementById('statTotal').innerText = window.currentCandidates.length;
-  document.getElementById('statAccepted').innerText = window.currentCandidates.filter(c => c.accepted).length;
-  document.getElementById('statRejected').innerText = window.currentCandidates.filter(c => c.notAccepted).length;
-}
-
-async function saveCandidateResult(rowId) {
-  const candidate = window.currentCandidates.find(c => c.rowId === rowId);
-  if (!candidate || !window.targetCompany) return;
-
-  const noteDesktop = document.getElementById(`note-${rowId}`);
-  const noteMobile = document.getElementById(`m-note-${rowId}`);
-  const noteVal = noteDesktop ? noteDesktop.value : (noteMobile ? noteMobile.value : candidate.note);
-  candidate.note = noteVal;
-
-  try {
-    const params = new URLSearchParams();
-    params.append('postData', JSON.stringify({
-      action: 'updateInterviewResult',
-      company: window.targetCompany,
-      rowId: rowId,
-      accepted: candidate.accepted,
-      notAccepted: candidate.notAccepted,
-      note: noteVal
-    }));
-
-    const resp = await fetch(VENDOR_GAS_API_URL, { method: 'POST', body: params });
-    const res = await resp.json();
-
-    if (res.success) {
-      showToast();
-      renderViews();
+        window.location.href = res.sheetUrl;
+      }, 800);
     } else {
-      alert('儲存失敗：' + (res.message || '無法寫入'));
+      alert(res.message || '驗證失敗！密碼不正確');
+      loadingBox.classList.add('hidden');
+      authBox.classList.remove('hidden');
     }
   } catch (err) {
-    alert('網路連線失敗，請確認連線狀況');
+    alert('網路連線失敗，請重試');
+    loadingBox.classList.add('hidden');
+    authBox.classList.remove('hidden');
   }
 }
-
-function showToast() {
-  const toast = document.getElementById('toast');
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 2500);
-}
-
-window.addEventListener('resize', renderViews);
-document.addEventListener('DOMContentLoaded', initVendorPage);
 </script>
 </body>
 </html>
