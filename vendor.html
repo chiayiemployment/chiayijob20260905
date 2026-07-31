@@ -28,128 +28,122 @@ tailwind.config = {
   --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
   --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
 }
-body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; min-height: 100vh; }
+body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; min-height: 100vh; font-size: 16px; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
 .main-content-area { position: relative; z-index: 10; }
-.form-container { background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
-.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); border-radius: 8px; color: var(--white); font-weight: 500; }
+.form-container { background: linear-gradient(135deg, rgba(31, 29, 83, 0.95) 0%, rgba(76, 35, 124, 0.85) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.25); }
+.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); border-radius: 8px; color: var(--white); font-weight: 700; }
 
 select, input[type="text"] {
-  background-color: rgba(31, 29, 83, 0.7) !important;
+  background-color: rgba(31, 29, 83, 0.8) !important;
   border: 1px solid var(--light-purple) !important;
   color: var(--white) !important;
   border-radius: 8px !important;
 }
-select {
-  appearance: none;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23a48dcd"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>') !important;
-  background-repeat: no-repeat !important;
-  background-position: right 0.75rem center !important;
-  background-size: 1.2em 1.2em !important;
-  padding-right: 2.5rem !important;
-}
 
-.table-row-hover:hover { background-color: rgba(164, 141, 205, 0.1); }
-.status-pill { transition: all 0.2s ease; cursor: pointer; }
-.status-pill.active-accepted { background-color: #15803d; color: #ffffff; border-color: #22c55e; }
-.status-pill.active-rejected { background-color: #b91c1c; color: #ffffff; border-color: #ef4444; }
+.table-row-hover:hover { background-color: rgba(164, 141, 205, 0.15); }
+.status-pill { transition: all 0.2s ease; cursor: pointer; font-weight: bold; }
+.status-pill.active-accepted { background-color: #15803d !important; color: #ffffff !important; border-color: #22c55e !important; }
+.status-pill.active-rejected { background-color: #b91c1c !important; color: #ffffff !important; border-color: #ef4444 !important; }
 
 .hidden { display: none !important; }
-.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--bright-cyan); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; }
+.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--bright-cyan); width: 1.5rem; height: 1.5rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body class="min-h-screen py-6 px-3 sm:px-6">
+<body class="min-h-screen py-6 px-4 sm:px-8">
 <div class="circuit-background" id="circuitBackground"></div>
 
 <div class="main-content-area max-w-7xl mx-auto space-y-6">
 
-  <!-- 頂部切換與統計標題 -->
-  <div class="form-container p-5 sm:p-6">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lightPurple/20 pb-4 mb-4">
+  <!-- 頂部標題與廠商鎖定資訊 -->
+  <div class="form-container p-6 sm:p-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lightPurple/20 pb-5 mb-5">
       <div>
-        <h1 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <h1 class="text-3xl sm:text-4xl font-bold text-white flex items-center gap-2">
           🏢 廠商面試管理系統
         </h1>
-        <p class="text-sm text-lightPurple mt-1">即時登錄面試結果、開啟履歷文件與手寫 PDF 註記</p>
+        <p id="companySubHeader" class="text-base text-circuitCyan mt-2 font-medium">請使用專屬網址進入，登錄貴公司應徵者面試結果</p>
       </div>
 
-      <!-- 35 家廠商搜尋與下拉選擇區塊 -->
-      <div class="w-full md:w-96 space-y-2">
-        <div class="flex items-center justify-between">
-          <label for="vendorSelect" class="text-xs font-bold text-circuitCyan">請選擇或搜尋您的公司名稱：</label>
-          <span id="totalVendorBadge" class="text-xs text-lightPurple">載入中...</span>
-        </div>
-        <input type="text" id="searchVendorInput" placeholder="🔍 輸入關鍵字快速搜尋廠商..." class="w-full px-3 py-1.5 text-xs rounded-lg mb-1">
-        <select id="vendorSelect" class="w-full px-4 py-2.5 text-base rounded-lg">
+      <!-- 廠商選單 (專屬網址模式下自動隱藏，防止看別家) -->
+      <div id="vendorSelectorBox" class="w-full md:w-96 space-y-2 hidden">
+        <label for="vendorSelect" class="text-sm font-bold text-circuitCyan">切換公司名稱：</label>
+        <select id="vendorSelect" class="w-full px-4 py-3 text-lg rounded-lg">
           <option value="" disabled selected>載入廠商清單中...</option>
         </select>
       </div>
+
+      <!-- 鎖定狀態下的公司顯示牌 -->
+      <div id="lockedCompanyBadge" class="hidden bg-darkPurple/80 border-2 border-circuitCyan px-6 py-3 rounded-xl">
+        <span class="text-xs text-lightPurple block">當前攤位廠商：</span>
+        <span id="lockedCompanyName" class="text-2xl font-bold text-white"></span>
+      </div>
     </div>
 
-    <!-- 即時數據小統計卡 -->
-    <div id="statsSummary" class="grid grid-cols-3 gap-3 text-center">
-      <div class="bg-darkPurple/50 p-3 rounded-lg border border-lightPurple/20">
-        <div class="text-xs text-lightPurple">預約面試總人數</div>
-        <div id="statTotal" class="text-2xl font-bold text-white mt-1">0</div>
+    <!-- 數據小統計 -->
+    <div id="statsSummary" class="grid grid-cols-3 gap-4 text-center">
+      <div class="bg-darkPurple/60 p-4 rounded-xl border border-lightPurple/20">
+        <div class="text-sm text-lightPurple font-medium">預約面試總人數</div>
+        <div id="statTotal" class="text-3xl font-bold text-white mt-1">0</div>
       </div>
-      <div class="bg-darkPurple/50 p-3 rounded-lg border border-green-500/30">
-        <div class="text-xs text-successGreen">擬錄取人數</div>
-        <div id="statAccepted" class="text-2xl font-bold text-successGreen mt-1">0</div>
+      <div class="bg-darkPurple/60 p-4 rounded-xl border border-green-500/40">
+        <div class="text-sm text-successGreen font-medium">擬錄取人數</div>
+        <div id="statAccepted" class="text-3xl font-bold text-successGreen mt-1">0</div>
       </div>
-      <div class="bg-darkPurple/50 p-3 rounded-lg border border-red-500/30">
-        <div class="text-xs text-errorRed">不錄取人數</div>
-        <div id="statRejected" class="text-2xl font-bold text-errorRed mt-1">0</div>
+      <div class="bg-darkPurple/60 p-4 rounded-xl border border-red-500/40">
+        <div class="text-sm text-errorRed font-medium">不錄取人數</div>
+        <div id="statRejected" class="text-3xl font-bold text-errorRed mt-1">0</div>
       </div>
     </div>
   </div>
 
   <!-- 面試名單載入中與主內容區 -->
-  <div id="contentSection" class="form-container p-4 sm:p-6">
+  <div id="contentSection" class="form-container p-6">
     
-    <div id="loadingStatus" class="text-center py-12 text-circuitCyan flex items-center justify-center gap-2 text-lg">
+    <div id="loadingStatus" class="text-center py-12 text-circuitCyan flex items-center justify-center gap-2 text-xl font-bold">
       <span class="spinner"></span>
-      <span>請先從上方選擇您的公司名稱以載入應徵者名單...</span>
+      <span id="loadingText">正在驗證廠商身分並載入面試者名單...</span>
     </div>
 
-    <!-- 💻 筆電大螢幕表格模式 (Table View) -->
+    <!-- 💻 筆電大螢幕表格模式 (大字體加強版) -->
     <div id="desktopTableView" class="hidden overflow-x-auto">
-      <table class="w-full text-left text-sm text-nearWhite border-collapse">
+      <table class="w-full text-left text-base text-nearWhite border-collapse">
         <thead>
-          <tr class="bg-darkPurple/80 border-b border-lightPurple/30 text-circuitCyan">
-            <th class="py-3 px-3">姓名</th>
-            <th class="py-3 px-3">身分證號</th>
-            <th class="py-3 px-3">年齡</th>
-            <th class="py-3 px-3">應徵職務</th>
-            <th class="py-3 px-3 text-center">履歷查看</th>
-            <th class="py-3 px-3 text-center">面試結果</th>
-            <th class="py-3 px-3">備註 / 評語</th>
-            <th class="py-3 px-3 text-center">操作</th>
+          <tr class="bg-darkPurple/90 border-b-2 border-circuitCyan text-circuitCyan text-lg">
+            <th class="py-4 px-4 font-bold">姓名</th>
+            <th class="py-4 px-4 font-bold">身分證號</th>
+            <th class="py-4 px-4 font-bold">年齡</th>
+            <th class="py-4 px-4 font-bold">應徵職務</th>
+            <th class="py-4 px-4 font-bold text-center">履歷檢視</th>
+            <th class="py-4 px-4 font-bold text-center">面試結果</th>
+            <th class="py-4 px-4 font-bold">備註 / 評語</th>
+            <th class="py-4 px-4 font-bold text-center">操作</th>
           </tr>
         </thead>
-        <tbody id="desktopTableBody" class="divide-y divide-lightPurple/10"></tbody>
+        <tbody id="desktopTableBody" class="divide-y divide-lightPurple/20"></tbody>
       </table>
     </div>
 
-    <!-- 📱 平板觸控卡片模式 (Card View) -->
+    <!-- 📱 平板觸控卡片模式 -->
     <div id="mobileCardView" class="hidden space-y-4"></div>
 
   </div>
 
 </div>
 
-<!-- 儲存成功 Toast 提示語 -->
-<div id="toast" class="fixed bottom-5 right-5 bg-successGreen text-gray-900 font-bold px-5 py-3 rounded-xl shadow-2xl hidden z-50 flex items-center gap-2">
+<!-- 儲存成功 Toast -->
+<div id="toast" class="fixed bottom-6 right-6 bg-successGreen text-gray-900 text-lg font-bold px-6 py-4 rounded-2xl shadow-2xl hidden z-50 flex items-center gap-2">
   <span>✅ 面試結果已成功寫入試算表！</span>
 </div>
 
 <script>
 // ⚠️ 請在此處填入您「廠商端面試管理 API」最新發布的 Web App 網址
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwbGyO-Qd0YtESMcD71dtSe9RWhiXthhTk3ufdNGKhmK7KZqXZ4Fl2zN2FPcvUqEoGV/exec';
+const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw2th8c2QS0ZGRMxQjS8fefMHrAtE3MzG7zqd1uc5igxey56JUZFXse8lZPDXV0gyw/exec';
 
-window.allCompanies = [];
 window.currentCandidates = [];
+window.lockedCompany = '';
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -158,7 +152,7 @@ function createCircuitBackground() {
   for (let i = 0; i < 12; i++) {
     const line = document.createElement('div');
     line.className = 'circuit-line';
-    line.style.height = '1px';
+    line.style.height = '2px';
     line.style.width = `${Math.random() * 30 + 10}%`;
     line.style.top = `${Math.random() * 100}%`;
     line.style.left = `${Math.random() * 70}%`;
@@ -169,54 +163,50 @@ function createCircuitBackground() {
 async function initVendorPage() {
   createCircuitBackground();
 
+  // 1. 抓取 URL 帶過來的公司名稱 (例如: vendor.html?company=02大成長城...)
   const urlParams = new URLSearchParams(window.location.search);
-  const targetCompany = urlParams.get('company') || '';
+  let targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
 
-  const vendorSelect = document.getElementById('vendorSelect');
+  const selectorBox = document.getElementById('vendorSelectorBox');
+  const lockedBadge = document.getElementById('lockedCompanyBadge');
+  const lockedName = document.getElementById('lockedCompanyName');
 
-  try {
-    const resp = await fetch(`${VENDOR_GAS_API_URL}?action=getVendorCompanyList`);
-    const res = await resp.json();
-
-    if (res.success && res.companies.length > 0) {
-      window.allCompanies = res.companies;
-      document.getElementById('totalVendorBadge').innerText = `共 ${res.companies.length} 家廠商`;
-      renderVendorOptions(res.companies, targetCompany);
-
-      if (targetCompany && res.companies.includes(targetCompany)) {
-        loadCandidatesForVendor(targetCompany);
+  if (targetCompany) {
+    // 🌟 安全鎖定模式：隱藏下拉選單，只顯示當前公司
+    window.lockedCompany = targetCompany;
+    lockedName.innerText = targetCompany;
+    lockedBadge.classList.remove('hidden');
+    document.getElementById('companySubHeader').innerText = `【${targetCompany}】專屬面試管理面板`;
+    loadCandidatesForVendor(targetCompany);
+  } else {
+    // 若無帶參數，則顯示下拉選單讓管理員選擇
+    selectorBox.classList.remove('hidden');
+    try {
+      const resp = await fetch(`${VENDOR_GAS_API_URL}?action=getVendorCompanyList`);
+      const res = await resp.json();
+      if (res.success && res.companies.length > 0) {
+        renderVendorOptions(res.companies);
+        document.getElementById('loadingText').innerText = '👈 請點擊右上角下拉選單選擇公司';
       } else {
-        document.getElementById('loadingStatus').innerHTML = '👈 請點擊右上角下拉選單選擇或搜尋您的公司名稱';
+        document.getElementById('loadingText').innerText = '無預約廠商資料';
       }
-    } else {
-      vendorSelect.innerHTML = '<option value="" disabled>目前尚無預約廠商資料</option>';
-      document.getElementById('loadingStatus').innerText = '目前尚無預約資料';
+    } catch (e) {
+      document.getElementById('loadingText').innerText = '載入失敗，請確認 API 網址';
     }
-  } catch (err) {
-    vendorSelect.innerHTML = '<option value="" disabled>載入廠商失敗</option>';
-    document.getElementById('loadingStatus').innerText = '無法連線至伺服器，請確認 VENDOR_GAS_API_URL 部署網址';
   }
 
-  vendorSelect.addEventListener('change', function() {
+  document.getElementById('vendorSelect').addEventListener('change', function() {
     if (this.value) loadCandidatesForVendor(this.value);
-  });
-
-  // 關鍵字即時過濾廠商選單
-  document.getElementById('searchVendorInput').addEventListener('input', function() {
-    const kw = this.value.trim().toLowerCase();
-    const filtered = window.allCompanies.filter(c => c.toLowerCase().includes(kw));
-    renderVendorOptions(filtered, vendorSelect.value);
   });
 }
 
-function renderVendorOptions(companies, selectedComp) {
+function renderVendorOptions(companies) {
   const vendorSelect = document.getElementById('vendorSelect');
-  vendorSelect.innerHTML = '<option value="" disabled selected>請選擇您的公司...</option>';
+  vendorSelect.innerHTML = '<option value="" disabled selected>請選擇公司...</option>';
   companies.forEach(comp => {
     const opt = document.createElement('option');
     opt.value = comp;
     opt.innerText = comp;
-    if (comp === selectedComp) opt.selected = true;
     vendorSelect.appendChild(opt);
   });
 }
@@ -229,7 +219,7 @@ async function loadCandidatesForVendor(companyName) {
   desktopView.classList.add('hidden');
   mobileView.classList.add('hidden');
   loadingStatus.classList.remove('hidden');
-  loadingStatus.innerHTML = `<span class="spinner"></span> 正在載入【${companyName}】的面試者名單...`;
+  document.getElementById('loadingText').innerText = `正在載入【${companyName}】的面試名單...`;
 
   try {
     const resp = await fetch(`${VENDOR_GAS_API_URL}?action=getVendorCandidates&company=${encodeURIComponent(companyName)}`);
@@ -241,10 +231,10 @@ async function loadCandidatesForVendor(companyName) {
       renderViews();
       loadingStatus.classList.add('hidden');
     } else {
-      loadingStatus.innerText = res.message || '讀取面試名單失敗';
+      document.getElementById('loadingText').innerText = res.message || '讀取名單失敗';
     }
   } catch (err) {
-    loadingStatus.innerText = '網路連線失敗，請稍後重試';
+    document.getElementById('loadingText').innerText = '網路連線失敗，請重新整理';
   }
 }
 
@@ -264,83 +254,104 @@ function renderViews() {
   }
 }
 
+// 💻 電腦版大字體表格渲染
 function renderDesktopTable() {
   const tbody = document.getElementById('desktopTableBody');
   tbody.innerHTML = '';
 
   if (window.currentCandidates.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-400">目前尚無此廠商的預約求職者。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-400 text-lg">目前尚無此廠商的預約求職者。</td></tr>`;
     return;
   }
 
   window.currentCandidates.forEach(c => {
     const tr = document.createElement('tr');
     tr.className = 'table-row-hover';
+
+    // 履歷按鈕 404 防呆
+    const docBtn = c.docUrl 
+      ? `<a href="${c.docUrl}" target="_blank" class="inline-block px-3 py-1.5 text-sm bg-blue/50 text-circuitCyan border border-circuitCyan/50 rounded-lg hover:bg-blue font-bold">📝 文件 (Docs)</a>` 
+      : `<button onclick="alert('試算表中未填寫有效的 Docs 履歷網址')" class="px-3 py-1.5 text-sm bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">📝 無文件</button>`;
+
+    const pdfBtn = c.pdfUrl 
+      ? `<a href="${c.pdfUrl}" target="_blank" class="inline-block px-3 py-1.5 text-sm bg-midPurple/60 text-purple-200 border border-purple-400/50 rounded-lg hover:bg-midPurple font-bold">📄 PDF (手寫)</a>` 
+      : `<button onclick="alert('試算表中未填寫有效的 PDF 履歷網址')" class="px-3 py-1.5 text-sm bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">📄 無 PDF</button>`;
+
     tr.innerHTML = `
-      <td class="py-3 px-3 font-bold text-white">${c.name}</td>
-      <td class="py-3 px-3 text-lightPurple">${c.idNumber}</td>
-      <td class="py-3 px-3">${c.age ? c.age + ' 歲' : '-'}</td>
-      <td class="py-3 px-3 text-yellow-300 font-medium">${c.position}</td>
-      <td class="py-3 px-3 text-center space-x-1 whitespace-nowrap">
-        ${c.docUrl ? `<a href="${c.docUrl}" target="_blank" class="inline-block px-2.5 py-1 text-xs bg-blue/40 text-circuitCyan border border-circuitCyan/40 rounded hover:bg-blue">📝 文件 (Docs)</a>` : ''}
-        ${c.pdfUrl ? `<a href="${c.pdfUrl}" target="_blank" class="inline-block px-2.5 py-1 text-xs bg-midPurple/40 text-purple-300 border border-purple-400/40 rounded hover:bg-midPurple">📄 PDF (手寫)</a>` : ''}
+      <td class="py-4 px-4 font-bold text-white text-lg">${c.name}</td>
+      <td class="py-4 px-4 text-lightPurple">${c.idNumber}</td>
+      <td class="py-4 px-4">${c.age ? c.age + ' 歲' : '-'}</td>
+      <td class="py-4 px-4 text-yellow-300 font-bold">${c.position}</td>
+      <td class="py-4 px-4 text-center space-x-2 whitespace-nowrap">
+        ${docBtn}
+        ${pdfBtn}
       </td>
-      <td class="py-3 px-3 text-center whitespace-nowrap">
-        <div class="inline-flex gap-1">
-          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="btn-acc-${c.rowId}" class="status-pill px-2.5 py-1 text-xs rounded border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/60 text-gray-300'}">擬錄取</button>
-          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="btn-rej-${c.rowId}" class="status-pill px-2.5 py-1 text-xs rounded border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/60 text-gray-300'}">不錄取</button>
+      <td class="py-4 px-4 text-center whitespace-nowrap">
+        <div class="inline-flex gap-2">
+          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="btn-acc-${c.rowId}" class="status-pill px-3 py-1.5 text-sm rounded-lg border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">擬錄取</button>
+          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="btn-rej-${c.rowId}" class="status-pill px-3 py-1.5 text-sm rounded-lg border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">不錄取</button>
         </div>
       </td>
-      <td class="py-3 px-3">
-        <input type="text" id="note-${c.rowId}" value="${c.note || ''}" placeholder="輸入面試評語/備註..." class="w-full px-2.5 py-1 text-xs rounded">
+      <td class="py-4 px-4">
+        <input type="text" id="note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入評語/備註..." class="w-full px-3 py-2 text-sm rounded-lg">
       </td>
-      <td class="py-3 px-3 text-center">
-        <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn px-3 py-1 text-xs font-bold">儲存</button>
+      <td class="py-4 px-4 text-center">
+        <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn px-4 py-2 text-sm font-bold">儲存</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
+// 📱 平板大卡片渲染
 function renderMobileCards() {
   const container = document.getElementById('mobileCardView');
   container.innerHTML = '';
 
   if (window.currentCandidates.length === 0) {
-    container.innerHTML = `<p class="text-center py-8 text-gray-400">目前尚無此廠商的預約求職者。</p>`;
+    container.innerHTML = `<p class="text-center py-10 text-gray-400 text-lg">目前尚無此廠商的預約求職者。</p>`;
     return;
   }
 
   window.currentCandidates.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'bg-darkPurple/50 p-4 rounded-xl border border-lightPurple/30 space-y-3';
+    card.className = 'bg-darkPurple/60 p-5 rounded-2xl border border-lightPurple/30 space-y-4';
+
+    const docBtn = c.docUrl 
+      ? `<a href="${c.docUrl}" target="_blank" class="text-center py-2.5 text-sm bg-blue/50 text-circuitCyan border border-circuitCyan/50 rounded-xl font-bold">📝 履歷文件 (筆電打字)</a>` 
+      : `<button onclick="alert('試算表中未填寫 Docs 網址')" class="py-2.5 text-sm bg-gray-700 text-gray-400 rounded-xl">無 Docs 檔</button>`;
+
+    const pdfBtn = c.pdfUrl 
+      ? `<a href="${c.pdfUrl}" target="_blank" class="text-center py-2.5 text-sm bg-midPurple/60 text-purple-200 border border-purple-400/50 rounded-xl font-bold">📄 履歷 PDF (平板手寫)</a>` 
+      : `<button onclick="alert('試算表中未填寫 PDF 網址')" class="py-2.5 text-sm bg-gray-700 text-gray-400 rounded-xl">無 PDF 檔</button>`;
+
     card.innerHTML = `
-      <div class="flex justify-between items-start border-b border-lightPurple/20 pb-2">
+      <div class="flex justify-between items-start border-b border-lightPurple/20 pb-3">
         <div>
-          <h3 class="text-xl font-bold text-white">${c.name} <span class="text-xs font-normal text-lightPurple">(${c.age ? c.age + '歲' : '年齡未填'})</span></h3>
-          <p class="text-xs text-circuitCyan mt-0.5">身分證：${c.idNumber}</p>
+          <h3 class="text-2xl font-bold text-white">${c.name} <span class="text-sm font-normal text-lightPurple">(${c.age ? c.age + '歲' : '年齡未填'})</span></h3>
+          <p class="text-sm text-circuitCyan mt-1">身分證：${c.idNumber}</p>
         </div>
-        <span class="text-sm font-bold text-yellow-300 bg-midPurple/40 px-2.5 py-1 rounded border border-yellow-300/30">${c.position}</span>
+        <span class="text-base font-bold text-yellow-300 bg-midPurple/60 px-3 py-1.5 rounded-lg border border-yellow-300/30">${c.position}</span>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
-        ${c.docUrl ? `<a href="${c.docUrl}" target="_blank" class="text-center py-2 text-xs bg-blue/40 text-circuitCyan border border-circuitCyan/40 rounded-lg font-bold">📝 履歷文件 (筆電打字)</a>` : '<div class="text-center py-2 text-xs text-gray-500">無 Docs 檔</div>'}
-        ${c.pdfUrl ? `<a href="${c.pdfUrl}" target="_blank" class="text-center py-2 text-xs bg-midPurple/50 text-purple-200 border border-purple-400/40 rounded-lg font-bold">📄 履歷 PDF (平板手寫)</a>` : '<div class="text-center py-2 text-xs text-gray-500">無 PDF 檔</div>'}
+      <div class="grid grid-cols-2 gap-3">
+        ${docBtn}
+        ${pdfBtn}
       </div>
 
-      <div class="flex items-center justify-between pt-1">
-        <span class="text-sm text-lightPurple font-medium">面試結果：</span>
+      <div class="flex items-center justify-between pt-2">
+        <span class="text-base text-lightPurple font-bold">面試結果：</span>
         <div class="flex gap-2">
-          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="m-btn-acc-${c.rowId}" class="status-pill px-4 py-2 text-sm font-bold rounded-lg border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">👍 擬錄取</button>
-          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="m-btn-rej-${c.rowId}" class="status-pill px-4 py-2 text-sm font-bold rounded-lg border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">👎 不錄取</button>
+          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="m-btn-acc-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">👍 擬錄取</button>
+          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="m-btn-rej-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">👎 不錄取</button>
         </div>
       </div>
 
-      <div class="pt-1">
-        <input type="text" id="m-note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入面試評語 / 檢核事項..." class="w-full px-3 py-2 text-sm rounded-lg">
+      <div class="pt-2">
+        <input type="text" id="m-note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入面試評語 / 檢核事項..." class="w-full px-4 py-3 text-base rounded-xl">
       </div>
 
-      <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn w-full py-2 text-sm font-bold mt-2">💾 儲存本筆資料</button>
+      <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn w-full py-3 text-lg font-bold mt-2">💾 儲存本筆資料</button>
     `;
     container.appendChild(card);
   });
@@ -370,10 +381,9 @@ function updateStats() {
 
 async function saveCandidateResult(rowId) {
   const candidate = window.currentCandidates.find(c => c.rowId === rowId);
-  const vendorSelect = document.getElementById('vendorSelect');
-  const selectedCompany = vendorSelect ? vendorSelect.value : '';
+  const comp = window.lockedCompany || (document.getElementById('vendorSelect') ? document.getElementById('vendorSelect').value : '');
 
-  if (!candidate || !selectedCompany) {
+  if (!candidate || !comp) {
     alert('未選擇公司或資料無效！');
     return;
   }
@@ -387,7 +397,7 @@ async function saveCandidateResult(rowId) {
     const params = new URLSearchParams();
     params.append('postData', JSON.stringify({
       action: 'updateInterviewResult',
-      company: selectedCompany,
+      company: comp,
       rowId: rowId,
       accepted: candidate.accepted,
       notAccepted: candidate.notAccepted,
