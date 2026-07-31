@@ -16,21 +16,18 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
 </style>
 </head>
 <body class="flex items-center justify-center p-4">
-
 <div class="form-container p-8 sm:p-10 max-w-lg w-full text-center space-y-6">
   <div class="text-5xl">🏢</div>
   <div>
     <h1 class="text-3xl font-bold text-white">廠商面試頁面</h1>
     <p id="companyNameHeader" class="text-lg text-circuitCyan mt-2 font-bold">請輸入專屬 8 位數密碼</p>
   </div>
-
   <div id="authBox" class="space-y-4">
     <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-3xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan">
     <button onclick="submitPinAuth()" class="submit-btn w-full py-4 text-2xl font-bold shadow-xl hover:opacity-90 transition">
       🔓 解鎖並開啟專屬頁面
     </button>
   </div>
-
   <div id="loadingBox" class="hidden py-6 space-y-3">
     <span class="spinner"></span>
     <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">驗證成功！正在為您開啟專屬頁面...</p>
@@ -40,17 +37,15 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
     </div>
   </div>
 </div>
-
 <script>
-// ⚠️ 請在此處填入您「廠商試算表快速驗證跳轉 API」的 Web App 網址
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzXjBhpRLGQ6b9L1RwfbnYowCnn7NVxfqTSg6-NpyCfHMceE7m2-swXnEb7o5WIptk7tA/exec';
+// ⚠️ 請填入您重新部署後最新產出的 API Web App 網址
+const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxKf6GDql_X4gy41jTggGLg5_SfqZhw9p8_mMSPHckmhkAy-foIn4i726xP-wj1qVB8cw/exec';
 
 window.targetCompany = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   window.targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
-
   if (window.targetCompany) {
     document.getElementById('companyNameHeader').innerText = `【${window.targetCompany}】`;
   }
@@ -62,7 +57,6 @@ async function submitPinAuth() {
     alert('請輸入完整的 8 位數 PIN 碼密碼！');
     return;
   }
-
   const authBox = document.getElementById('authBox');
   const loadingBox = document.getElementById('loadingBox');
   const loadingText = document.getElementById('loadingStatusText');
@@ -82,12 +76,11 @@ async function submitPinAuth() {
     const res = await resp.json();
 
     if (res.success && res.sheetUrl) {
-      loadingText.innerText = '✅ 驗證成功！正在為您開啟頁面';
+      loadingText.innerText = '✅ 驗證成功！正在為您開啟頁面...';
       
       document.getElementById('directSheetBtn').href = res.sheetUrl;
       document.getElementById('manualRedirectLink').classList.remove('hidden');
 
-      // 1 秒後自動跳轉開啟 Google Sheet
       setTimeout(() => {
         window.location.href = res.sheetUrl;
       }, 800);
@@ -97,7 +90,7 @@ async function submitPinAuth() {
       authBox.classList.remove('hidden');
     }
   } catch (err) {
-    alert('網路連線失敗，請重試');
+    alert('後端連線回應異常，詳細原因：' + err.message);
     loadingBox.classList.add('hidden');
     authBox.classList.remove('hidden');
   }
