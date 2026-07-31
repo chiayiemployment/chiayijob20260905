@@ -28,128 +28,150 @@ tailwind.config = {
   --light-purple: #A48DCD; --near-white: #EDEEF7; --white: #FFFFFF;
   --bright-cyan: #28C4FF; --button-start: #AC3FFF; --button-end: #6A1BCB;
 }
-body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; min-height: 100vh; font-size: 16px; }
+body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-purple); color: var(--white); position: relative; min-height: 100vh; font-size: 18px; }
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
-.main-content-area { position: relative; z-index: 10; }
+.main-content-area { position: relative; z-index: 10; width: 100%; }
 .form-container { background: linear-gradient(135deg, rgba(31, 29, 83, 0.95) 0%, rgba(76, 35, 124, 0.85) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.25); }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); border-radius: 8px; color: var(--white); font-weight: 700; }
 
-select, input[type="text"] {
+select, input[type="text"], input[type="password"] {
   background-color: rgba(31, 29, 83, 0.8) !important;
-  border: 1px solid var(--light-purple) !important;
+  border: 1.5px solid var(--light-purple) !important;
   color: var(--white) !important;
   border-radius: 8px !important;
 }
 
-.table-row-hover:hover { background-color: rgba(164, 141, 205, 0.15); }
+.table-row-hover:hover { background-color: rgba(164, 141, 205, 0.18); }
 .status-pill { transition: all 0.2s ease; cursor: pointer; font-weight: bold; }
 .status-pill.active-accepted { background-color: #15803d !important; color: #ffffff !important; border-color: #22c55e !important; }
 .status-pill.active-rejected { background-color: #b91c1c !important; color: #ffffff !important; border-color: #ef4444 !important; }
 
 .hidden { display: none !important; }
-.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--bright-cyan); width: 1.5rem; height: 1.5rem; animation: spin 1s linear infinite; display: inline-block; }
+.spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--bright-cyan); width: 1.75rem; height: 1.75rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
-<body class="min-h-screen py-6 px-4 sm:px-8">
+<body class="min-h-screen py-6 px-4 sm:px-10">
 <div class="circuit-background" id="circuitBackground"></div>
 
-<div class="main-content-area max-w-7xl mx-auto space-y-6">
+<!-- 🔐 8位數 PIN 碼驗證彈窗 Modal -->
+<div id="pinAuthModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+  <div class="form-container p-8 max-w-md w-full text-center space-y-6 border-2 border-circuitCyan">
+    <div class="text-4xl">🔐</div>
+    <div>
+      <h2 class="text-2xl font-bold text-white">攤位身分安全驗證</h2>
+      <p id="pinModalSubtext" class="text-sm text-lightPurple mt-1">請輸入貴攤位 8 位數 PIN 碼密碼：</p>
+    </div>
+    <div>
+      <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan">
+    </div>
+    <button onclick="submitPinAuth()" class="submit-btn w-full py-3 text-xl font-bold">解鎖進入管理系統</button>
+  </div>
+</div>
 
-  <!-- 頂部標題與廠商鎖定資訊 -->
+<!-- 📄 履歷內嵌閱讀器彈窗 Lightbox Modal -->
+<div id="resumeViewerModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 hidden flex flex-col p-4 sm:p-8">
+  <div class="flex justify-between items-center bg-darkPurple/90 px-6 py-4 rounded-t-2xl border-t border-x border-circuitCyan">
+    <h3 id="resumeModalTitle" class="text-xl font-bold text-circuitCyan">📄 履歷預覽與檢視</h3>
+    <div class="flex items-center gap-3">
+      <a id="openNewTabBtn" href="#" target="_blank" class="px-4 py-1.5 text-sm bg-blue/60 text-white rounded-lg border border-lightPurple/40">↗️ 另開全螢幕分頁</a>
+      <button onclick="closeResumeViewer()" class="text-2xl font-bold text-gray-300 hover:text-white px-2 py-1">❌ 關閉</button>
+    </div>
+  </div>
+  <div class="flex-1 bg-white rounded-b-2xl overflow-hidden">
+    <iframe id="resumeIframe" src="" class="w-full h-full border-none"></iframe>
+  </div>
+</div>
+
+<div class="main-content-area w-full mx-auto space-y-6">
+
+  <!-- 頂部標題與統計 -->
   <div class="form-container p-6 sm:p-8">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-lightPurple/20 pb-5 mb-5">
       <div>
         <h1 class="text-3xl sm:text-4xl font-bold text-white flex items-center gap-2">
           🏢 廠商面試管理系統
         </h1>
-        <p id="companySubHeader" class="text-base text-circuitCyan mt-2 font-medium">請使用專屬網址進入，登錄貴公司應徵者面試結果</p>
+        <p id="companySubHeader" class="text-lg text-circuitCyan mt-2 font-bold">請完成 8 位數 PIN 碼驗證以載入資料</p>
       </div>
 
-      <!-- 廠商選單 (專屬網址模式下自動隱藏，防止看別家) -->
-      <div id="vendorSelectorBox" class="w-full md:w-96 space-y-2 hidden">
-        <label for="vendorSelect" class="text-sm font-bold text-circuitCyan">切換公司名稱：</label>
-        <select id="vendorSelect" class="w-full px-4 py-3 text-lg rounded-lg">
-          <option value="" disabled selected>載入廠商清單中...</option>
-        </select>
-      </div>
-
-      <!-- 鎖定狀態下的公司顯示牌 -->
-      <div id="lockedCompanyBadge" class="hidden bg-darkPurple/80 border-2 border-circuitCyan px-6 py-3 rounded-xl">
-        <span class="text-xs text-lightPurple block">當前攤位廠商：</span>
+      <!-- 當前攤位標籤 -->
+      <div id="lockedCompanyBadge" class="hidden bg-darkPurple/90 border-2 border-circuitCyan px-6 py-3 rounded-2xl shadow-lg">
+        <span class="text-xs text-lightPurple block font-bold">當前攤位廠商：</span>
         <span id="lockedCompanyName" class="text-2xl font-bold text-white"></span>
       </div>
     </div>
 
-    <!-- 數據小統計 -->
-    <div id="statsSummary" class="grid grid-cols-3 gap-4 text-center">
-      <div class="bg-darkPurple/60 p-4 rounded-xl border border-lightPurple/20">
-        <div class="text-sm text-lightPurple font-medium">預約面試總人數</div>
-        <div id="statTotal" class="text-3xl font-bold text-white mt-1">0</div>
+    <!-- 大字體數據統計 -->
+    <div id="statsSummary" class="grid grid-cols-3 gap-6 text-center">
+      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-lightPurple/30">
+        <div class="text-base text-lightPurple font-bold">預約面試總人數</div>
+        <div id="statTotal" class="text-4xl font-bold text-white mt-2">0</div>
       </div>
-      <div class="bg-darkPurple/60 p-4 rounded-xl border border-green-500/40">
-        <div class="text-sm text-successGreen font-medium">擬錄取人數</div>
-        <div id="statAccepted" class="text-3xl font-bold text-successGreen mt-1">0</div>
+      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-green-500/50">
+        <div class="text-base text-successGreen font-bold">擬錄取人數</div>
+        <div id="statAccepted" class="text-4xl font-bold text-successGreen mt-2">0</div>
       </div>
-      <div class="bg-darkPurple/60 p-4 rounded-xl border border-red-500/40">
-        <div class="text-sm text-errorRed font-medium">不錄取人數</div>
-        <div id="statRejected" class="text-3xl font-bold text-errorRed mt-1">0</div>
+      <div class="bg-darkPurple/60 p-5 rounded-2xl border border-red-500/50">
+        <div class="text-base text-errorRed font-bold">不錄取人數</div>
+        <div id="statRejected" class="text-4xl font-bold text-errorRed mt-2">0</div>
       </div>
     </div>
   </div>
 
-  <!-- 面試名單載入中與主內容區 -->
-  <div id="contentSection" class="form-container p-6">
+  <!-- 面試名單主區塊 (滿版化) -->
+  <div id="contentSection" class="form-container p-6 sm:p-8">
     
-    <div id="loadingStatus" class="text-center py-12 text-circuitCyan flex items-center justify-center gap-2 text-xl font-bold">
+    <div id="loadingStatus" class="text-center py-16 text-circuitCyan flex items-center justify-center gap-3 text-2xl font-bold">
       <span class="spinner"></span>
-      <span id="loadingText">正在驗證廠商身分並載入面試者名單...</span>
+      <span id="loadingText">請先輸入 8 位數 PIN 碼驗證密碼...</span>
     </div>
 
-    <!-- 💻 筆電大螢幕表格模式 (大字體加強版) -->
+    <!-- 💻 電腦/平板大螢幕表格 (滿版 + 大字體 + 內嵌預覽) -->
     <div id="desktopTableView" class="hidden overflow-x-auto">
-      <table class="w-full text-left text-base text-nearWhite border-collapse">
+      <table class="w-full text-left text-lg text-nearWhite border-collapse">
         <thead>
-          <tr class="bg-darkPurple/90 border-b-2 border-circuitCyan text-circuitCyan text-lg">
-            <th class="py-4 px-4 font-bold">姓名</th>
-            <th class="py-4 px-4 font-bold">身分證號</th>
-            <th class="py-4 px-4 font-bold">年齡</th>
-            <th class="py-4 px-4 font-bold">應徵職務</th>
-            <th class="py-4 px-4 font-bold text-center">履歷檢視</th>
-            <th class="py-4 px-4 font-bold text-center">面試結果</th>
-            <th class="py-4 px-4 font-bold">備註 / 評語</th>
-            <th class="py-4 px-4 font-bold text-center">操作</th>
+          <tr class="bg-darkPurple/90 border-b-2 border-circuitCyan text-circuitCyan text-xl">
+            <th class="py-4 px-4 font-bold whitespace-nowrap">姓名</th>
+            <th class="py-4 px-4 font-bold whitespace-nowrap">身分證號</th>
+            <th class="py-4 px-4 font-bold whitespace-nowrap">年齡</th>
+            <th class="py-4 px-4 font-bold whitespace-nowrap">應徵職務</th>
+            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">履歷檢視 (彈出大視窗)</th>
+            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">面試結果</th>
+            <th class="py-4 px-4 font-bold">備註 / 面試評語</th>
+            <th class="py-4 px-4 font-bold text-center whitespace-nowrap">操作</th>
           </tr>
         </thead>
         <tbody id="desktopTableBody" class="divide-y divide-lightPurple/20"></tbody>
       </table>
     </div>
 
-    <!-- 📱 平板觸控卡片模式 -->
-    <div id="mobileCardView" class="hidden space-y-4"></div>
+    <!-- 📱 行動版觸控卡片 -->
+    <div id="mobileCardView" class="hidden space-y-5"></div>
 
   </div>
 
 </div>
 
 <!-- 儲存成功 Toast -->
-<div id="toast" class="fixed bottom-6 right-6 bg-successGreen text-gray-900 text-lg font-bold px-6 py-4 rounded-2xl shadow-2xl hidden z-50 flex items-center gap-2">
+<div id="toast" class="fixed bottom-8 right-8 bg-successGreen text-gray-900 text-xl font-bold px-8 py-5 rounded-2xl shadow-2xl hidden z-50 flex items-center gap-2">
   <span>✅ 面試結果已成功寫入試算表！</span>
 </div>
 
 <script>
-// ⚠️ 請在此處填入您「廠商端面試管理 API」最新發布的 Web App 網址
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw2th8c2QS0ZGRMxQjS8fefMHrAtE3MzG7zqd1uc5igxey56JUZFXse8lZPDXV0gyw/exec';
+// ⚠️ 請填入您「廠商端面試管理 API」最新發布的 Web App 網址
+const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx3pb2rWz0q1yZbGvMO39z4qMOTe_xHXpRGdfka9USPpBa_gkXR1sNP7PeLUfHv_1uSWQ/exec';
 
 window.currentCandidates = [];
-window.lockedCompany = '';
+window.targetCompany = '';
+window.userPin = '';
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
   if (!circuitBg) return;
   circuitBg.innerHTML = '';
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 15; i++) {
     const line = document.createElement('div');
     line.className = 'circuit-line';
     line.style.height = '2px';
@@ -163,55 +185,43 @@ function createCircuitBackground() {
 async function initVendorPage() {
   createCircuitBackground();
 
-  // 1. 抓取 URL 帶過來的公司名稱 (例如: vendor.html?company=02大成長城...)
   const urlParams = new URLSearchParams(window.location.search);
-  let targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
+  window.targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
 
-  const selectorBox = document.getElementById('vendorSelectorBox');
-  const lockedBadge = document.getElementById('lockedCompanyBadge');
-  const lockedName = document.getElementById('lockedCompanyName');
-
-  if (targetCompany) {
-    // 🌟 安全鎖定模式：隱藏下拉選單，只顯示當前公司
-    window.lockedCompany = targetCompany;
-    lockedName.innerText = targetCompany;
-    lockedBadge.classList.remove('hidden');
-    document.getElementById('companySubHeader').innerText = `【${targetCompany}】專屬面試管理面板`;
-    loadCandidatesForVendor(targetCompany);
-  } else {
-    // 若無帶參數，則顯示下拉選單讓管理員選擇
-    selectorBox.classList.remove('hidden');
-    try {
-      const resp = await fetch(`${VENDOR_GAS_API_URL}?action=getVendorCompanyList`);
-      const res = await resp.json();
-      if (res.success && res.companies.length > 0) {
-        renderVendorOptions(res.companies);
-        document.getElementById('loadingText').innerText = '👈 請點擊右上角下拉選單選擇公司';
-      } else {
-        document.getElementById('loadingText').innerText = '無預約廠商資料';
-      }
-    } catch (e) {
-      document.getElementById('loadingText').innerText = '載入失敗，請確認 API 網址';
-    }
+  if (window.targetCompany) {
+    document.getElementById('lockedCompanyName').innerText = window.targetCompany;
+    document.getElementById('lockedCompanyBadge').classList.remove('hidden');
+    document.getElementById('companySubHeader').innerText = `【${window.targetCompany}】專屬面試管理面板`;
+    document.getElementById('pinModalSubtext').innerText = `【${window.targetCompany}】請輸入攤位 8 位數 PIN 碼：`;
   }
 
-  document.getElementById('vendorSelect').addEventListener('change', function() {
-    if (this.value) loadCandidatesForVendor(this.value);
-  });
+  // 檢查瀏覽器快取是否已有密碼
+  const savedPin = localStorage.getItem(`vendor_pin_${window.targetCompany}`);
+  if (savedPin && savedPin.length === 8) {
+    window.userPin = savedPin;
+    document.getElementById('pinAuthModal').classList.add('hidden');
+    loadCandidatesForVendor(window.targetCompany, savedPin);
+  } else {
+    document.getElementById('pinAuthModal').classList.remove('hidden');
+  }
 }
 
-function renderVendorOptions(companies) {
-  const vendorSelect = document.getElementById('vendorSelect');
-  vendorSelect.innerHTML = '<option value="" disabled selected>請選擇公司...</option>';
-  companies.forEach(comp => {
-    const opt = document.createElement('option');
-    opt.value = comp;
-    opt.innerText = comp;
-    vendorSelect.appendChild(opt);
-  });
+// 提交 PIN 碼驗證
+function submitPinAuth() {
+  const pinInput = document.getElementById('pinInput').value.trim();
+  if (pinInput.length !== 8) {
+    alert('請輸入完整的 8 位數 PIN 碼密碼！');
+    return;
+  }
+
+  window.userPin = pinInput;
+  localStorage.setItem(`vendor_pin_${window.targetCompany}`, pinInput);
+  document.getElementById('pinAuthModal').classList.add('hidden');
+  loadCandidatesForVendor(window.targetCompany, pinInput);
 }
 
-async function loadCandidatesForVendor(companyName) {
+// 載入廠商資料
+async function loadCandidatesForVendor(companyName, pin) {
   const loadingStatus = document.getElementById('loadingStatus');
   const desktopView = document.getElementById('desktopTableView');
   const mobileView = document.getElementById('mobileCardView');
@@ -219,10 +229,16 @@ async function loadCandidatesForVendor(companyName) {
   desktopView.classList.add('hidden');
   mobileView.classList.add('hidden');
   loadingStatus.classList.remove('hidden');
-  document.getElementById('loadingText').innerText = `正在載入【${companyName}】的面試名單...`;
+  document.getElementById('loadingText').innerText = `驗證身分並載入【${companyName}】的名單...`;
 
   try {
-    const resp = await fetch(`${VENDOR_GAS_API_URL}?action=getVendorCandidates&company=${encodeURIComponent(companyName)}`);
+    const query = new URLSearchParams({
+      action: 'getVendorCandidates',
+      company: companyName,
+      pin: pin
+    }).toString();
+
+    const resp = await fetch(`${VENDOR_GAS_API_URL}?${query}`);
     const res = await resp.json();
 
     if (res.success) {
@@ -231,7 +247,11 @@ async function loadCandidatesForVendor(companyName) {
       renderViews();
       loadingStatus.classList.add('hidden');
     } else {
-      document.getElementById('loadingText').innerText = res.message || '讀取名單失敗';
+      localStorage.removeItem(`vendor_pin_${window.targetCompany}`);
+      document.getElementById('loadingText').innerText = res.message || '驗證失敗';
+      setTimeout(() => {
+        document.getElementById('pinAuthModal').classList.remove('hidden');
+      }, 1500);
     }
   } catch (err) {
     document.getElementById('loadingText').innerText = '網路連線失敗，請重新整理';
@@ -254,84 +274,84 @@ function renderViews() {
   }
 }
 
-// 💻 電腦版大字體表格渲染
+// 💻 滿版大字體表格
 function renderDesktopTable() {
   const tbody = document.getElementById('desktopTableBody');
   tbody.innerHTML = '';
 
   if (window.currentCandidates.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10 text-gray-400 text-lg">目前尚無此廠商的預約求職者。</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-12 text-gray-400 text-xl font-bold">目前尚無此廠商的預約求職者。</td></tr>`;
     return;
   }
 
   window.currentCandidates.forEach(c => {
     const tr = document.createElement('tr');
-    tr.className = 'table-row-hover';
+    tr.className = 'table-row-hover border-b border-lightPurple/20';
 
-    // 履歷按鈕 404 防呆
-    const docBtn = c.docUrl 
-      ? `<a href="${c.docUrl}" target="_blank" class="inline-block px-3 py-1.5 text-sm bg-blue/50 text-circuitCyan border border-circuitCyan/50 rounded-lg hover:bg-blue font-bold">📝 文件 (Docs)</a>` 
-      : `<button onclick="alert('試算表中未填寫有效的 Docs 履歷網址')" class="px-3 py-1.5 text-sm bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">📝 無文件</button>`;
+    // 🌟 點擊後開啟頁面內嵌入大視窗 Modal
+    const docBtn = c.docEmbedUrl || c.docUrl
+      ? `<button onclick="openResumeViewer('${c.name} - 履歷文件', '${c.docEmbedUrl || c.docUrl}', '${c.docUrl}')" class="px-4 py-2 text-base bg-blue/60 text-circuitCyan border border-circuitCyan/60 rounded-xl hover:bg-blue font-bold">📝 檢視文件 (Docs)</button>` 
+      : `<button class="px-4 py-2 text-base bg-gray-700 text-gray-400 rounded-xl cursor-not-allowed">📝 無文件</button>`;
 
-    const pdfBtn = c.pdfUrl 
-      ? `<a href="${c.pdfUrl}" target="_blank" class="inline-block px-3 py-1.5 text-sm bg-midPurple/60 text-purple-200 border border-purple-400/50 rounded-lg hover:bg-midPurple font-bold">📄 PDF (手寫)</a>` 
-      : `<button onclick="alert('試算表中未填寫有效的 PDF 履歷網址')" class="px-3 py-1.5 text-sm bg-gray-700 text-gray-400 rounded-lg cursor-not-allowed">📄 無 PDF</button>`;
+    const pdfBtn = c.pdfEmbedUrl || c.pdfUrl
+      ? `<button onclick="openResumeViewer('${c.name} - 履歷 PDF', '${c.pdfEmbedUrl || c.pdfUrl}', '${c.pdfUrl}')" class="px-4 py-2 text-base bg-midPurple/70 text-purple-200 border border-purple-400/60 rounded-xl hover:bg-midPurple font-bold">📄 檢視 PDF (手寫)</button>` 
+      : `<button class="px-4 py-2 text-base bg-gray-700 text-gray-400 rounded-xl cursor-not-allowed">📄 無 PDF</button>`;
 
     tr.innerHTML = `
-      <td class="py-4 px-4 font-bold text-white text-lg">${c.name}</td>
-      <td class="py-4 px-4 text-lightPurple">${c.idNumber}</td>
-      <td class="py-4 px-4">${c.age ? c.age + ' 歲' : '-'}</td>
-      <td class="py-4 px-4 text-yellow-300 font-bold">${c.position}</td>
-      <td class="py-4 px-4 text-center space-x-2 whitespace-nowrap">
+      <td class="py-5 px-4 font-bold text-white text-xl whitespace-nowrap">${c.name}</td>
+      <td class="py-5 px-4 text-lightPurple font-medium whitespace-nowrap">${c.idNumber}</td>
+      <td class="py-5 px-4 whitespace-nowrap">${c.age ? c.age + ' 歲' : '-'}</td>
+      <td class="py-5 px-4 text-yellow-300 font-bold text-xl">${c.position}</td>
+      <td class="py-5 px-4 text-center space-x-2 whitespace-nowrap">
         ${docBtn}
         ${pdfBtn}
       </td>
-      <td class="py-4 px-4 text-center whitespace-nowrap">
+      <td class="py-5 px-4 text-center whitespace-nowrap">
         <div class="inline-flex gap-2">
-          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="btn-acc-${c.rowId}" class="status-pill px-3 py-1.5 text-sm rounded-lg border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">擬錄取</button>
-          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="btn-rej-${c.rowId}" class="status-pill px-3 py-1.5 text-sm rounded-lg border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">不錄取</button>
+          <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="btn-acc-${c.rowId}" class="status-pill px-4 py-2 text-base rounded-xl border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">擬錄取</button>
+          <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="btn-rej-${c.rowId}" class="status-pill px-4 py-2 text-base rounded-xl border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">不錄取</button>
         </div>
       </td>
-      <td class="py-4 px-4">
-        <input type="text" id="note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入評語/備註..." class="w-full px-3 py-2 text-sm rounded-lg">
+      <td class="py-5 px-4">
+        <input type="text" id="note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入評語/備註..." class="w-full px-4 py-2.5 text-base rounded-xl">
       </td>
-      <td class="py-4 px-4 text-center">
-        <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn px-4 py-2 text-sm font-bold">儲存</button>
+      <td class="py-5 px-4 text-center whitespace-nowrap">
+        <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn px-5 py-2.5 text-base font-bold">儲存</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
 
-// 📱 平板大卡片渲染
+// 📱 平板/行動版卡片
 function renderMobileCards() {
   const container = document.getElementById('mobileCardView');
   container.innerHTML = '';
 
   if (window.currentCandidates.length === 0) {
-    container.innerHTML = `<p class="text-center py-10 text-gray-400 text-lg">目前尚無此廠商的預約求職者。</p>`;
+    container.innerHTML = `<p class="text-center py-10 text-gray-400 text-xl font-bold">目前尚無此廠商的預約求職者。</p>`;
     return;
   }
 
   window.currentCandidates.forEach(c => {
     const card = document.createElement('div');
-    card.className = 'bg-darkPurple/60 p-5 rounded-2xl border border-lightPurple/30 space-y-4';
+    card.className = 'bg-darkPurple/60 p-6 rounded-2xl border border-lightPurple/30 space-y-4';
 
-    const docBtn = c.docUrl 
-      ? `<a href="${c.docUrl}" target="_blank" class="text-center py-2.5 text-sm bg-blue/50 text-circuitCyan border border-circuitCyan/50 rounded-xl font-bold">📝 履歷文件 (筆電打字)</a>` 
-      : `<button onclick="alert('試算表中未填寫 Docs 網址')" class="py-2.5 text-sm bg-gray-700 text-gray-400 rounded-xl">無 Docs 檔</button>`;
+    const docBtn = c.docEmbedUrl || c.docUrl
+      ? `<button onclick="openResumeViewer('${c.name} - 履歷文件', '${c.docEmbedUrl || c.docUrl}', '${c.docUrl}')" class="text-center py-3 text-base bg-blue/60 text-circuitCyan border border-circuitCyan/60 rounded-xl font-bold">📝 檢視文件 (Docs)</button>` 
+      : `<button class="py-3 text-base bg-gray-700 text-gray-400 rounded-xl">無 Docs 檔</button>`;
 
-    const pdfBtn = c.pdfUrl 
-      ? `<a href="${c.pdfUrl}" target="_blank" class="text-center py-2.5 text-sm bg-midPurple/60 text-purple-200 border border-purple-400/50 rounded-xl font-bold">📄 履歷 PDF (平板手寫)</a>` 
-      : `<button onclick="alert('試算表中未填寫 PDF 網址')" class="py-2.5 text-sm bg-gray-700 text-gray-400 rounded-xl">無 PDF 檔</button>`;
+    const pdfBtn = c.pdfEmbedUrl || c.pdfUrl
+      ? `<button onclick="openResumeViewer('${c.name} - 履歷 PDF', '${c.pdfEmbedUrl || c.pdfUrl}', '${c.pdfUrl}')" class="text-center py-3 text-base bg-midPurple/70 text-purple-200 border border-purple-400/60 rounded-xl font-bold">📄 檢視 PDF (手寫)</button>` 
+      : `<button class="py-3 text-base bg-gray-700 text-gray-400 rounded-xl">無 PDF 檔</button>`;
 
     card.innerHTML = `
       <div class="flex justify-between items-start border-b border-lightPurple/20 pb-3">
         <div>
-          <h3 class="text-2xl font-bold text-white">${c.name} <span class="text-sm font-normal text-lightPurple">(${c.age ? c.age + '歲' : '年齡未填'})</span></h3>
-          <p class="text-sm text-circuitCyan mt-1">身分證：${c.idNumber}</p>
+          <h3 class="text-2xl font-bold text-white">${c.name} <span class="text-base font-normal text-lightPurple">(${c.age ? c.age + '歲' : '年齡未填'})</span></h3>
+          <p class="text-base text-circuitCyan mt-1">身分證：${c.idNumber}</p>
         </div>
-        <span class="text-base font-bold text-yellow-300 bg-midPurple/60 px-3 py-1.5 rounded-lg border border-yellow-300/30">${c.position}</span>
+        <span class="text-lg font-bold text-yellow-300 bg-midPurple/60 px-4 py-2 rounded-xl border border-yellow-300/30">${c.position}</span>
       </div>
 
       <div class="grid grid-cols-2 gap-3">
@@ -340,7 +360,7 @@ function renderMobileCards() {
       </div>
 
       <div class="flex items-center justify-between pt-2">
-        <span class="text-base text-lightPurple font-bold">面試結果：</span>
+        <span class="text-lg text-lightPurple font-bold">面試結果：</span>
         <div class="flex gap-2">
           <button onclick="toggleStatus(${c.rowId}, 'accepted')" id="m-btn-acc-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.accepted ? 'active-accepted' : 'bg-darkPurple/80 text-gray-300'}">👍 擬錄取</button>
           <button onclick="toggleStatus(${c.rowId}, 'rejected')" id="m-btn-rej-${c.rowId}" class="status-pill px-5 py-2.5 text-base rounded-xl border border-lightPurple/30 ${c.notAccepted ? 'active-rejected' : 'bg-darkPurple/80 text-gray-300'}">👎 不錄取</button>
@@ -351,10 +371,23 @@ function renderMobileCards() {
         <input type="text" id="m-note-${c.rowId}" value="${c.note || ''}" placeholder="點擊輸入面試評語 / 檢核事項..." class="w-full px-4 py-3 text-base rounded-xl">
       </div>
 
-      <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn w-full py-3 text-lg font-bold mt-2">💾 儲存本筆資料</button>
+      <button onclick="saveCandidateResult(${c.rowId})" class="submit-btn w-full py-3.5 text-xl font-bold mt-2">💾 儲存本筆資料</button>
     `;
     container.appendChild(card);
   });
+}
+
+// 🌟 開啟頁面內履歷視窗 (Modal Lightbox)
+function openResumeViewer(title, embedUrl, rawUrl) {
+  document.getElementById('resumeModalTitle').innerText = title;
+  document.getElementById('resumeIframe').src = embedUrl;
+  document.getElementById('openNewTabBtn').href = rawUrl;
+  document.getElementById('resumeViewerModal').classList.remove('hidden');
+}
+
+function closeResumeViewer() {
+  document.getElementById('resumeViewerModal').classList.add('hidden');
+  document.getElementById('resumeIframe').src = '';
 }
 
 function toggleStatus(rowId, type) {
@@ -381,12 +414,7 @@ function updateStats() {
 
 async function saveCandidateResult(rowId) {
   const candidate = window.currentCandidates.find(c => c.rowId === rowId);
-  const comp = window.lockedCompany || (document.getElementById('vendorSelect') ? document.getElementById('vendorSelect').value : '');
-
-  if (!candidate || !comp) {
-    alert('未選擇公司或資料無效！');
-    return;
-  }
+  if (!candidate || !window.targetCompany) return;
 
   const noteDesktop = document.getElementById(`note-${rowId}`);
   const noteMobile = document.getElementById(`m-note-${rowId}`);
@@ -397,7 +425,7 @@ async function saveCandidateResult(rowId) {
     const params = new URLSearchParams();
     params.append('postData', JSON.stringify({
       action: 'updateInterviewResult',
-      company: comp,
+      company: window.targetCompany,
       rowId: rowId,
       accepted: candidate.accepted,
       notAccepted: candidate.notAccepted,
