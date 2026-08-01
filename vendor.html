@@ -40,7 +40,7 @@ select option {
   <!-- 美化排版後的表頭區塊 -->
   <div class="space-y-2 border-b border-purple-400/20 pb-5">
     <div class="text-5xl mb-3">🏢</div>
-    <div class="text-sm font-bold text-cyan-300 tracking-wider uppercase">
+    <div class="text-xl font-bold text-cyan-300 tracking-wider uppercase">
       數位永續 薪在嘉義
     </div>
     <div class="text-xl sm:text-2xl font-extrabold text-white tracking-wide">
@@ -56,19 +56,19 @@ select option {
     
     <!-- 🏢 選擇廠商下拉式選單 -->
     <div class="text-left space-y-2">
-      <label for="companySelect" class="text-sm font-bold text-purple-200 block">
-        1. 請選擇貴公司名稱：
+      <label for="companySelect" class="text-2xl font-bold text-purple-200 block">
+        請選擇公司名稱：
       </label>
       <select id="companySelect" class="w-full px-4 py-3 text-lg font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
-        <option value="" disabled selected>-- 請選擇貴公司名稱 --</option>
+        <option value="" disabled selected>-- 請選擇公司名稱 --</option>
         <!-- 下拉選項會透過 JavaScript 依據 VENDOR_CONFIG 自動生成 -->
       </select>
     </div>
 
     <!-- 🔑 輸入 8 位數密碼 -->
     <div class="text-left space-y-2">
-      <label for="pinInput" class="text-sm font-bold text-purple-200 block">
-        2. 請輸入專屬 8 位數密碼：
+      <label for="pinInput" class="text-2xl font-bold text-purple-200 block">
+        請輸入專屬 8 位數密碼：
       </label>
       <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
     </div>
