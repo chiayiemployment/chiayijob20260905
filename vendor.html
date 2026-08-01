@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>廠商身分驗證與試算表入口</title>
+<title>數位永續 薪在嘉義 2026大嘉義就業博覽</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -16,36 +16,41 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
 </style>
 </head>
 <body class="flex items-center justify-center p-4">
+
 <div class="form-container p-8 sm:p-10 max-w-lg w-full text-center space-y-6">
   <div class="text-5xl">🏢</div>
   <div>
-    <h1 class="text-3xl font-bold text-white">廠商面試頁面</h1>
-    <p id="companyNameHeader" class="text-lg text-circuitCyan mt-2 font-bold">請輸入專屬 8 位數密碼</p>
+    <h1 class="text-3xl font-bold text-white">廠商面試系統</h1>
+    <p id="companyNameHeader" class="text-lg text-circuitCyan mt-2 font-bold">請輸入貴公司專屬 8 位數密碼</p>
   </div>
+
   <div id="authBox" class="space-y-4">
     <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-3xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan">
     <button onclick="submitPinAuth()" class="submit-btn w-full py-4 text-2xl font-bold shadow-xl hover:opacity-90 transition">
-      🔓 解鎖並開啟專屬頁面
+      🔓 解鎖並開啟面試資料
     </button>
   </div>
+
   <div id="loadingBox" class="hidden py-6 space-y-3">
     <span class="spinner"></span>
-    <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">驗證成功！正在為您開啟專屬頁面...</p>
+    <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">驗證成功！正在為您開啟專屬資料...</p>
     <div id="manualRedirectLink" class="hidden mt-4">
       <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
       <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-2 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl">📊 點此開啟 Google 試算表</a>
     </div>
   </div>
 </div>
+
 <script>
-// ⚠️ 請填入您重新部署後最新產出的 API Web App 網址
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxKf6GDql_X4gy41jTggGLg5_SfqZhw9p8_mMSPHckmhkAy-foIn4i726xP-wj1qVB8cw/exec';
+// ⚠️ 請在此處填入您「廠商試算表快速驗證跳轉 API」的 Web App 網址
+const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbycpF5dLHF4UwUxkJ8GI8_tbYXxzVhevoy3fxQ-RMet3YFxT2XZzGwQ2ktDxr5CKfoaPw/exec';
 
 window.targetCompany = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   window.targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
+
   if (window.targetCompany) {
     document.getElementById('companyNameHeader').innerText = `【${window.targetCompany}】`;
   }
@@ -54,16 +59,17 @@ document.addEventListener('DOMContentLoaded', () => {
 async function submitPinAuth() {
   const pinInput = document.getElementById('pinInput').value.trim();
   if (pinInput.length !== 8) {
-    alert('請輸入完整的 8 位數 PIN 碼密碼！');
+    alert('請輸入完整的 8 位數密碼！');
     return;
   }
+
   const authBox = document.getElementById('authBox');
   const loadingBox = document.getElementById('loadingBox');
   const loadingText = document.getElementById('loadingStatusText');
 
   authBox.classList.add('hidden');
   loadingBox.classList.remove('hidden');
-  loadingText.innerText = '正在安全驗證 PIN 碼...';
+  loadingText.innerText = '正在安全驗證 密碼...';
 
   try {
     const query = new URLSearchParams({
@@ -76,11 +82,12 @@ async function submitPinAuth() {
     const res = await resp.json();
 
     if (res.success && res.sheetUrl) {
-      loadingText.innerText = '✅ 驗證成功！正在為您開啟頁面...';
+      loadingText.innerText = '✅ 驗證成功！正在為您開啟資料...';
       
       document.getElementById('directSheetBtn').href = res.sheetUrl;
       document.getElementById('manualRedirectLink').classList.remove('hidden');
 
+      // 1 秒後自動跳轉開啟 Google Sheet
       setTimeout(() => {
         window.location.href = res.sheetUrl;
       }, 800);
@@ -90,7 +97,7 @@ async function submitPinAuth() {
       authBox.classList.remove('hidden');
     }
   } catch (err) {
-    alert('後端連線回應異常，詳細原因：' + err.message);
+    alert('網路連線失敗，請重試');
     loadingBox.classList.add('hidden');
     authBox.classList.remove('hidden');
   }
