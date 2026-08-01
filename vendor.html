@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>數位永續 薪在嘉義 2026大嘉義就業博覽會</title>
+<title>數位永續 薪在嘉義_廠商面試系統</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
@@ -37,7 +37,7 @@ select option {
 
 <div class="form-container p-6 sm:p-10 max-w-lg w-full text-center space-y-6">
   
-  <!-- 美化排版後的表頭區塊 -->
+  <!-- 表頭區塊 -->
   <div class="space-y-2 border-b border-purple-400/20 pb-5">
     <div class="text-5xl mb-3">🏢</div>
     <div class="text-xl font-bold text-cyan-300 tracking-wider uppercase">
@@ -61,16 +61,21 @@ select option {
       </label>
       <select id="companySelect" class="w-full px-4 py-3 text-lg font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
         <option value="" disabled selected>-- 請選擇公司名稱 --</option>
-        <!-- 下拉選項會透過 JavaScript 依據 VENDOR_CONFIG 自動生成 -->
       </select>
     </div>
 
-    <!-- 🔑 輸入 8 位數密碼 -->
+    <!-- 🔑 輸入 8 位數密碼 (支援 Enter 鍵解鎖) -->
     <div class="text-left space-y-2">
       <label for="pinInput" class="text-lg font-bold text-purple-200 block">
-        請輸入 8 位數密碼
+        2. 請輸入 8 位數 密碼
       </label>
-      <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
+      <input 
+        type="password" 
+        id="pinInput" 
+        maxlength="8" 
+        placeholder="請輸入 8 位數密碼" 
+        onkeypress="handleKeyPress(event)"
+        class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
     </div>
 
     <button onclick="submitPinAuth()" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold shadow-xl hover:opacity-90 transition mt-2">
@@ -83,7 +88,7 @@ select option {
     <span class="spinner"></span>
     <p id="loadingStatusText" class="text-xl font-bold text-cyan-300">驗證成功！正在為您開啟資料...</p>
     <div id="manualRedirectLink" class="hidden mt-4">
-      <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕</p>
+      <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
       <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-3 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl hover:bg-green-500 transition">📊 點此開啟 Google 試算表</a>
     </div>
   </div>
@@ -91,7 +96,7 @@ select option {
 </div>
 
 <script>
-// 🛠️ 工作人員萬用救援密碼 (現場應變防卡關用)
+// 🛠️ 工作人員萬用救援密碼
 const MASTER_PIN = "11223344";
 
 /**
@@ -123,7 +128,6 @@ const VENDOR_CONFIG = {
     pin: "88210505", 
     url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
   }
-  // 💡 可依此格式繼續新增至 35 家廠商
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -137,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     selectElem.appendChild(option);
   });
 
-  // 2. 自動偵測 URL 中的 company 參數，自動預選對應廠商
+  // 2. 自動偵測 URL 中的 company 參數預選廠商
   const urlParams = new URLSearchParams(window.location.search);
   const companyParam = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
   
@@ -151,6 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 });
+
+// ⌨️ 監聽 Enter 鍵，按下後自動解鎖
+function handleKeyPress(event) {
+  if (event.key === 'Enter' || event.keyCode === 13) {
+    event.preventDefault();
+    submitPinAuth();
+  }
+}
 
 function submitPinAuth() {
   const selectElem = document.getElementById('companySelect');
@@ -169,7 +181,7 @@ function submitPinAuth() {
 
   const vendorData = VENDOR_CONFIG[selectedVendorCode];
 
-  // 驗證密碼（萬用救援密碼通行 OR 個別專屬密碼）
+  // 驗證密碼
   const isMasterPin = (pinInput === MASTER_PIN);
   const isVendorPin = (vendorData && pinInput === vendorData.pin);
 
@@ -192,7 +204,7 @@ function submitPinAuth() {
   document.getElementById('directSheetBtn').href = targetUrl;
   document.getElementById('manualRedirectLink').classList.remove('hidden');
 
-  // 0.5 秒後流暢跳轉開啟 Google 試算表
+  // 0.5 秒後流暢跳轉
   setTimeout(() => {
     window.location.href = targetUrl;
   }, 500);
