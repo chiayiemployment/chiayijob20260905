@@ -68,7 +68,7 @@ select option {
     <!-- 🔑 輸入 8 位數密碼 -->
     <div class="text-left space-y-2">
       <label for="pinInput" class="text-lg font-bold text-purple-200 block">
-        請輸入專屬 8 位數密碼：
+        請輸入 8 位數密碼
       </label>
       <input type="password" id="pinInput" maxlength="8" placeholder="請輸入 8 位數密碼" class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
     </div>
@@ -83,7 +83,7 @@ select option {
     <span class="spinner"></span>
     <p id="loadingStatusText" class="text-xl font-bold text-cyan-300">驗證成功！正在為您開啟資料...</p>
     <div id="manualRedirectLink" class="hidden mt-4">
-      <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
+      <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕</p>
       <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-3 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl hover:bg-green-500 transition">📊 點此開啟 Google 試算表</a>
     </div>
   </div>
@@ -158,12 +158,12 @@ function submitPinAuth() {
   const pinInput = document.getElementById('pinInput').value.trim();
 
   if (!selectedVendorCode) {
-    alert('請先選擇貴公司 / 攤位名稱！');
+    alert('請先選擇公司名稱！');
     return;
   }
 
   if (pinInput.length !== 8) {
-    alert('請輸入完整的 8 位數 PIN 碼密碼！');
+    alert('請輸入完整的 8 位數 密碼！');
     return;
   }
 
@@ -174,7 +174,7 @@ function submitPinAuth() {
   const isVendorPin = (vendorData && pinInput === vendorData.pin);
 
   if (!isMasterPin && !isVendorPin) {
-    alert('🔒 密碼錯誤！請輸入貴公司專屬的 8 位數密碼。');
+    alert('🔒 密碼錯誤！請輸入公司的 8 位數密碼。');
     return;
   }
 
