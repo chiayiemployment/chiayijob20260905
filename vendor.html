@@ -19,7 +19,8 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
 <div class="form-container p-8 sm:p-10 max-w-lg w-full text-center space-y-6">
   <div class="text-5xl">🏢</div>
   <div>
-    <h1 class="text-3xl font-bold text-white">數位永續 薪在嘉義 2026大嘉義就業博覽會廠商面試系統</h1>
+    <h1 class="text-3xl font-bold text-white">數位永續 薪在嘉義 2026大嘉義就業博覽會</h1>
+    <h1 class="text-3xl font-bold text-white">廠商面試系統</h1>
     <p id="companyNameHeader" class="text-lg text-circuitCyan mt-2 font-bold">請輸入貴公司專屬 8 位數密碼</p>
   </div>
   <div id="authBox" class="space-y-4">
@@ -30,7 +31,7 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
   </div>
   <div id="loadingBox" class="hidden py-6 space-y-3">
     <span class="spinner"></span>
-    <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">正在安全驗證密碼...</p>
+    <p id="loadingStatusText" class="text-xl font-bold text-circuitCyan">驗證成功！正在為您開啟資料...</p>
     <div id="manualRedirectLink" class="hidden mt-4">
       <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
       <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-2 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl">📊 點此開啟 Google 試算表</a>
@@ -39,8 +40,37 @@ input[type="password"] { background-color: rgba(31, 29, 83, 0.8) !important; bor
 </div>
 
 <script>
-// ⚠️ 請填入您最新的 GAS Web App 網址
-const VENDOR_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxGz2u7BxycCbXFwXOr4xEdviYsOrv78fDK0mBSNW5AXHuIkS5fWiSQOkv6z8z4yY4cWA/exec';
+// 🛠️ 工作人員萬用救援密碼 (現場應變防卡關用)
+const MASTER_PIN = "11223344";
+
+/**
+ * 🔑 35 家廠商專屬「獨立密碼與試算表對照表」
+ * 格式說明：
+ * "廠商編號": { pin: "該廠商專屬8位數密碼", url: "對應的Google Sheet網址" }
+ */
+const VENDOR_CONFIG = {
+  "01": { 
+    pin: "12345678", 
+    url: "https://docs.google.com/spreadsheets/d/1GsHyHEnM_MRqC3GPLuZ2qv1N3uMgjRP5lZh3e4ywLuc/edit?gid=0#gid=0" 
+  },
+  "02": { 
+    pin: "23456789", 
+    url: "https://docs.google.com/spreadsheets/d/1XTr5A84uIz52YlaIFajIcTunJo-WMB6GIhogxDBRpBs/edit?gid=0#gid=0" 
+  },
+  "03": { 
+    pin: "34567890", 
+    url: "https://docs.google.com/spreadsheets/d/1msmdsBE61vHnJoIlOribOO-FzazAvW9zu-j7FZx3q-U/edit?gid=0#gid=0" 
+  },
+  "04": { 
+    pin: "88210404", 
+    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
+  },
+  "05": { 
+    pin: "88210505", 
+    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
+  }
+  // 💡 可依此類推繼續往下增加至 35 家
+};
 
 window.targetCompany = '';
 
@@ -52,65 +82,57 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// 🌟 使用 JSONP 動態動態動載入腳本，完美繞過瀏覽器跨網域 CORS 限制
 function submitPinAuth() {
   const pinInput = document.getElementById('pinInput').value.trim();
   if (pinInput.length !== 8) {
     alert('請輸入完整的 8 位數密碼！');
     return;
   }
+
+  // 擷取網址上的廠商編號 (例如: "01", "02" 或檔名開頭的數字)
+  const comp = window.targetCompany || '';
+  const numMatch = comp.match(/\d+/);
+  let vendorNo = numMatch ? numMatch[0] : '';
+  if (vendorNo.length === 1) vendorNo = '0' + vendorNo; // 補齊為 2 位數 (例: "1" -> "01")
+
+  // 取得該廠商設定
+  const vendorData = VENDOR_CONFIG[vendorNo];
+
+  // 驗證密碼邏輯
+  let isValid = false;
+  let targetUrl = '';
+
+  if (pinInput === MASTER_PIN) {
+    // 1. 輸入萬用密碼通行
+    isValid = true;
+    targetUrl = vendorData ? vendorData.url : Object.values(VENDOR_CONFIG)[0].url;
+  } else if (vendorData && pinInput === vendorData.pin) {
+    // 2. 輸入該廠商設定檔中的專屬個別密碼
+    isValid = true;
+    targetUrl = vendorData.url;
+  }
+
+  if (!isValid) {
+    alert('🔒 密碼錯誤！請輸入貴公司專屬的 8 位數密碼。');
+    return;
+  }
+
+  // 驗證成功處理
   const authBox = document.getElementById('authBox');
   const loadingBox = document.getElementById('loadingBox');
   const loadingText = document.getElementById('loadingStatusText');
 
   authBox.classList.add('hidden');
   loadingBox.classList.remove('hidden');
-  loadingText.innerText = '正在安全驗證密碼...';
+  loadingText.innerText = '✅ 驗證成功！正在為您開啟資料...';
 
-  // 建立全域 JSONP 回呼函數
-  const callbackName = 'handleGasResponse_' + Math.round(100000 * Math.random());
-  
-  window[callbackName] = function(res) {
-    // 移除已使用的 script 標籤與全域函數
-    delete window[callbackName];
-    const scriptElem = document.getElementById(callbackName);
-    if (scriptElem) scriptElem.remove();
+  document.getElementById('directSheetBtn').href = targetUrl;
+  document.getElementById('manualRedirectLink').classList.remove('hidden');
 
-    if (res && res.success && res.sheetUrl) {
-      loadingText.innerText = '✅ 驗證成功！正在為您開啟資料...';
-      
-      document.getElementById('directSheetBtn').href = res.sheetUrl;
-      document.getElementById('manualRedirectLink').classList.remove('hidden');
-
-      setTimeout(() => {
-        window.location.href = res.sheetUrl;
-      }, 800);
-    } else {
-      alert((res ? res.message : null) || '驗證失敗！密碼不正確');
-      loadingBox.classList.add('hidden');
-      authBox.classList.remove('hidden');
-    }
-  };
-
-  // 組裝 JSONP 請求 URL
-  const query = new URLSearchParams({
-    action: 'getVendorSheetUrl',
-    company: window.targetCompany,
-    pin: pinInput,
-    callback: callbackName
-  }).toString();
-
-  // 動態建立 <script> 標籤發送請求（徹底避開 fetch CORS 限制）
-  const script = document.createElement('script');
-  script.id = callbackName;
-  script.src = `${VENDOR_GAS_API_URL}?${query}`;
-  script.onerror = function() {
-    alert('網路連線失敗，請確認 GAS 部署權限是否開啟為「所有人」');
-    loadingBox.classList.add('hidden');
-    authBox.classList.remove('hidden');
-  };
-
-  document.body.appendChild(script);
+  // 0.5 秒後流暢跳轉
+  setTimeout(() => {
+    window.location.href = targetUrl;
+  }, 500);
 }
 </script>
 </body>
