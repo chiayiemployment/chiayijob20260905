@@ -181,9 +181,11 @@ async function loadJobsForCompany(companyName) {
     if (jobList.length > 0) {
       jobList.forEach(job => {
         const rawTitle = job.title ? job.title.split('\n')[0] : '';
+        // 帶入預約頁面時，將職缺編號與職稱一併帶入
+        const fullPositionTitle = job.id ? `${job.id} ${rawTitle}` : rawTitle;
         const queryParams = new URLSearchParams({
           company: companyName,
-          position: rawTitle,
+          position: fullPositionTitle,
           uid: window.lineUserId || ''
         }).toString();
         const targetUrl = `quick_book.html?${queryParams}`;
@@ -191,9 +193,11 @@ async function loadJobsForCompany(companyName) {
         const card = document.createElement('div');
         card.className = 'job-card p-5 sm:p-6 space-y-4 text-left';
         card.innerHTML = `
-          <!-- 職缺標題與薪資欄位 (無 Icon) -->
+          <!-- 職缺標題 (含 A 欄職缺編號) 與薪資欄位 -->
           <div class="border-b border-lightPurple/20 pb-3">
-            <h3 class="text-2xl font-bold text-white whitespace-pre-line leading-snug">${job.title}</h3>
+            <h3 class="text-2xl font-bold text-white whitespace-pre-line leading-snug">
+              ${job.id ? `<span class="text-circuitCyan mr-2">[${job.id}]</span>` : ''}${job.title}
+            </h3>
             <div class="mt-3">
               <span class="inline-block text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3.5 py-1.5 rounded-lg border border-yellow-300/30">
                 ${job.salary || '面議'}
@@ -201,22 +205,18 @@ async function loadJobsForCompany(companyName) {
             </div>
           </div>
 
-          <!-- 詳細資訊區塊 (無 Icon，標題獨立一行，內容換行) -->
+          <!-- 詳細資訊區塊 -->
           <div class="space-y-3.5 text-base text-nearWhite pt-1">
-            
-            <!-- 學經歷 -->
             <div>
               <span class="text-lightPurple font-bold block mb-1">學經歷：</span>
               <p class="text-gray-200 pl-2 whitespace-pre-line leading-relaxed">${job.education || '不限'}</p>
             </div>
 
-            <!-- 工作班別/休假 -->
             <div>
               <span class="text-lightPurple font-bold block mb-1">工作班別/休假：</span>
               <p class="text-gray-200 pl-2 whitespace-pre-line leading-relaxed">${job.shift || '依公司規定'}</p>
             </div>
 
-            <!-- 工作內容 -->
             ${job.description ? `
               <div class="bg-darkPurple/40 p-3.5 rounded-lg border border-lightPurple/10 mt-2">
                 <span class="text-lightPurple font-bold block mb-1.5">工作內容：</span>
@@ -226,7 +226,7 @@ async function loadJobsForCompany(companyName) {
 
           </div>
 
-          <!-- 預約按鈕 (無 Icon) -->
+          <!-- 預約按鈕 -->
           <div class="pt-3 text-center sm:text-right">
             <a href="${targetUrl}" class="submit-btn inline-block w-full sm:w-auto px-6 py-3 text-lg font-bold">
               我要預約
