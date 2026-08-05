@@ -34,18 +34,18 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .circuit-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
 .main-content-area { position: relative; z-index: 10; }
-.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
+.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); border: 1px solid rgba(164, 141, 205, 0.25); }
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
-input[type="text"], select { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
+input[type="text"], select { background-color: rgba(31, 29, 83, 0.85) !important; border: 1.5px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 10px !important; }
 select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23a48dcd"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 1.2em 1.2em !important; padding-right: 2.5rem !important; }
-.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
+.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 14px rgba(172, 63, 255, 0.35); border-radius: 10px; color: var(--white); font-weight: 700; border: none; cursor: pointer; text-align: center; }
 /* 多人選擇卡片樣式 */
 .user-card {
   background: rgba(31, 29, 83, 0.6);
   border: 1px solid rgba(164, 141, 205, 0.3);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  padding: 0.85rem 1.15rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -53,76 +53,76 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 .user-card.active {
   background: rgba(40, 196, 255, 0.2);
   border-color: var(--bright-cyan);
-  box-shadow: 0 0 10px rgba(40, 196, 255, 0.4);
+  box-shadow: 0 0 12px rgba(40, 196, 255, 0.4);
 }
-.company-group { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(164, 141, 205, 0.3); }
+.company-group { margin-bottom: 1.75rem; padding-bottom: 1.75rem; border-bottom: 1px solid rgba(164, 141, 205, 0.3); }
 .company-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.company-title { font-size: 1.25rem; font-weight: 600; color: var(--bright-cyan); margin-bottom: 0.75rem; }
+.company-title { font-size: 1.35rem; font-weight: 700; color: var(--bright-cyan); margin-bottom: 0.85rem; }
 .hidden { display: none !important; }
-.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; }
+.spinner { border: 3.5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.75rem; height: 1.75rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <base target="_top">
 </head>
-<body class="min-h-screen py-8 text-lg">
+<body class="min-h-screen py-6 lg:py-12 text-lg">
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
-<div class="main-content-area max-w-3xl mx-auto px-4">
+<div class="main-content-area max-w-4xl mx-auto px-4 sm:px-6">
   <!-- 預約面試主表單 -->
-  <div id="appointmentSection" class="form-container p-5 sm:p-7 md:p-9">
-    <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
-      <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">預約面試</h1>
+  <div id="appointmentSection" class="form-container p-6 sm:p-8 md:p-10 lg:p-12">
+    <div class="form-header -mx-6 sm:-mx-8 md:-mx-10 lg:-mx-12 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 mb-8 py-6 px-6 sm:py-7 md:px-10 rounded-t-2xl">
+      <h1 class="form-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center tracking-wide">預約面試</h1>
     </div>
 
-    <!-- 驗證狀態 / 身分選擇區 -->
-    <div id="statusBanner" class="bg-darkPurple/50 p-4 rounded-xl mb-6 border border-lightPurple/30">
-      <div id="verifyingStatus" class="flex items-center gap-2 text-circuitCyan">
+    <!-- 驗證狀態 / 身分選擇區 (零 Icon，字體與間距放大) -->
+    <div id="statusBanner" class="bg-darkPurple/60 p-5 sm:p-7 rounded-2xl mb-8 border border-lightPurple/40">
+      <div id="verifyingStatus" class="flex items-center gap-3 text-circuitCyan text-lg sm:text-xl font-medium">
         <span class="spinner"></span>
-        <span class="text-base font-medium">⚡ 正在識別 LINE 身份與比對履歷紀錄...</span>
+        <span>正在識別 LINE 身份與比對履歷紀錄...</span>
       </div>
 
-      <!-- 🌟 多人履歷切換區塊 (LINE 用戶顯示) -->
-      <div id="userSelectorBox" class="hidden space-y-3">
+      <!-- 多人履歷切換區塊 (LINE 用戶顯示) -->
+      <div id="userSelectorBox" class="hidden space-y-4">
         <div class="flex items-center justify-between">
-          <span class="text-base font-bold text-circuitCyan">請選擇預約應徵者：</span>
-          <span id="userCountTag" class="text-xs text-lightPurple"></span>
+          <span class="text-lg sm:text-xl font-bold text-circuitCyan">請選擇預約應徵者：</span>
+          <span id="userCountTag" class="text-sm sm:text-base text-lightPurple"></span>
         </div>
-        <div id="userCardsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        <div id="userCardsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
       </div>
 
-      <!-- 🌟 現場手動輸入區塊 (未偵測到 LINE ID / 工作人員模式顯示) -->
-      <div id="manualInputBox" class="hidden space-y-4 pt-1">
-        <div class="flex items-center gap-2 text-amber-300 font-bold border-b border-lightPurple/20 pb-2">
-          <span>網頁預約模式</span>
-          <span class="text-xs font-normal text-purple-200">（未偵測到 LINE 帳號，請手動輸入身分）</span>
+      <!-- 現場手動輸入區塊 (未偵測到 LINE ID / 工作人員模式顯示) -->
+      <div id="manualInputBox" class="hidden space-y-5 pt-1">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lightPurple/20 pb-3 gap-2">
+          <span class="text-amber-300 font-bold text-xl sm:text-2xl">網頁預約模式</span>
+          <span class="text-sm sm:text-base font-normal text-purple-200">（未偵測到 LINE 帳號，請手動輸入身分）</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
-            <label class="block text-sm font-medium text-circuitCyan mb-1">求職者姓名 <span class="text-red-400">*</span></label>
-            <input type="text" id="manualName" placeholder="請輸入姓名" class="w-full px-3 py-2 text-base rounded-lg focus:outline-none focus:border-amber-300">
+            <label class="block text-base sm:text-lg font-bold text-circuitCyan mb-2">求職者姓名 <span class="text-red-400">*</span></label>
+            <input type="text" id="manualName" placeholder="請輸入姓名" class="w-full px-4 py-3 text-lg sm:text-xl rounded-xl focus:outline-none focus:border-amber-300">
           </div>
           <div>
-            <label class="block text-sm font-medium text-circuitCyan mb-1">身分證字號 <span class="text-red-400">*</span></label>
-            <input type="text" id="manualIdNumber" placeholder="例如：A123456789" maxlength="10" class="w-full px-3 py-2 text-base uppercase rounded-lg focus:outline-none focus:border-amber-300">
+            <label class="block text-base sm:text-lg font-bold text-circuitCyan mb-2">身分證字號 <span class="text-red-400">*</span></label>
+            <input type="text" id="manualIdNumber" placeholder="例如：A123456789" maxlength="10" class="w-full px-4 py-3 text-lg sm:text-xl uppercase rounded-xl focus:outline-none focus:border-amber-300">
           </div>
         </div>
       </div>
     </div>
 
-    <form id="reservationForm" class="space-y-5">
+    <form id="reservationForm" class="space-y-6">
       <!-- 隱藏式當前選中用戶欄位 -->
       <input type="hidden" id="selectedName" name="selectedName">
       <input type="hidden" id="selectedIdNumber" name="selectedIdNumber">
 
-      <p class="text-lg font-bold text-left text-[#FFC72C] my-4">如欲應徵兩項以上職務，請於面試時告知。</p>
+      <p class="text-lg sm:text-xl font-bold text-left text-[#FFC72C] my-4">如欲應徵兩項以上職務，請於面試時告知。</p>
 
       <!-- 公司職缺選擇列表 -->
-      <div class="space-y-4 mb-6" id="companyListContainer">
-        <p class="text-center text-lightPurple py-4">載入職缺清單中...</p>
+      <div class="space-y-5 mb-8" id="companyListContainer">
+        <p class="text-center text-lightPurple py-6 text-lg">載入職缺清單中...</p>
       </div>
 
       <div class="pt-4">
-        <button type="submit" id="submitBtn" class="submit-btn w-full px-4 py-3 text-2xl font-bold">
+        <button type="submit" id="submitBtn" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold hover:opacity-90 transition">
           <span id="submitBtnText">提交預約面試</span>
         </button>
       </div>
@@ -130,17 +130,17 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
   </div>
 
   <!-- 預約成功結果頁 -->
-  <div id="successMessageContainer" class="form-container p-6 sm:p-8 hidden mt-10">
+  <div id="successMessageContainer" class="form-container p-8 sm:p-10 lg:p-12 hidden mt-10">
     <div id="successMessageContent"></div>
   </div>
 </div>
 
 <!-- 客製化 Alert Modal -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
-  <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-5">
-    <p id="customAlertMessage" class="text-white text-lg leading-relaxed whitespace-pre-line"></p>
-    <div id="modalButtons" class="flex justify-center gap-3">
-      <button onclick="hideCustomAlert()" class="submit-btn px-8 py-2.5 text-base font-bold">知道了</button>
+  <div class="form-container p-6 sm:p-8 rounded-2xl shadow-2xl max-w-lg w-full mx-auto text-center space-y-6">
+    <p id="customAlertMessage" class="text-white text-lg sm:text-xl leading-relaxed whitespace-pre-line font-medium"></p>
+    <div id="modalButtons" class="flex justify-center gap-4">
+      <button onclick="hideCustomAlert()" class="submit-btn px-8 py-3 text-lg font-bold">知道了</button>
     </div>
   </div>
 </div>
@@ -174,11 +174,11 @@ function showCustomAlert(msg, needResume = false) {
   const btns = document.getElementById('modalButtons');
   if (needResume) {
     btns.innerHTML = `
-      <a href="index.html" class="submit-btn px-6 py-2.5 text-base font-bold">前往填寫求職登記表</a>
-      <button onclick="hideCustomAlert()" class="px-4 py-2.5 text-sm text-lightPurple">取消</button>
+      <a href="index.html" class="submit-btn px-6 py-3 text-base sm:text-lg font-bold">前往填寫求職登記表</a>
+      <button onclick="hideCustomAlert()" class="px-5 py-3 text-base text-lightPurple hover:text-white">取消</button>
     `;
   } else {
-    btns.innerHTML = `<button onclick="hideCustomAlert()" class="submit-btn px-8 py-2.5 text-base font-bold">知道了</button>`;
+    btns.innerHTML = `<button onclick="hideCustomAlert()" class="submit-btn px-9 py-3 text-lg font-bold">知道了</button>`;
   }
   document.getElementById('customAlertModal').classList.remove('hidden');
 }
@@ -199,7 +199,6 @@ async function initPage() {
       }
     }
   } catch (e) { console.warn('LIFF 驗證跳過'); }
-
   window.lineUserId = uid;
 
   // 抓取初始資料
@@ -207,22 +206,17 @@ async function initPage() {
     const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
     const res = await resp.json();
     document.getElementById('verifyingStatus').classList.add('hidden');
-
     if (res && res.success) {
       window.companyData = Array.isArray(res.companyData) ? res.companyData : [];
       renderCompanyOptions();
-
       const profiles = res.userProfiles || [];
       if (uid && profiles.length > 0) {
-        // 1. 有 USER ID 且找到履歷：顯示選擇卡片
         window.isManualMode = false;
         renderUserSelector(profiles);
       } else if (!uid) {
-        // 2. 沒有 USER ID（電腦網頁模式）：切換為手動輸入姓名與身分證
         window.isManualMode = true;
         document.getElementById('manualInputBox').classList.remove('hidden');
       } else {
-        // 3. 有 USER ID 但查無履歷：提示去填寫履歷，但也開放手動輸入區域
         window.isManualMode = true;
         document.getElementById('manualInputBox').classList.remove('hidden');
         showCustomAlert('系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！', true);
@@ -234,20 +228,18 @@ async function initPage() {
     }
   } catch (err) {
     document.getElementById('verifyingStatus').classList.add('hidden');
-    document.getElementById('companyListContainer').innerHTML = '<p class="text-center text-red-400">無法載入職缺清單，請重新整理。</p>';
+    document.getElementById('companyListContainer').innerHTML = '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
     window.isManualMode = true;
     document.getElementById('manualInputBox').classList.remove('hidden');
   }
 }
 
-// 🌟 渲染同 LINE ID 下的所有求職者選項卡片
 function renderUserSelector(profiles) {
   const box = document.getElementById('userSelectorBox');
   const list = document.getElementById('userCardsList');
   const tag = document.getElementById('userCountTag');
   list.innerHTML = '';
   tag.innerText = `偵測到此帳號有 ${profiles.length} 筆履歷`;
-
   profiles.forEach((p, idx) => {
     const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
     const card = document.createElement('div');
@@ -255,15 +247,13 @@ function renderUserSelector(profiles) {
     card.onclick = () => selectUser(p, card);
     card.innerHTML = `
       <div class="flex items-center justify-between">
-        <span class="font-bold text-white text-lg">${p.name}</span>
-        <span class="text-xs text-circuitCyan border border-circuitCyan/40 px-1.5 py-0.5 rounded">${maskedId}</span>
+        <span class="font-bold text-white text-lg sm:text-xl">${p.name}</span>
+        <span class="text-xs sm:text-sm text-circuitCyan border border-circuitCyan/40 px-2 py-0.5 rounded">${maskedId}</span>
       </div>
-      <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
+      <div class="text-xs sm:text-sm text-lightPurple mt-1.5">登記時間: ${p.timestamp}</div>
     `;
     list.appendChild(card);
   });
-
-  // 預設選取第一筆
   selectUser(profiles[0], list.children[0]);
   box.classList.remove('hidden');
 }
@@ -286,12 +276,12 @@ function renderCompanyOptions() {
     window.companyData.forEach(c => {
       const d = document.createElement('div');
       d.className = 'company-group space-y-3';
-      d.innerHTML = `<h3 class="company-title text-xl font-semibold text-circuitCyan">${c.company}</h3>`;
+      d.innerHTML = `<h3 class="company-title text-xl sm:text-2xl font-bold text-circuitCyan">${c.company}</h3>`;
       
       if (c.positions && c.positions.length > 0) {
         const s = document.createElement('select');
         s.dataset.company = c.company;
-        s.className = 'w-full px-4 py-3 text-lg rounded-lg';
+        s.className = 'w-full px-4 py-3.5 text-lg sm:text-xl rounded-xl';
         
         let optionsHTML = '<option value="">請選擇職務</option>';
         c.positions.forEach(p => {
@@ -301,11 +291,10 @@ function renderCompanyOptions() {
         s.innerHTML = optionsHTML;
         d.appendChild(s);
       } else {
-        d.innerHTML += '<p class="text-gray-400 italic mt-2">目前無提供職務</p>';
+        d.innerHTML += '<p class="text-gray-400 italic mt-2 text-base sm:text-lg">目前無提供職務</p>';
       }
       container.appendChild(d);
     });
-
     if (targetCompany) {
       setTimeout(() => {
         const targetSelect = document.querySelector(`select[data-company="${targetCompany}"]`);
@@ -313,25 +302,19 @@ function renderCompanyOptions() {
       }, 300);
     }
   } else {
-    container.innerHTML = '<p class="text-center text-red-400">目前尚無職缺清單。</p>';
+    container.innerHTML = '<p class="text-center text-red-400 text-lg">目前尚無職缺清單。</p>';
   }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   initPage();
-
-  // 表單提交處理
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-
     let nameVal = '';
     let idVal = '';
-
-    // 判斷是「卡片選擇」還是「工作人員手動輸入」
     if (window.isManualMode) {
       nameVal = document.getElementById('manualName').value.trim();
       idVal = document.getElementById('manualIdNumber').value.trim().toUpperCase();
-
       if (!nameVal) {
         showCustomAlert('請輸入求職者姓名！');
         return;
@@ -343,26 +326,21 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       nameVal = document.getElementById('selectedName').value;
       idVal = document.getElementById('selectedIdNumber').value;
-
       if (!nameVal || !idVal) {
         showCustomAlert('請點選上方卡片選擇應徵者身份！');
         return;
       }
     }
-
     const sels = document.querySelectorAll('select[data-company]');
     const pos = [];
     sels.forEach(s => { if(s.value) pos.push({ company: s.dataset.company, position: s.value }); });
-
     if (pos.length === 0) {
       showCustomAlert('請至少選擇一個職務進行預約！');
       return;
     }
-
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     document.getElementById('submitBtnText').innerHTML = '預約中... <span class="spinner"></span>';
-
     try {
       const params = new URLSearchParams();
       params.append('postData', JSON.stringify({
@@ -374,23 +352,19 @@ document.addEventListener('DOMContentLoaded', function() {
           lineUserId: window.lineUserId || ''
         }
       }));
-
       const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
       const r = await resp.json();
-
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-
       if (r.success) {
-        let h = `<div class="text-center text-3xl font-bold mb-4 text-successGreen">🎉 預約面試成功！</div>`;
-        h += `<p class="text-center text-lg mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
-        h += '<div class="space-y-3 bg-darkPurple/60 p-4 rounded-lg border border-lightPurple/30 mb-6">';
+        let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約面試成功！</div>`;
+        h += `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
+        h += '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
         pos.forEach(i => {
-          h += `<div class="border-b border-lightPurple/20 pb-2 last:border-b-0"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
+          h += `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
         });
         h += '</div>';
-        h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-8 py-2.5 text-lg font-bold">查看預約紀錄</a></div>';
-
+        h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">查看預約紀錄</a></div>';
         document.getElementById('successMessageContent').innerHTML = h;
         document.getElementById('appointmentSection').classList.add('hidden');
         document.getElementById('successMessageContainer').classList.remove('hidden');
