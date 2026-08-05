@@ -35,90 +35,92 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
 .left-gradient { position: fixed; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, var(--deep-blue) 0%, rgba(5, 61, 136, 0) 100%); z-index: 1; pointer-events: none; }
 .main-content-area { position: relative; z-index: 10; }
-.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); backdrop-filter: blur(4px); border: 1px solid rgba(164, 141, 205, 0.18); }
+.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); border: 1px solid rgba(164, 141, 205, 0.25); }
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
-input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
-.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
+input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border: 1.5px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 10px !important; }
+.submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 14px rgba(172, 63, 255, 0.35); border-radius: 10px; color: var(--white); font-weight: 700; border: none; cursor: pointer; text-align: center; }
 .record-card {
-  background: rgba(31, 29, 83, 0.65);
-  border: 1px solid rgba(164, 141, 205, 0.3);
-  border-radius: 12px;
+  background: rgba(31, 29, 83, 0.7);
+  border: 1px solid rgba(164, 141, 205, 0.35);
+  border-radius: 14px;
 }
 .hidden { display: none !important; }
-.spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.5rem; height: 1.5rem; animation: spin 1s linear infinite; display: inline-block; }
+.spinner { border: 3.5px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.75rem; height: 1.75rem; animation: spin 1s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 <base target="_top">
 </head>
-<body class="min-h-screen py-8 text-lg">
+<body class="min-h-screen py-6 lg:py-12 text-lg">
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
-<div class="main-content-area max-w-3xl mx-auto px-4 space-y-6">
+<div class="main-content-area max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
 
-  <div class="form-container p-5 sm:p-7 md:p-9">
-    <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-6 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
-      <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷與面試紀錄查詢</h1>
+  <div class="form-container p-6 sm:p-8 md:p-10 lg:p-12">
+    <!-- 頂部頁面標題 -->
+    <div class="form-header -mx-6 sm:-mx-8 md:-mx-10 lg:-mx-12 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 mb-8 py-6 px-6 sm:py-7 md:px-10 rounded-t-2xl">
+      <h1 class="form-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center tracking-wide">履歷與面試紀錄查詢</h1>
     </div>
 
     <!-- ⚡ 讀取中提示 -->
-    <div id="loadingStatus" class="text-center py-6 text-circuitCyan flex items-center justify-center gap-2 text-lg">
+    <div id="loadingStatus" class="text-center py-8 text-circuitCyan flex items-center justify-center gap-3 text-xl font-medium">
       <span class="spinner"></span>
       <span>正在識別 LINE 身份並讀取資料...</span>
     </div>
 
-    <!-- 🖥️ 工作人員手動輸入區塊 (未偵測到 LINE ID 時顯示) -->
-    <div id="manualSearchBox" class="hidden bg-darkPurple/50 p-5 rounded-xl border border-lightPurple/30 space-y-4 mb-6">
-      <div class="flex items-center gap-2 text-amber-300 font-bold border-b border-lightPurple/20 pb-2">
-        <span>網頁查詢模式</span>
-        <span class="text-xs font-normal text-purple-200">（請輸入求職者姓名與身分證）</span>
+    <!-- 🖥️ 工作人員手動輸入區塊 (大螢幕優化字級與間距) -->
+    <div id="manualSearchBox" class="hidden bg-darkPurple/60 p-6 sm:p-8 rounded-2xl border border-lightPurple/40 space-y-5 mb-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lightPurple/20 pb-3 gap-2">
+        <span class="text-amber-300 font-bold text-xl sm:text-2xl">網頁查詢模式</span>
+        <span class="text-sm sm:text-base font-normal text-purple-200">（請輸入求職者姓名與身分證）</span>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
-          <label class="block text-sm font-medium text-circuitCyan mb-1">求職者姓名 <span class="text-red-400">*</span></label>
-          <input type="text" id="manualName" placeholder="請輸入姓名" class="w-full px-3 py-2 text-base rounded-lg focus:outline-none focus:border-amber-300">
+          <label class="block text-base sm:text-lg font-bold text-circuitCyan mb-2">求職者姓名 <span class="text-red-400">*</span></label>
+          <input type="text" id="manualName" placeholder="請輸入姓名" class="w-full px-4 py-3 text-lg sm:text-xl rounded-xl focus:outline-none focus:border-amber-300">
         </div>
         <div>
-          <label class="block text-sm font-medium text-circuitCyan mb-1">身分證字號 <span class="text-red-400">*</span></label>
-          <input type="text" id="manualIdNumber" placeholder="例如：A123456789" maxlength="10" class="w-full px-3 py-2 text-base uppercase rounded-lg focus:outline-none focus:border-amber-300">
+          <label class="block text-base sm:text-lg font-bold text-circuitCyan mb-2">身分證字號 <span class="text-red-400">*</span></label>
+          <input type="text" id="manualIdNumber" placeholder="例如：A123456789" maxlength="10" class="w-full px-4 py-3 text-lg sm:text-xl uppercase rounded-xl focus:outline-none focus:border-amber-300">
         </div>
       </div>
-      <button onclick="executeManualSearch()" class="submit-btn w-full py-3 text-lg font-bold mt-2">
-        🔍 查詢求職紀錄
+      <button onclick="executeManualSearch()" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold mt-3 hover:opacity-90 transition">
+        查詢求職紀錄
       </button>
     </div>
 
-    <!-- 📊 查詢結果區域 -->
-    <div id="queryResults" class="hidden space-y-8">
+    <!-- 📊 查詢結果區域 (無 Icon，適度放大字體) -->
+    <div id="queryResults" class="hidden space-y-10">
+      
       <!-- 📄 1. 個人履歷清單區塊 -->
       <div>
-        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-2 mb-4">
-          <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">
-            📄 已填寫履歷紀錄
+        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-5">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-circuitCyan">
+            已填寫履歷紀錄
           </h2>
-          <span id="resumeCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 筆</span>
+          <span id="resumeCountBadge" class="px-4 py-1.5 bg-blue/40 text-white rounded-full text-base font-bold">0 筆</span>
         </div>
-        <div id="resumeContainer" class="space-y-4"></div>
+        <div id="resumeContainer" class="space-y-5"></div>
       </div>
 
       <!-- 📅 2. 預約面試紀錄區塊 -->
       <div>
-        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-2 mb-4">
-          <h2 class="text-2xl font-bold text-circuitCyan flex items-center gap-2">
-            📅 預約面試紀錄
+        <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-5">
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-circuitCyan">
+            預約面試紀錄
           </h2>
-          <span id="apptCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 筆</span>
+          <span id="apptCountBadge" class="px-4 py-1.5 bg-blue/40 text-white rounded-full text-base font-bold">0 筆</span>
         </div>
-        <div id="apptContainer" class="space-y-4"></div>
+        <div id="apptContainer" class="space-y-5"></div>
       </div>
+
     </div>
 
     <!-- ⚠️ 查無資料/錯誤訊息 -->
-    <div id="errorBox" class="hidden text-center py-8 space-y-4">
-      <div class="text-4xl">⚠️</div>
-      <p id="errorMsgText" class="text-xl text-nearWhite leading-relaxed"></p>
-      <div class="pt-2">
-        <a href="index.html" class="submit-btn inline-block px-8 py-2.5 text-lg font-bold">前往填寫求職登記表</a>
+    <div id="errorBox" class="hidden text-center py-10 space-y-5">
+      <p id="errorMsgText" class="text-xl sm:text-2xl text-nearWhite leading-relaxed font-bold"></p>
+      <div class="pt-3">
+        <a href="index.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">前往填寫求職登記表</a>
       </div>
     </div>
 
@@ -126,7 +128,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.7) !important; border:
 </div>
 
 <script>
-const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw9NIgqhJxdUFbfI5BSKPySzDCNflAY_0W-rNSYPa1_BCSF8xEiRgKJH8jy_xE9aj3GVw/exec'; 
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyXrQjx_KxvbrQDH5pfZYkDZdQFf1sFpqYoV9RBBE3cWov3d7ymcTHBoza5rtH6RU_o3Q/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
@@ -161,18 +163,14 @@ async function initQueryPage() {
     console.warn('LIFF 驗證跳過:', e);
   }
 
-  // 判斷是否有 LINE USER ID
   if (lineUserId) {
-    // 1. 手機 LINE 模式：自動以 lineUserId 查詢
     fetchData(`${QUERY_GAS_API_URL}?action=queryByLineUserId&lineUserId=${encodeURIComponent(lineUserId)}`);
   } else {
-    // 2. 電腦網頁模式：隱藏載入提示，顯示手動輸入搜尋框
     document.getElementById('loadingStatus').classList.add('hidden');
     document.getElementById('manualSearchBox').classList.remove('hidden');
   }
 }
 
-// 🔍 執行手動查詢
 function executeManualSearch() {
   const name = document.getElementById('manualName').value.trim();
   const idNumber = document.getElementById('manualIdNumber').value.trim().toUpperCase();
@@ -186,7 +184,6 @@ function executeManualSearch() {
     return;
   }
 
-  // 重置結果區域畫面
   document.getElementById('errorBox').classList.add('hidden');
   document.getElementById('queryResults').classList.add('hidden');
   document.getElementById('loadingStatus').classList.remove('hidden');
@@ -195,7 +192,6 @@ function executeManualSearch() {
   fetchData(apiUrl);
 }
 
-// 📡 通用抓取資料函式
 async function fetchData(url) {
   try {
     const resp = await fetch(url);
@@ -223,31 +219,34 @@ function renderResumes(resumes) {
   if (resumes.length > 0) {
     resumes.forEach((r, idx) => {
       const card = document.createElement('div');
-      card.className = 'record-card p-5 space-y-3';
+      card.className = 'record-card p-6 sm:p-7 space-y-4';
       card.innerHTML = `
-        <div class="flex justify-between items-center border-b border-lightPurple/20 pb-2">
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 text-xs bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
-            <h3 class="text-xl font-bold text-white">${r.name}</h3>
+        <div class="flex justify-between items-center border-b border-lightPurple/20 pb-3">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 text-sm font-bold bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
+            <h3 class="text-2xl font-extrabold text-white">${r.name}</h3>
           </div>
-          <span class="text-xs text-lightPurple">登記時間: ${r.timestamp}</span>
+          <span class="text-sm text-lightPurple">登記時間: ${r.timestamp}</span>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-nearWhite">
-          <div><span class="text-lightPurple font-medium">🎂 出生日期：</span>${r.birth || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">🪪 身分證/居留證：</span>${r.idNumber || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">💍 婚姻狀況：</span>${r.maritalStatus || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">🪖 兵役狀況：</span>${r.military || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">📱 聯絡電話：</span>${r.phone || '未填'}</div>
-          <div><span class="text-lightPurple font-medium">📧 E-mail：</span>${r.email || '未填'}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🏠 聯絡地址：</span>${r.address || '未填'}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🎓 最高學歷：</span>${r.education || '未填'} ${r.school ? '- ' + r.school : ''} ${r.department ? '(' + r.department + ')' : ''}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🚗 駕照種類：</span>${r.license || '未填'}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">💻 電腦能力：</span>${r.computer || '未填'}</div>
-          <div class="sm:col-span-2"><span class="text-lightPurple font-medium">🗣️ 語文能力：</span>${r.language || '未填'}</div>
+        
+        <!-- 放大文字，移除全數 Icon -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-base sm:text-lg text-nearWhite">
+          <div><span class="text-lightPurple font-bold">出生日期：</span>${r.birth || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">身分證/居留證：</span>${r.idNumber || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">婚姻狀況：</span>${r.maritalStatus || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">兵役狀況：</span>${r.military || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">聯絡電話：</span>${r.phone || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">E-mail：</span>${r.email || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">聯絡地址：</span>${r.address || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">最高學歷：</span>${r.education || '未填'} ${r.school ? '- ' + r.school : ''} ${r.department ? '(' + r.department + ')' : ''}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">駕照種類：</span>${r.license || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">電腦能力：</span>${r.computer || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">語文能力：</span>${r.language || '未填'}</div>
         </div>
+
         ${r.experience ? `
-          <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200">
-            <span class="text-lightPurple font-medium block mb-1">💼 工作經歷：</span>
+          <div class="text-base bg-darkPurple/50 p-4 rounded-xl border border-lightPurple/20 text-gray-200">
+            <span class="text-lightPurple font-bold block mb-1.5">工作經歷：</span>
             <p class="whitespace-pre-line leading-relaxed">${r.experience}</p>
           </div>
         ` : ''}
@@ -255,7 +254,7 @@ function renderResumes(resumes) {
       container.appendChild(card);
     });
   } else {
-    container.innerHTML = '<p class="text-center py-4 text-gray-400">目前尚無履歷登記紀錄。</p>';
+    container.innerHTML = '<p class="text-center py-6 text-gray-400 text-lg">目前尚無履歷登記紀錄。</p>';
   }
 }
 
@@ -266,24 +265,24 @@ function renderAppointments(appointments) {
   if (appointments.length > 0) {
     appointments.forEach((a, idx) => {
       const card = document.createElement('div');
-      card.className = 'record-card p-5 space-y-2 border-l-4 border-l-circuitCyan';
+      card.className = 'record-card p-6 sm:p-7 space-y-3 border-l-4 border-l-circuitCyan';
       card.innerHTML = `
-        <div class="flex justify-between items-start border-b border-lightPurple/20 pb-2">
+        <div class="flex justify-between items-start border-b border-lightPurple/20 pb-3">
           <div>
-            <span class="text-xs text-lightPurple">應徵者：${a.userName} (${a.idNumber})</span>
-            <h3 class="text-xl font-bold text-circuitCyan mt-1">${a.company}</h3>
+            <span class="text-sm text-lightPurple font-medium">應徵者：${a.userName} (${a.idNumber})</span>
+            <h3 class="text-2xl font-extrabold text-circuitCyan mt-1">${a.company}</h3>
           </div>
-          <span class="text-xs text-lightPurple">${a.timestamp}</span>
+          <span class="text-sm text-lightPurple">${a.timestamp}</span>
         </div>
-        <div class="text-base text-white pt-1">
-          <span class="text-lightPurple font-medium">💼 應徵職務：</span>
-          <span class="font-bold text-yellow-300">${a.position}</span>
+        <div class="text-lg text-white pt-1">
+          <span class="text-lightPurple font-bold">應徵職務：</span>
+          <span class="font-extrabold text-yellow-300">${a.position}</span>
         </div>
       `;
       container.appendChild(card);
     });
   } else {
-    container.innerHTML = '<p class="text-center py-4 text-gray-400">目前尚無面試預約紀錄。</p>';
+    container.innerHTML = '<p class="text-center py-6 text-gray-400 text-lg">目前尚無面試預約紀錄。</p>';
   }
 }
 
