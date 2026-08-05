@@ -40,7 +40,6 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-
 select {
   background-color: rgba(31, 29, 83, 0.7) !important;
   border: 1px solid var(--light-purple) !important;
@@ -54,7 +53,6 @@ select {
   padding-right: 2.5rem !important;
 }
 select option { background-color: var(--dark-purple); color: var(--white); }
-
 .job-card {
   background: rgba(31, 29, 83, 0.65);
   border: 1px solid rgba(164, 141, 205, 0.3);
@@ -70,13 +68,11 @@ select option { background-color: var(--dark-purple); color: var(--white); }
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-3xl mx-auto px-4 space-y-6">
-
   <!-- 頂部廠商選擇下拉選單區塊 -->
   <div class="form-container p-5 sm:p-7 md:p-9">
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-6 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">職缺資訊</h1>
     </div>
-
     <div class="space-y-3">
       <label for="companySelect" class="block text-lg font-medium text-circuitCyan">廠商名稱</label>
       <select id="companySelect" class="w-full px-4 py-3 text-lg rounded-lg">
@@ -91,11 +87,9 @@ select option { background-color: var(--dark-purple); color: var(--white); }
       <h2 id="currentCompanyName" class="text-2xl font-bold text-circuitCyan">廠商名稱</h2>
       <span id="jobCountBadge" class="px-3 py-1 bg-blue/30 text-white rounded-full text-sm font-bold">0 個職缺</span>
     </div>
-
     <!-- 職缺卡片清單容器 -->
     <div id="jobCardsContainer" class="space-y-5"></div>
   </div>
-
 </div>
 
 <script>
@@ -123,8 +117,6 @@ function createCircuitBackground() {
 
 async function initJobPage() {
   createCircuitBackground();
-
-  // 1. 初始化 LIFF 取得用戶 LINE ID
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -136,14 +128,10 @@ async function initJobPage() {
   } catch (e) { console.warn('LIFF 初始化跳過'); }
 
   const companySelect = document.getElementById('companySelect');
-
-  // 2. 載入公司列表
   try {
     const resp = await fetch(`${JOB_GAS_API_URL}?action=getCompanyList`);
     const res = await resp.json();
-
     let companies = Array.isArray(res) ? res : (res.data || res.companyList || []);
-
     if (companies.length > 0) {
       companySelect.innerHTML = '<option value="" disabled selected>請選擇公司廠商...</option>';
       companies.forEach(comp => {
@@ -155,7 +143,6 @@ async function initJobPage() {
           companySelect.appendChild(opt);
         }
       });
-
       const firstComp = companySelect.options[1] ? companySelect.options[1].value : '';
       if (firstComp) {
         companySelect.value = firstComp;
@@ -177,63 +164,72 @@ async function loadJobsForCompany(companyName) {
   const container = document.getElementById('jobCardsContainer');
   document.getElementById('currentCompanyName').innerText = companyName;
   document.getElementById('jobListSection').classList.remove('hidden');
-
   container.innerHTML = `
     <div class="text-center py-8 text-lightPurple flex items-center justify-center gap-2">
       <span class="spinner"></span>
       <span>正在讀取 ${companyName} 的詳細職缺...</span>
     </div>
   `;
-
   try {
     const query = new URLSearchParams({ action: 'getJobData', company: companyName }).toString();
     const resp = await fetch(`${JOB_GAS_API_URL}?${query}`);
     const jobs = await resp.json();
-
     const jobList = Array.isArray(jobs) ? jobs : (jobs.data || []);
     document.getElementById('jobCountBadge').innerText = `${jobList.length} 個職缺`;
     container.innerHTML = '';
-
+    
     if (jobList.length > 0) {
       jobList.forEach(job => {
         const rawTitle = job.title ? job.title.split('\n')[0] : '';
-
-        // 🌟 核心：點擊後安全帶參跳轉至 quick_book.html 進行身份選擇與預約
         const queryParams = new URLSearchParams({
           company: companyName,
           position: rawTitle,
           uid: window.lineUserId || ''
         }).toString();
-
         const targetUrl = `quick_book.html?${queryParams}`;
-
+        
         const card = document.createElement('div');
-        card.className = 'job-card p-5 space-y-3';
+        card.className = 'job-card p-5 sm:p-6 space-y-4 text-left';
         card.innerHTML = `
+          <!-- 職缺標題與薪資欄位 (無 Icon) -->
           <div class="border-b border-lightPurple/20 pb-3">
             <h3 class="text-2xl font-bold text-white whitespace-pre-line leading-snug">${job.title}</h3>
-            <div class="mt-2">
-              <span class="inline-block text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3 py-1 rounded-lg border border-yellow-300/30">
-                💰 ${job.salary || '面議'}
+            <div class="mt-3">
+              <span class="inline-block text-lg font-bold text-yellow-300 bg-darkPurple/80 px-3.5 py-1.5 rounded-lg border border-yellow-300/30">
+                ${job.salary || '面議'}
               </span>
             </div>
           </div>
 
-          <div class="space-y-1.5 text-base text-nearWhite pt-1">
-            <div><span class="text-lightPurple font-medium">🎓 學經歷：</span>${job.education || '不限'}</div>
-            <div><span class="text-lightPurple font-medium">⏰ 工作班別/休假：</span>${job.shift || '依公司規定'}</div>
+          <!-- 詳細資訊區塊 (無 Icon，標題獨立一行，內容換行) -->
+          <div class="space-y-3.5 text-base text-nearWhite pt-1">
+            
+            <!-- 學經歷 -->
+            <div>
+              <span class="text-lightPurple font-bold block mb-1">學經歷：</span>
+              <p class="text-gray-200 pl-2 whitespace-pre-line leading-relaxed">${job.education || '不限'}</p>
+            </div>
+
+            <!-- 工作班別/休假 -->
+            <div>
+              <span class="text-lightPurple font-bold block mb-1">工作班別/休假：</span>
+              <p class="text-gray-200 pl-2 whitespace-pre-line leading-relaxed">${job.shift || '依公司規定'}</p>
+            </div>
+
+            <!-- 工作內容 -->
+            ${job.description ? `
+              <div class="bg-darkPurple/40 p-3.5 rounded-lg border border-lightPurple/10 mt-2">
+                <span class="text-lightPurple font-bold block mb-1.5">工作內容：</span>
+                <p class="text-gray-200 pl-2 whitespace-pre-line leading-relaxed text-sm sm:text-base">${job.description}</p>
+              </div>
+            ` : ''}
+
           </div>
 
-          ${job.description ? `
-            <div class="text-sm bg-darkPurple/40 p-3 rounded-lg border border-lightPurple/10 text-gray-200 mt-2">
-              <span class="text-lightPurple block font-medium mb-1">📋 工作內容：</span>
-              <p class="whitespace-pre-line leading-relaxed">${job.description}</p>
-            </div>
-          ` : ''}
-
-          <div class="pt-2 text-right">
-            <a href="${targetUrl}" class="submit-btn inline-block px-5 py-2.5 text-base font-bold">
-              🚀 預約面試本職缺
+          <!-- 預約按鈕 (無 Icon) -->
+          <div class="pt-3 text-center sm:text-right">
+            <a href="${targetUrl}" class="submit-btn inline-block w-full sm:w-auto px-6 py-3 text-lg font-bold">
+              我要預約
             </a>
           </div>
         `;
