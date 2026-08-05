@@ -40,7 +40,6 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 input[type="text"], select { background-color: rgba(31, 29, 83, 0.7) !important; border: 1px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 8px !important; }
 select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23a48dcd"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 1.2em 1.2em !important; padding-right: 2.5rem !important; }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 12px rgba(172, 63, 255, 0.3); border-radius: 8px; color: var(--white); font-weight: 500; border: none; cursor: pointer; text-align: center; }
-
 /* 多人選擇卡片樣式 */
 .user-card {
   background: rgba(31, 29, 83, 0.6);
@@ -56,7 +55,6 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
   border-color: var(--bright-cyan);
   box-shadow: 0 0 10px rgba(40, 196, 255, 0.4);
 }
-
 .company-group { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid rgba(164, 141, 205, 0.3); }
 .company-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .company-title { font-size: 1.25rem; font-weight: 600; color: var(--bright-cyan); margin-bottom: 0.75rem; }
@@ -70,7 +68,6 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-3xl mx-auto px-4">
-
   <!-- 預約面試主表單 -->
   <div id="appointmentSection" class="form-container p-5 sm:p-7 md:p-9">
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
@@ -84,13 +81,31 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
         <span class="text-base font-medium">⚡ 正在識別 LINE 身份與比對履歷紀錄...</span>
       </div>
 
-      <!-- 🌟 多人履歷切換區塊 -->
+      <!-- 🌟 多人履歷切換區塊 (LINE 用戶顯示) -->
       <div id="userSelectorBox" class="hidden space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-base font-bold text-circuitCyan">請選擇預約應徵者：</span>
           <span id="userCountTag" class="text-xs text-lightPurple"></span>
         </div>
         <div id="userCardsList" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+      </div>
+
+      <!-- 🌟 現場手動輸入區塊 (未偵測到 LINE ID / 工作人員模式顯示) -->
+      <div id="manualInputBox" class="hidden space-y-4 pt-1">
+        <div class="flex items-center gap-2 text-amber-300 font-bold border-b border-lightPurple/20 pb-2">
+          <span>網頁預約模式</span>
+          <span class="text-xs font-normal text-purple-200">（未偵測到 LINE 帳號，請手動輸入身分）</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-circuitCyan mb-1">求職者姓名 <span class="text-red-400">*</span></label>
+            <input type="text" id="manualName" placeholder="請輸入姓名" class="w-full px-3 py-2 text-base rounded-lg focus:outline-none focus:border-amber-300">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-circuitCyan mb-1">身分證字號 <span class="text-red-400">*</span></label>
+            <input type="text" id="manualIdNumber" placeholder="例如：A123456789" maxlength="10" class="w-full px-3 py-2 text-base uppercase rounded-lg focus:outline-none focus:border-amber-300">
+          </div>
+        </div>
       </div>
     </div>
 
@@ -118,7 +133,6 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
   <div id="successMessageContainer" class="form-container p-6 sm:p-8 hidden mt-10">
     <div id="successMessageContent"></div>
   </div>
-
 </div>
 
 <!-- 客製化 Alert Modal -->
@@ -136,6 +150,7 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyCBwTXgd4nDg58eXhX
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
+window.isManualMode = false; // 標記是否為手動輸入模式
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -157,7 +172,6 @@ function createCircuitBackground() {
 function showCustomAlert(msg, needResume = false) {
   document.getElementById('customAlertMessage').innerText = msg;
   const btns = document.getElementById('modalButtons');
-
   if (needResume) {
     btns.innerHTML = `
       <a href="index.html" class="submit-btn px-6 py-2.5 text-base font-bold">前往填寫求職登記表</a>
@@ -175,7 +189,6 @@ function hideCustomAlert() {
 
 async function initPage() {
   createCircuitBackground();
-
   let uid = '';
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
@@ -189,11 +202,10 @@ async function initPage() {
 
   window.lineUserId = uid;
 
-  // 抓取初始資料 (含該 LINE ID 下的所有履歷名單)
+  // 抓取初始資料
   try {
     const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
     const res = await resp.json();
-
     document.getElementById('verifyingStatus').classList.add('hidden');
 
     if (res && res.success) {
@@ -201,17 +213,30 @@ async function initPage() {
       renderCompanyOptions();
 
       const profiles = res.userProfiles || [];
-      if (profiles.length > 0) {
+      if (uid && profiles.length > 0) {
+        // 1. 有 USER ID 且找到履歷：顯示選擇卡片
+        window.isManualMode = false;
         renderUserSelector(profiles);
+      } else if (!uid) {
+        // 2. 沒有 USER ID（電腦網頁模式）：切換為手動輸入姓名與身分證
+        window.isManualMode = true;
+        document.getElementById('manualInputBox').classList.remove('hidden');
       } else {
-        showCustomAlert('系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」後，再進行預約面試！', true);
+        // 3. 有 USER ID 但查無履歷：提示去填寫履歷，但也開放手動輸入區域
+        window.isManualMode = true;
+        document.getElementById('manualInputBox').classList.remove('hidden');
+        showCustomAlert('系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！', true);
       }
     } else {
       renderCompanyOptions();
+      window.isManualMode = true;
+      document.getElementById('manualInputBox').classList.remove('hidden');
     }
   } catch (err) {
     document.getElementById('verifyingStatus').classList.add('hidden');
     document.getElementById('companyListContainer').innerHTML = '<p class="text-center text-red-400">無法載入職缺清單，請重新整理。</p>';
+    window.isManualMode = true;
+    document.getElementById('manualInputBox').classList.remove('hidden');
   }
 }
 
@@ -220,7 +245,6 @@ function renderUserSelector(profiles) {
   const box = document.getElementById('userSelectorBox');
   const list = document.getElementById('userCardsList');
   const tag = document.getElementById('userCountTag');
-
   list.innerHTML = '';
   tag.innerText = `偵測到此帳號有 ${profiles.length} 筆履歷`;
 
@@ -229,7 +253,6 @@ function renderUserSelector(profiles) {
     const card = document.createElement('div');
     card.className = `user-card ${idx === 0 ? 'active' : ''}`;
     card.onclick = () => selectUser(p, card);
-
     card.innerHTML = `
       <div class="flex items-center justify-between">
         <span class="font-bold text-white text-lg">${p.name}</span>
@@ -237,7 +260,6 @@ function renderUserSelector(profiles) {
       </div>
       <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
     `;
-
     list.appendChild(card);
   });
 
@@ -249,7 +271,6 @@ function renderUserSelector(profiles) {
 function selectUser(profile, cardEl) {
   document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
   if (cardEl) cardEl.classList.add('active');
-
   document.getElementById('selectedName').value = profile.name;
   document.getElementById('selectedIdNumber').value = profile.idNumber;
 }
@@ -257,7 +278,6 @@ function selectUser(profile, cardEl) {
 function renderCompanyOptions() {
   const container = document.getElementById('companyListContainer');
   container.innerHTML = '';
-
   const urlParams = new URLSearchParams(window.location.search);
   const targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')) : '';
   const targetPosition = urlParams.get('position') ? decodeURIComponent(urlParams.get('position')) : '';
@@ -278,7 +298,6 @@ function renderCompanyOptions() {
           const isSelected = (c.company === targetCompany && (p === targetPosition || p.includes(targetPosition))) ? 'selected' : '';
           optionsHTML += `<option value="${p}" ${isSelected}>${p}</option>`;
         });
-
         s.innerHTML = optionsHTML;
         d.appendChild(s);
       } else {
@@ -293,7 +312,6 @@ function renderCompanyOptions() {
         if (targetSelect) targetSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 300);
     }
-
   } else {
     container.innerHTML = '<p class="text-center text-red-400">目前尚無職缺清單。</p>';
   }
@@ -302,15 +320,34 @@ function renderCompanyOptions() {
 document.addEventListener('DOMContentLoaded', function() {
   initPage();
 
-  // 表單提交
+  // 表單提交處理
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
-    const nameVal = document.getElementById('selectedName').value;
-    const idVal = document.getElementById('selectedIdNumber').value;
 
-    if (!nameVal || !idVal) {
-      showCustomAlert('請點選上方卡片選擇應徵者身份！');
-      return;
+    let nameVal = '';
+    let idVal = '';
+
+    // 判斷是「卡片選擇」還是「工作人員手動輸入」
+    if (window.isManualMode) {
+      nameVal = document.getElementById('manualName').value.trim();
+      idVal = document.getElementById('manualIdNumber').value.trim().toUpperCase();
+
+      if (!nameVal) {
+        showCustomAlert('請輸入求職者姓名！');
+        return;
+      }
+      if (!idVal || idVal.length !== 10) {
+        showCustomAlert('請輸入正確的 10 位身分證字號！');
+        return;
+      }
+    } else {
+      nameVal = document.getElementById('selectedName').value;
+      idVal = document.getElementById('selectedIdNumber').value;
+
+      if (!nameVal || !idVal) {
+        showCustomAlert('請點選上方卡片選擇應徵者身份！');
+        return;
+      }
     }
 
     const sels = document.querySelectorAll('select[data-company]');
@@ -334,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
           name: nameVal,
           idNumber: idVal,
           companyPositions: pos,
-          lineUserId: window.lineUserId
+          lineUserId: window.lineUserId || ''
         }
       }));
 
