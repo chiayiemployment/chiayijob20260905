@@ -34,12 +34,10 @@ select option {
 </style>
 </head>
 <body class="flex items-center justify-center p-4 min-h-screen">
-
 <div class="form-container p-6 sm:p-10 max-w-lg w-full text-center space-y-6">
   
   <!-- 表頭區塊 -->
   <div class="space-y-2 border-b border-purple-400/20 pb-5">
-    <div class="text-5xl mb-3">🏢</div>
     <div class="text-xl font-bold text-cyan-300 tracking-wider uppercase">
       數位永續 薪在嘉義
     </div>
@@ -54,17 +52,17 @@ select option {
   <!-- 表單輸入區塊 -->
   <div id="authBox" class="space-y-5 pt-2">
     
-    <!-- 🏢 選擇廠商下拉式選單 -->
+    <!-- 選擇廠商下拉式選單 -->
     <div class="text-left space-y-2">
       <label for="companySelect" class="text-lg font-bold text-purple-200 block">
         請選擇公司名稱
       </label>
       <select id="companySelect" class="w-full px-4 py-3 text-lg font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
-        <option value="" disabled selected>-- 請選擇公司名稱 --</option>
+        <option value="" disabled selected>載入廠商清單中...</option>
       </select>
     </div>
 
-    <!-- 🔑 輸入 8 位數密碼 (支援 Enter 鍵解鎖) -->
+    <!-- 輸入 8 位數密碼 (支援 Enter 鍵解鎖) -->
     <div class="text-left space-y-2">
       <label for="pinInput" class="text-lg font-bold text-purple-200 block">
         請輸入 8 位數 密碼
@@ -78,85 +76,78 @@ select option {
         class="w-full text-center text-2xl tracking-widest py-3 font-bold rounded-xl border-2 border-circuitCyan focus:outline-none focus:border-amber-300">
     </div>
 
-    <button onclick="submitPinAuth()" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold shadow-xl hover:opacity-90 transition mt-2">
-      🔓 解鎖並開啟面試資料
+    <button onclick="submitPinAuth()" id="loginBtn" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold shadow-xl hover:opacity-90 transition mt-2">
+      解鎖並開啟面試資料
     </button>
   </div>
 
   <!-- 載入中與手動按鈕區塊 -->
   <div id="loadingBox" class="hidden py-6 space-y-3">
     <span class="spinner"></span>
-    <p id="loadingStatusText" class="text-xl font-bold text-cyan-300">驗證成功！正在為您開啟資料...</p>
+    <p id="loadingStatusText" class="text-xl font-bold text-cyan-300">驗證中，請稍候...</p>
     <div id="manualRedirectLink" class="hidden mt-4">
       <p class="text-sm text-gray-300">如未自動跳轉，請點擊下方按鈕：</p>
-      <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-3 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl hover:bg-green-500 transition">📊 點此開啟 Google 試算表</a>
+      <a id="directSheetBtn" href="#" target="_blank" class="inline-block mt-3 px-6 py-3 bg-green-600 text-white font-bold text-lg rounded-xl hover:bg-green-500 transition">點此開啟 Google 試算表</a>
     </div>
   </div>
 
 </div>
 
 <script>
-// 🛠️ 工作人員萬用救援密碼
-const MASTER_PIN = "11223344";
-
-/**
- * 🔑 廠商設定清單（請在此直接輸入/維護 35 家廠商的名稱、個別密碼與試算表網址）
- */
-const VENDOR_CONFIG = {
-  "01": { 
-    name: "01 大成長城企業股份有限公司", 
-    pin: "88210101", 
-    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
-  },
-  "02": { 
-    name: "02 台灣積體電路製造股份有限公司", 
-    pin: "88210202", 
-    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
-  },
-  "03": { 
-    name: "03 遠東機械工業股份有限公司", 
-    pin: "88210303", 
-    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
-  },
-  "04": { 
-    name: "04 耐斯企業股份有限公司", 
-    pin: "88210404", 
-    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
-  },
-  "05": { 
-    name: "05 愛之味股份有限公司", 
-    pin: "88210505", 
-    url: "https://docs.google.com/spreadsheets/d/1TVy3T4qe1ldxkFsFgNdW_3g_I2uBtXej5FNBMs0fdp0/edit" 
-  }
-};
+// ⚠️ 請填入您的「廠商試算表快速驗證跳轉 API」發布後的 Web App 網址
+const VENDOR_API_URL = 'https://script.google.com/macros/s/AKfycbwRDu5o_vzv-eAV-QmI-LAQhMLzOOd7r9fSrBdI0n9TJ36m_lmGwGXnj-VOr0DZZ2lniQ/exec';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const selectElem = document.getElementById('companySelect');
-  
-  // 1. 動態渲染下拉選單項目
-  Object.keys(VENDOR_CONFIG).forEach(code => {
-    const option = document.createElement('option');
-    option.value = code;
-    option.textContent = VENDOR_CONFIG[code].name;
-    selectElem.appendChild(option);
-  });
-
-  // 2. 自動偵測 URL 中的 company 參數預選廠商
-  const urlParams = new URLSearchParams(window.location.search);
-  const companyParam = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
-  
-  if (companyParam) {
-    const numMatch = companyParam.match(/\d+/);
-    let vendorNo = numMatch ? numMatch[0] : '';
-    if (vendorNo.length === 1) vendorNo = '0' + vendorNo;
-
-    if (VENDOR_CONFIG[vendorNo]) {
-      selectElem.value = vendorNo;
-    }
-  }
+  loadCompanyList();
 });
 
-// ⌨️ 監聽 Enter 鍵，按下後自動解鎖
+/**
+ * 1. 向 GAS API 動態讀取密碼總表中的公司清單
+ */
+function loadCompanyList() {
+  const selectElem = document.getElementById('companySelect');
+  
+  // 使用 JSONP 跨網域讀取公司清單
+  const callbackName = 'onCompanyListLoaded';
+  window[callbackName] = function(response) {
+    if (response && response.success && response.companyList) {
+      selectElem.innerHTML = '<option value="" disabled selected>-- 請選擇公司名稱 --</option>';
+      response.companyList.forEach(compName => {
+        const option = document.createElement('option');
+        option.value = compName;
+        option.textContent = compName;
+        selectElem.appendChild(option);
+      });
+
+      // 自動偵測 URL 中的 company 參數預選廠商
+      const urlParams = new URLSearchParams(window.location.search);
+      const companyParam = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
+      if (companyParam) {
+        for (let i = 0; i < selectElem.options.length; i++) {
+          if (selectElem.options[i].value.includes(companyParam) || companyParam.includes(selectElem.options[i].value)) {
+            selectElem.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    } else {
+      selectElem.innerHTML = '<option value="" disabled>載入廠商失敗，請重新整理</option>';
+    }
+    // 移除動態 Script 標籤
+    delete window[callbackName];
+    const scriptTag = document.getElementById(callbackName);
+    if (scriptTag) scriptTag.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = `${VENDOR_API_URL}?action=getCompanyList&callback=${callbackName}`;
+  document.body.appendChild(script);
+}
+
+/**
+ * ⌨️ 監聽 Enter 鍵，按下後自動解鎖
+ */
 function handleKeyPress(event) {
   if (event.key === 'Enter' || event.keyCode === 13) {
     event.preventDefault();
@@ -164,50 +155,58 @@ function handleKeyPress(event) {
   }
 }
 
+/**
+ * 2. 向 GAS API 發送密碼驗證與取得試算表網址
+ */
 function submitPinAuth() {
   const selectElem = document.getElementById('companySelect');
-  const selectedVendorCode = selectElem.value;
+  const selectedCompany = selectElem.value;
   const pinInput = document.getElementById('pinInput').value.trim();
 
-  if (!selectedVendorCode) {
+  if (!selectedCompany) {
     alert('請先選擇公司名稱！');
     return;
   }
-
   if (pinInput.length !== 8) {
     alert('請輸入完整的 8 位數 密碼！');
     return;
   }
 
-  const vendorData = VENDOR_CONFIG[selectedVendorCode];
-
-  // 驗證密碼
-  const isMasterPin = (pinInput === MASTER_PIN);
-  const isVendorPin = (vendorData && pinInput === vendorData.pin);
-
-  if (!isMasterPin && !isVendorPin) {
-    alert('🔒 密碼錯誤！請輸入公司的 8 位數密碼。');
-    return;
-  }
-
-  const targetUrl = vendorData.url;
-
-  // 驗證成功處理畫面
   const authBox = document.getElementById('authBox');
   const loadingBox = document.getElementById('loadingBox');
   const loadingText = document.getElementById('loadingStatusText');
 
   authBox.classList.add('hidden');
   loadingBox.classList.remove('hidden');
-  loadingText.innerText = `✅ 驗證成功！正在開啟【${vendorData.name.replace(/^\d+\s*/, '')}】面試資料...`;
+  loadingText.innerText = '正在驗證密碼並搜尋試算表...';
 
-  document.getElementById('directSheetBtn').href = targetUrl;
-  document.getElementById('manualRedirectLink').classList.remove('hidden');
+  // 使用 JSONP 發送驗證請求
+  const callbackName = 'onVendorAuthVerified';
+  window[callbackName] = function(response) {
+    if (response && response.success && response.sheetUrl) {
+      loadingText.innerText = `驗證成功！正在開啟【${response.company}】面試資料...`;
+      document.getElementById('directSheetBtn').href = response.sheetUrl;
+      document.getElementById('manualRedirectLink').classList.remove('hidden');
 
-  // 0.5 秒後流暢跳轉
-  setTimeout(() => {
-    window.location.href = targetUrl;
-  }, 500);
+      // 0.5 秒後自動跳轉至試算表網址
+      setTimeout(() => {
+        window.location.href = response.sheetUrl;
+      }, 500);
+    } else {
+      alert(response.message || '🔒 密碼錯誤！請輸入貴公司專屬的 8 位數密碼。');
+      authBox.classList.remove('hidden');
+      loadingBox.classList.add('hidden');
+    }
+
+    delete window[callbackName];
+    const scriptTag = document.getElementById(callbackName);
+    if (scriptTag) scriptTag.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = `${VENDOR_API_URL}?action=getVendorSheetUrl&company=${encodeURIComponent(selectedCompany)}&pin=${encodeURIComponent(pinInput)}&callback=${callbackName}`;
+  document.body.appendChild(script);
 }
 </script>
 </body>
