@@ -323,7 +323,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyTqgH4OBZkxHMTi-QI_GBkCZTJ4AleydbifPIaG7D8MY2tZU4hgX74n9WJaYZK4NXifw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwqbRpUI5bFAi7wEgfKUda0t-xdcwEEVAcKEzxEQsFwo8st68YsTmB0SZnLZPI0jDXs/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -618,7 +618,7 @@ function handleFinalSuccess(r) {
   const successMessageContainer = document.getElementById('successMessageContainer');
   const m = r.message ? r.message.split('\n') : []; 
   const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
-  let h = `<div class="text-center text-3xl font-bold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！請隨時留意LINE的面試通知'}</div>`;
+  let h = `<div class="text-center text-3xl font-bold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！請隨時留意LINE的面試通知！'}</div>`;
   if (m[1]) h += `<div class="text-left text-xl mb-4 font-medium" style="color: var(--success-green);">${m[1]}</div>`;
   h += '<div class="booked-list text-lg">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
   
