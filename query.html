@@ -40,7 +40,6 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border: 1.5px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 10px !important; }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 14px rgba(172, 63, 255, 0.35); border-radius: 10px; color: var(--white); font-weight: 700; border: none; cursor: pointer; text-align: center; }
-.secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 10px; font-weight: 700; cursor: pointer; text-align: center; }
 .record-card {
   background: rgba(31, 29, 83, 0.7);
   border: 1px solid rgba(164, 141, 205, 0.35);
@@ -125,27 +124,9 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
   </div>
 </div>
 
-<!-- 🌟 履歷詳細資料預覽 Modal -->
-<div id="resumeDetailModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden z-50 backdrop-blur-md overflow-y-auto">
-  <div class="form-container p-6 sm:p-8 rounded-2xl shadow-2xl max-w-2xl w-full mx-auto my-8 space-y-6">
-    <div class="border-b border-lightPurple/30 pb-4 text-center">
-      <h3 class="text-2xl sm:text-3xl font-bold text-circuitCyan">履歷詳細內容預覽</h3>
-    </div>
-    
-    <!-- 17 項欄位完整清單 -->
-    <div id="modalDetailContent" class="space-y-3 text-base sm:text-lg max-h-[60vh] overflow-y-auto pr-2"></div>
-
-    <div class="flex flex-col sm:flex-row justify-center gap-4 pt-4 border-t border-lightPurple/20">
-      <button onclick="closeDetailModal()" class="secondary-btn px-6 py-3 text-lg font-bold">關閉預覽</button>
-      <a href="index.html" class="submit-btn px-8 py-3 text-lg font-bold text-center">前往修改此筆履歷</a>
-    </div>
-  </div>
-</div>
-
 <script>
 const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzTbpJ-Kc9vcTPg-XW1PkePPVzai8EwNksRvv8ZKOjLLGTo2KMm_4vOgaZd0FHmx3I/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
-window.fetchedResumes = [];
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -216,8 +197,7 @@ async function fetchData(url) {
 
     if (res.success) {
       document.getElementById('errorBox').classList.add('hidden');
-      window.fetchedResumes = res.resumes || [];
-      renderResumes(window.fetchedResumes);
+      renderResumes(res.resumes || []);
       renderAppointments(res.appointments || []);
       document.getElementById('queryResults').classList.remove('hidden');
     } else {
@@ -229,6 +209,7 @@ async function fetchData(url) {
   }
 }
 
+// 🌟 直接帶參數跳轉至 index.html 並自動進入修改介面
 function renderResumes(resumes) {
   const container = document.getElementById('resumeContainer');
   document.getElementById('resumeCountBadge').innerText = `${resumes.length} 筆`;
@@ -238,6 +219,10 @@ function renderResumes(resumes) {
     resumes.forEach((r, idx) => {
       const card = document.createElement('div');
       card.className = 'record-card p-6 sm:p-7 space-y-4';
+      
+      // 組合帶回 index.html 的 URL
+      const editUrl = `index.html?autoRow=${r.rowNum || ''}&name=${encodeURIComponent(r.name || '')}&id=${encodeURIComponent(r.idNumber || '')}`;
+
       card.innerHTML = `
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-lightPurple/20 pb-3 gap-2">
           <div class="flex items-center gap-3">
@@ -247,10 +232,10 @@ function renderResumes(resumes) {
           
           <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
             <span class="text-sm text-lightPurple">登記時間: ${r.timestamp}</span>
-            <!-- 🌟 點擊預覽履歷按鈕 -->
-            <button onclick="openDetailModal(${idx})" class="submit-btn px-4 py-1.5 text-base font-bold hover:opacity-90 transition">
-              預覽完整履歷
-            </button>
+            <!-- 🌟 直達修改/預覽頁面 -->
+            <a href="${editUrl}" class="submit-btn px-5 py-2 text-base font-bold hover:opacity-90 transition">
+              檢視 / 修改履歷
+            </a>
           </div>
         </div>
         
@@ -267,47 +252,6 @@ function renderResumes(resumes) {
   } else {
     container.innerHTML = '<p class="text-center py-6 text-gray-400 text-lg">目前尚無履歷登記紀錄。</p>';
   }
-}
-
-// 🌟 開啟履歷預覽 Modal
-function openDetailModal(idx) {
-  const r = window.fetchedResumes[idx];
-  if (!r) return;
-
-  const content = document.getElementById('modalDetailContent');
-  
-  const fields = [
-    { label: '姓名', val: r.name },
-    { label: '出生日期', val: r.birth },
-    { label: '身分證/居留證', val: r.idNumber },
-    { label: '婚姻狀況', val: r.maritalStatus },
-    { label: '兵役狀況', val: r.military },
-    { label: '聯絡電話', val: r.phone },
-    { label: 'E-mail', val: r.email },
-    { label: '聯絡地址', val: r.address },
-    { label: '最高學歷', val: r.education },
-    { label: '畢(肄)業學校', val: r.school },
-    { label: '畢業科系', val: r.department },
-    { label: '工作經歷', val: r.experience },
-    { label: '駕照種類', val: r.license },
-    { label: '電腦能力', val: r.computer },
-    { label: '語文能力', val: r.language }
-  ];
-
-  content.innerHTML = fields.map(item => `
-    <div class="flex flex-col sm:flex-row border-b border-lightPurple/20 pb-2 gap-1">
-      <span class="text-circuitCyan font-bold sm:w-1/3">${item.label}：</span>
-      <span class="text-white sm:w-2/3 whitespace-pre-line">${item.val || '<span class="text-gray-400 italic">未填</span>'}</span>
-    </div>
-  `).join('');
-
-  document.getElementById('resumeDetailModal').classList.remove('hidden');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeDetailModal() {
-  document.getElementById('resumeDetailModal').classList.add('hidden');
-  document.body.style.overflow = '';
 }
 
 function renderAppointments(appointments) {
