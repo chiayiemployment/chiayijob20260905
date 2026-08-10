@@ -118,7 +118,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         
         <!-- 🌟 項目 3: 加上 (必填)* -->
         <div class="space-y-2">
-          <label for="infoSource" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>如何得知活動訊息：<span class="text-red-500">*</span></label>
+          <label for="infoSource" class="block text-lg md:text-base font-medium">如何得知活動訊息：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <select id="infoSource" name="infoSource" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
             <option value="" disabled selected>請選擇...</option>
             <option value="就業中心告知(臨櫃、電話)">就業中心告知(臨櫃、電話)</option>
@@ -138,13 +138,13 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         </div>
 
         <div class="space-y-2">
-          <label for="name" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>姓名：<span class="text-red-500">*</span></label>
+          <label for="name" class="block text-lg md:text-base font-medium">姓名：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <input type="text" id="name" name="name" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
         </div>
 
         <!-- 🌟 項目 4: 民國日期選擇器 -->
         <div class="space-y-2">
-          <label class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>出生日期 (民國)：<span class="text-red-500">*</span></label>
+          <label class="block text-lg md:text-base font-medium">出生日期 (民國)：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <div class="grid grid-cols-3 gap-2">
             <select id="birthYear" class="w-full px-3 py-3 text-base rounded-lg" required>
               <option value="" disabled selected>民國年</option>
@@ -162,7 +162,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
 
         <div class="space-y-2">
           <label for="idNumber" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>身份證字號(居留證號)：<span class="text-red-500">*</span></label>
-          <input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 text-lg md:text-base rounded-lg uppercase" required placeholder="如: A123456789">
+          <input type="text" id="idNumber" name="idNumber" class="w-full px-4 py-3 text-lg md:text-base rounded-lg uppercase" required>
           <div id="idNumberError" class="error-message-inline hidden">身份證字號(居留證號)格式錯誤</div>
         </div>
 
@@ -184,12 +184,12 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         </div>
 
         <div class="space-y-2">
-          <label for="address" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>聯絡地址：<span class="text-red-500">*</span></label>
+          <label for="address" class="block text-lg md:text-base font-medium">聯絡地址：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <input type="text" id="address" name="address" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
         </div>
 
         <div class="space-y-2">
-          <label for="phone" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>聯絡電話：<span class="text-red-500">*</span></label>
+          <label for="phone" class="block text-lg md:text-base font-medium">聯絡電話：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <input type="tel" id="phone" name="phone" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
         </div>
 
@@ -199,7 +199,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         </div>
 
         <div class="space-y-2">
-          <label for="education" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>最高學歷(畢業)：<span class="text-red-500">*</span></label>
+          <label for="education" class="block text-lg md:text-base font-medium">最高學歷(畢業)：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <select id="education" name="education" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
             <option value="" disabled selected>請選擇...</option>
             <option value="國小">國小</option><option value="國中">國中</option><option value="高中(職)">高中(職)</option><option value="專科">專科</option><option value="大學">大學</option><option value="碩士">碩士</option><option value="博士">博士</option>
@@ -207,17 +207,17 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         </div>
 
         <div class="space-y-2">
-          <label for="school" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>畢(肄)業學校：<span class="text-red-500">*</span></label>
+          <label for="school" class="block text-lg md:text-base font-medium">畢(肄)業學校：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <input type="text" id="school" name="school" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
         </div>
 
         <div class="space-y-2">
-          <label for="major" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>畢業科系：<span class="text-red-500">*</span></label>
+          <label for="major" class="block text-lg md:text-base font-medium">畢業科系：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <input type="text" id="major" name="major" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required>
         </div>
 
         <div class="space-y-2">
-          <label for="workExperience" class="block text-lg md:text-base font-medium"><span class="required-tag">(必填)</span>工作經歷：<span class="text-red-500">*</span></label>
+          <label for="workExperience" class="block text-lg md:text-base font-medium">工作經歷：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <p class="text-sm text-lightPurple mb-2">請依照「公司名稱/擔任職務/年資」順序填寫，最多三筆</p>
           <textarea id="workExperience" name="workExperience" rows="4" class="w-full px-4 py-3 text-lg md:text-base rounded-lg" required></textarea>
         </div>
@@ -295,7 +295,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div class="form-header -mx-6 sm:-mx-8 -mt-6 sm:-mt-8 mb-6 sm:mb-8 py-5 px-6 sm:py-6 sm:px-8 rounded-t-lg">
       <h2 id="appointmentTitle" class="text-2xl md:text-xl font-bold text-center">選擇預約面試職務名稱</h2>
     </div>
-    <p class="text-lg font-bold text-left text-[#FFC72C] mb-4">如欲應徵同家公司兩項以上職務，請於面試時告知。</p>
+    <p class="text-lg font-bold text-left text-[#FFC72C] mb-4">一家廠商只能選擇一項職務，如欲應徵兩項以上職務，請於面試時告知。</p>
     <div class="space-y-5 md:space-y-4 mb-6" id="companyListContainer">
       <p class="text-center text-lightPurple py-4">載入職務列表中...</p>
     </div>
@@ -618,7 +618,7 @@ function handleFinalSuccess(r) {
   const successMessageContainer = document.getElementById('successMessageContainer');
   const m = r.message ? r.message.split('\n') : []; 
   const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
-  let h = `<div class="text-center text-3xl font-bold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！'}</div>`;
+  let h = `<div class="text-center text-3xl font-bold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！請隨時留意LINE的面試通知'}</div>`;
   if (m[1]) h += `<div class="text-left text-xl mb-4 font-medium" style="color: var(--success-green);">${m[1]}</div>`;
   h += '<div class="booked-list text-lg">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
   
