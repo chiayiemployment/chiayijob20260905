@@ -79,15 +79,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         <span class="text-xl font-bold text-amber-300">偵測到已有求職履歷</span>
         <span id="resumeCountTag" class="text-xs text-lightPurple"></span>
       </div>
-      <p id="resumeBannerText" class="text-base text-purple-100">系統偵測到此 LINE 帳號已有登記的履歷，請問您要進行修改還是填寫新履歷？</p>
+      <p id="resumeBannerText" class="text-base text-purple-100">系統偵測到此 LINE 帳號已有登記的履歷，請問您要進行修改還是新增履歷？</p>
       
       <!-- 多筆履歷列表卡片 -->
       <div id="resumeCardsList" class="grid grid-cols-1 gap-3 hidden"></div>
 
       <!-- 單筆履歷或控制按鈕 -->
       <div id="resumeActionBtns" class="flex flex-col sm:flex-row gap-3 pt-2">
-        <button id="btnModifyExisting" class="submit-btn px-6 py-3 text-lg font-bold">修改履歷表</button>
-        <button id="btnAddNewResume" class="secondary-btn px-6 py-3 text-lg font-bold">新增履歷表</button>
+        <button id="btnModifyExisting" class="submit-btn px-6 py-3 text-lg font-bold">修改履歷</button>
+        <button id="btnAddNewResume" class="secondary-btn px-6 py-3 text-lg font-bold">新增履歷</button>
       </div>
     </div>
 
@@ -104,7 +104,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         </p>
         <div class="pt-2 space-y-2">
           <!-- 🌟 項目 3: 加上 (必填)* -->
-          <label class="block font-medium text-lg md:text-base"><span class="required-tag">(必填)</span>請詳閱上方宣告後，點選同意以繼續：<span class="text-red-500">*</span></label>
+          <label class="block font-medium text-lg md:text-base">請詳閱上方宣告後，點選同意以繼續：<span class="required-tag">(必填)</span><span class="text-red-500">*</span></label>
           <div class="flex flex-wrap gap-x-6 gap-y-2 pt-1">
             <label class="flex items-center gap-2"> <input type="radio" name="agreement" value="同意" required class="h-5 w-5"> <span>同意</span> </label>
             <label class="flex items-center gap-2"> <input type="radio" name="agreement" value="不同意" class="h-5 w-5"> <span>不同意</span> </label>
