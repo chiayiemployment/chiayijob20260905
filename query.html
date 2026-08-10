@@ -35,7 +35,7 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 .circuit-line { position: absolute; background-color: var(--dark-purple); box-shadow: 0 0 5px var(--blue); }
 .left-gradient { position: fixed; top: 0; left: 0; width: 30%; height: 100%; background: linear-gradient(90deg, var(--deep-blue) 0%, rgba(5, 61, 136, 0) 100%); z-index: 1; pointer-events: none; }
 .main-content-area { position: relative; z-index: 10; }
-.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.95) 0%, rgba(76, 35, 124, 0.9) 100%); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); border: 1px solid rgba(164, 141, 205, 0.25); }
+.form-container { position: relative; z-index: 1; background: linear-gradient(135deg, rgba(31, 29, 83, 0.9) 0%, rgba(76, 35, 124, 0.8) 100%); border-radius: 20px; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4); backdrop-filter: blur(6px); border: 1px solid rgba(164, 141, 205, 0.25); }
 .form-header { background: linear-gradient(90deg, var(--deep-blue), var(--dark-purple)); border-bottom: 2px solid var(--bright-cyan); box-shadow: 0 4px 12px rgba(5, 61, 136, 0.5); }
 .form-title { text-shadow: 0 2px 4px var(--mid-purple); }
 input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border: 1.5px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 10px !important; }
@@ -55,6 +55,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
+
   <div class="form-container p-6 sm:p-8 md:p-10 lg:p-12">
     <!-- 頂部頁面標題 -->
     <div class="form-header -mx-6 sm:-mx-8 md:-mx-10 lg:-mx-12 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 mb-8 py-6 px-6 sm:py-7 md:px-10 rounded-t-2xl">
@@ -67,7 +68,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
       <span>正在識別 LINE 身份並讀取資料...</span>
     </div>
 
-    <!-- 🖥️ 工作人員手動輸入區塊 -->
+    <!-- 🖥️ 工作人員手動輸入區塊 (大螢幕優化字級與間距) -->
     <div id="manualSearchBox" class="hidden bg-darkPurple/60 p-6 sm:p-8 rounded-2xl border border-lightPurple/40 space-y-5 mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lightPurple/20 pb-3 gap-2">
         <span class="text-amber-300 font-bold text-xl sm:text-2xl">網頁查詢模式</span>
@@ -88,7 +89,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
       </button>
     </div>
 
-    <!-- 📊 查詢結果區域 -->
+    <!-- 📊 查詢結果區域 (無 Icon，適度放大字體) -->
     <div id="queryResults" class="hidden space-y-10">
       
       <!-- 📄 1. 個人履歷清單區塊 -->
@@ -112,6 +113,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         </div>
         <div id="apptContainer" class="space-y-5"></div>
       </div>
+
     </div>
 
     <!-- ⚠️ 查無資料/錯誤訊息 -->
@@ -121,11 +123,12 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         <a href="index.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">前往填寫求職登記表</a>
       </div>
     </div>
+
   </div>
 </div>
 
 <script>
-const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzTbpJ-Kc9vcTPg-XW1PkePPVzai8EwNksRvv8ZKOjLLGTo2KMm_4vOgaZd0FHmx3I/exec'; 
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw9NIgqhJxdUFbfI5BSKPySzDCNflAY_0W-rNSYPa1_BCSF8xEiRgKJH8jy_xE9aj3GVw/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
@@ -209,43 +212,44 @@ async function fetchData(url) {
   }
 }
 
-// 🌟 直接帶參數跳轉至 index.html 並自動進入修改介面
 function renderResumes(resumes) {
   const container = document.getElementById('resumeContainer');
   document.getElementById('resumeCountBadge').innerText = `${resumes.length} 筆`;
   container.innerHTML = '';
-
   if (resumes.length > 0) {
     resumes.forEach((r, idx) => {
       const card = document.createElement('div');
       card.className = 'record-card p-6 sm:p-7 space-y-4';
-      
-      // 組合帶回 index.html 的 URL
-      const editUrl = `index.html?autoRow=${r.rowNum || ''}&name=${encodeURIComponent(r.name || '')}&id=${encodeURIComponent(r.idNumber || '')}`;
-
       card.innerHTML = `
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-lightPurple/20 pb-3 gap-2">
+        <div class="flex justify-between items-center border-b border-lightPurple/20 pb-3">
           <div class="flex items-center gap-3">
             <span class="px-2.5 py-1 text-sm font-bold bg-darkPurple text-circuitCyan rounded border border-circuitCyan/30">履歷 #${idx + 1}</span>
             <h3 class="text-2xl font-extrabold text-white">${r.name}</h3>
           </div>
-          
-          <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            <span class="text-sm text-lightPurple">登記時間: ${r.timestamp}</span>
-            <!-- 🌟 直達修改/預覽頁面 -->
-            <a href="${editUrl}" class="submit-btn px-5 py-2 text-base font-bold hover:opacity-90 transition">
-              檢視 / 修改履歷
-            </a>
-          </div>
+          <span class="text-sm text-lightPurple">登記時間: ${r.timestamp}</span>
         </div>
         
+        <!-- 放大文字，移除全數 Icon -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-base sm:text-lg text-nearWhite">
           <div><span class="text-lightPurple font-bold">出生日期：</span>${r.birth || '未填'}</div>
           <div><span class="text-lightPurple font-bold">身分證/居留證：</span>${r.idNumber || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">婚姻狀況：</span>${r.maritalStatus || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">兵役狀況：</span>${r.military || '未填'}</div>
           <div><span class="text-lightPurple font-bold">聯絡電話：</span>${r.phone || '未填'}</div>
-          <div><span class="text-lightPurple font-bold">最高學歷：</span>${r.education || '未填'}</div>
+          <div><span class="text-lightPurple font-bold">E-mail：</span>${r.email || '未填'}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-bold">聯絡地址：</span>${r.address || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">最高學歷：</span>${r.education || '未填'} ${r.school ? '- ' + r.school : ''} ${r.department ? '(' + r.department + ')' : ''}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">駕照種類：</span>${r.license || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">電腦能力：</span>${r.computer || '未填'}</div>
+          <div class="sm:col-span-2"><span class="text-lightPurple font-bold">語文能力：</span>${r.language || '未填'}</div>
         </div>
+
+        ${r.experience ? `
+          <div class="text-base bg-darkPurple/50 p-4 rounded-xl border border-lightPurple/20 text-gray-200">
+            <span class="text-lightPurple font-bold block mb-1.5">工作經歷：</span>
+            <p class="whitespace-pre-line leading-relaxed">${r.experience}</p>
+          </div>
+        ` : ''}
       `;
       container.appendChild(card);
     });
