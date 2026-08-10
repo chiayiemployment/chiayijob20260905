@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
       if (r.success) {
-        let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約面試成功！</div>`;
+        let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約成功！請隨時留意LINE的面試通知！</div>`;
         h += `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
         h += '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
         pos.forEach(i => {
