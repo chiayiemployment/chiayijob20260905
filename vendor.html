@@ -35,10 +35,9 @@ select option {
 </style>
 </head>
 <body class="flex items-center justify-center p-4 sm:p-6 lg:p-12 min-h-screen">
-
 <div class="form-container p-6 sm:p-10 md:p-12 max-w-xl w-full text-center space-y-6 lg:space-y-8">
   
-  <!-- 表頭區塊 (已移除 Emoji 圖示) -->
+  <!-- 表頭區塊 -->
   <div class="space-y-2 border-b border-purple-400/20 pb-6">
     <div class="text-lg sm:text-xl font-bold text-cyan-300 tracking-wider uppercase">
       數位永續 薪在嘉義
@@ -64,7 +63,7 @@ select option {
       </select>
     </div>
 
-    <!-- 輸入 8 位數密碼 (支援 Enter 鍵解鎖) -->
+    <!-- 輸入 8 位數密碼 -->
     <div class="text-left space-y-2.5">
       <label for="pinInput" class="text-lg sm:text-xl font-bold text-purple-200 block">
         請輸入 8 位數 密碼
@@ -96,7 +95,7 @@ select option {
 </div>
 
 <script>
-// ⚠️ 請填入您的「廠商試算表快速驗證跳轉 API」發布後的 Web App 網址 (網址結尾必須是 /exec)
+// ⚠️ 請填入您的「廠商試算表快速驗證跳轉 API」發布後的 Web App 網址
 const VENDOR_API_URL = 'https://script.google.com/macros/s/AKfycbw3_uxYa0iyVixweOBUneJ_BZc9VTHRVX3osxqccNVhJpNMizMaifNIP4EK8vT0oS0-0w/exec';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -104,15 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * 1. 向 GAS API 動態讀取密碼總表 B 欄中的公司清單
+ * 1. 使用 JSONP 機制穿透 CORS 跨域限制，載入廠商清單
  */
-async function loadCompanyList() {
+function loadCompanyList() {
   const selectElem = document.getElementById('companySelect');
-  
-  try {
-    const resp = await fetch(`${VENDOR_API_URL}?action=getCompanyList`);
-    const res = await resp.json();
+  const callbackName = 'cb_getCompanyList_' + Date.now();
 
+  window[callbackName] = function(res) {
     if (res && res.success && Array.isArray(res.companyList) && res.companyList.length > 0) {
       selectElem.innerHTML = '<option value="" disabled selected>-- 請選擇公司名稱 --</option>';
       
@@ -123,7 +120,7 @@ async function loadCompanyList() {
         selectElem.appendChild(option);
       });
 
-      // 自動偵測 URL 中的 company 參數預選廠商
+      // 自動預選網址中的 company 參數
       const urlParams = new URLSearchParams(window.location.search);
       const companyParam = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')).trim() : '';
       if (companyParam) {
@@ -137,14 +134,26 @@ async function loadCompanyList() {
     } else {
       selectElem.innerHTML = '<option value="" disabled>載入失敗：無廠商資料或總表讀取異常</option>';
     }
-  } catch (err) {
-    console.error("載入廠商清單失敗：", err);
-    selectElem.innerHTML = '<option value="" disabled>連線失敗，請檢查 API 網址或重新整理</option>';
-  }
+
+    // 清理資源
+    delete window[callbackName];
+    const scriptEl = document.getElementById(callbackName);
+    if (scriptEl) scriptEl.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = `${VENDOR_API_URL}?action=getCompanyList&callback=${callbackName}`;
+  script.onerror = function() {
+    selectElem.innerHTML = '<option value="" disabled>連線失敗，請檢查 API 網址</option>';
+    delete window[callbackName];
+    script.remove();
+  };
+  document.body.appendChild(script);
 }
 
 /**
- * ⌨️ 監聽 Enter 鍵，按下後自動解鎖
+ * ⌨️ 監聽 Enter 鍵解鎖
  */
 function handleKeyPress(event) {
   if (event.key === 'Enter' || event.keyCode === 13) {
@@ -154,9 +163,9 @@ function handleKeyPress(event) {
 }
 
 /**
- * 2. 向 GAS API 發送 C 欄密碼驗證，並取得 D 欄試算表 ID 轉成的網址
+ * 2. 使用 JSONP 機制發送密碼驗證
  */
-async function submitPinAuth() {
+function submitPinAuth() {
   const selectElem = document.getElementById('companySelect');
   const selectedCompany = selectElem.value;
   const pinInput = document.getElementById('pinInput').value.trim();
@@ -166,7 +175,7 @@ async function submitPinAuth() {
     return;
   }
   if (pinInput.length !== 8) {
-    alert('請輸入完整的 8 位數 密碼！');
+    alert('請輸入完整的 8 位數密碼！');
     return;
   }
 
@@ -178,22 +187,14 @@ async function submitPinAuth() {
   loadingBox.classList.remove('hidden');
   loadingText.innerText = '正在驗證密碼並搜尋試算表...';
 
-  try {
-    const query = new URLSearchParams({
-      action: 'getVendorSheetUrl',
-      company: selectedCompany,
-      pin: pinInput
-    }).toString();
+  const callbackName = 'cb_verifyPin_' + Date.now();
 
-    const resp = await fetch(`${VENDOR_API_URL}?${query}`);
-    const res = await resp.json();
-
+  window[callbackName] = function(res) {
     if (res && res.success && res.sheetUrl) {
       loadingText.innerText = `驗證成功！正在開啟【${res.company}】面試資料...`;
       document.getElementById('directSheetBtn').href = res.sheetUrl;
       document.getElementById('manualRedirectLink').classList.remove('hidden');
 
-      // 0.5 秒後自動跳轉至試算表網址
       setTimeout(() => {
         window.location.href = res.sheetUrl;
       }, 500);
@@ -202,11 +203,23 @@ async function submitPinAuth() {
       authBox.classList.remove('hidden');
       loadingBox.classList.add('hidden');
     }
-  } catch (err) {
+
+    delete window[callbackName];
+    const scriptEl = document.getElementById(callbackName);
+    if (scriptEl) scriptEl.remove();
+  };
+
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = `${VENDOR_API_URL}?action=getVendorSheetUrl&company=${encodeURIComponent(selectedCompany)}&pin=${encodeURIComponent(pinInput)}&callback=${callbackName}`;
+  script.onerror = function() {
     alert('連線失敗，請確認網路連線或 API 網址！');
     authBox.classList.remove('hidden');
     loadingBox.classList.add('hidden');
-  }
+    delete window[callbackName];
+    script.remove();
+  };
+  document.body.appendChild(script);
 }
 </script>
 </body>
