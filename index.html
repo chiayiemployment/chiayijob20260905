@@ -127,7 +127,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <!-- 多履歷選擇彈窗/提示區塊 -->
     <div id="existingResumeBanner" class="hidden bg-darkPurple/60 border border-bright-cyan/40 p-5 rounded-xl mb-6 space-y-4">
       <div class="flex items-center justify-between border-b border-lightPurple/20 pb-3">
-        <span class="text-xl font-bold text-amber-300">偵測到已有求職履歷</span>
+        <span class="text-xl font-bold text-amber-300">偵測到履歷數</span>
         <span id="resumeCountTag" class="text-xs text-lightPurple"></span>
       </div>
       <p id="resumeBannerText" class="text-base text-purple-100">系統偵測到此 LINE 帳號已有登記的履歷，請問您要進行修改還是新增履歷？</p>
@@ -521,7 +521,7 @@ async function checkExistingProfiles(lineUserId) {
       document.getElementById('btnModifyExisting').onclick = () => loadProfileIntoForm(res.profiles[0]);
     } else {
       tag.innerText = `共找到 ${res.profiles.length} 筆歷史履歷`;
-      document.getElementById('resumeBannerText').innerText = '系統偵測到此 LINE 帳號有多筆履歷紀錄，請依下方資料選擇要使用／修改的履歷，或新增一筆履歷：';
+      document.getElementById('resumeBannerText').innerText = '系統偵測到有多筆履歷，請擇一進行修改，或新增履歷：';
       cardsList.innerHTML = '';
       cardsList.classList.remove('hidden');
 
