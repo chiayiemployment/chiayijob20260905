@@ -346,7 +346,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyk1buOCyDvf2ZwwgVyRhajhWhZrjO3AGaXwqLpqKGJ8-fRDI3yaLgZ2rEl6i2NHVRPyw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwPW88P2g5oZcUEoN9Z6Ja-9KuGdPP1Q8bBhOlkrhpjv8PMPZUbqoxgLFss_XbuAACMwg/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -481,6 +481,27 @@ async function initLiff() {
   }
 }
 
+
+function maskPhoneForResumeCard(phone) {
+  const v = String(phone || '').trim();
+  if (!v) return '未填';
+
+  if (v.length >= 7) {
+    return v.substring(0, 4) + '***' + v.substring(v.length - 3);
+  }
+
+  if (v.length >= 4) {
+    return v.substring(0, 2) + '***' + v.substring(v.length - 1);
+  }
+
+  return '***';
+}
+
+function safeResumeCardText(value, fallback = '未填') {
+  const v = String(value || '').trim();
+  return v || fallback;
+}
+
 async function checkExistingProfiles(lineUserId) {
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
 
@@ -499,8 +520,8 @@ async function checkExistingProfiles(lineUserId) {
       cardsList.classList.add('hidden');
       document.getElementById('btnModifyExisting').onclick = () => loadProfileIntoForm(res.profiles[0]);
     } else {
-      tag.innerText = `找到 ${res.profiles.length} 筆歷史履歷`;
-      document.getElementById('resumeBannerText').innerText = '系統偵測到此帳號有多筆登記的履歷，請點選您要修改的履歷，或填寫新履歷：';
+      tag.innerText = `共找到 ${res.profiles.length} 筆歷史履歷`;
+      document.getElementById('resumeBannerText').innerText = '系統偵測到此 LINE 帳號有多筆履歷紀錄，請依下方資料選擇要使用／修改的履歷，或新增一筆履歷：';
       cardsList.innerHTML = '';
       cardsList.classList.remove('hidden');
 
@@ -509,12 +530,25 @@ async function checkExistingProfiles(lineUserId) {
         const card = document.createElement('div');
         card.className = 'user-card';
         card.onclick = () => loadProfileIntoForm(p);
+        const maskedPhone = maskPhoneForResumeCard(p.phone);
+        const educationText = safeResumeCardText(p.education);
+        const schoolText = safeResumeCardText(p.school);
+
         card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-white text-lg">${p.name} (${maskedId})</span>
-            <span class="text-xs text-circuitCyan border border-circuitCyan/40 px-2 py-0.5 rounded">修改此筆</span>
+          <div class="flex justify-between items-start gap-3">
+            <div>
+              <div class="font-bold text-white text-lg">${p.name} (${maskedId})</div>
+              <div class="text-sm text-purple-100 mt-2 leading-6">
+                <div>最高學歷：${educationText}</div>
+                <div>畢業學校：${schoolText}</div>
+                <div>聯絡電話：${maskedPhone}</div>
+              </div>
+            </div>
+            <span class="shrink-0 text-xs text-circuitCyan border border-circuitCyan/40 px-2 py-1 rounded">選擇此筆</span>
           </div>
-          <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
+          <div class="text-xs text-lightPurple mt-3 pt-2 border-t border-lightPurple/20">
+            登記時間：${p.timestamp}
+          </div>
         `;
         cardsList.appendChild(card);
       });
