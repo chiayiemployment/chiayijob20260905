@@ -59,6 +59,50 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
 .hidden { display: none !important; }
 .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+.identity-check-panel {
+  background: rgba(31, 29, 83, 0.72);
+  border: 1px solid rgba(40, 196, 255, 0.35);
+  border-radius: 14px;
+  padding: 1.25rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: inset 0 0 20px rgba(40, 196, 255, 0.04);
+}
+.identity-check-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+}
+.identity-spinner {
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 4px solid rgba(255,255,255,0.28);
+  border-top-color: var(--bright-cyan);
+  border-right-color: var(--bright-cyan);
+  border-radius: 9999px;
+  animation: spin 0.85s linear infinite;
+  flex: 0 0 auto;
+}
+.identity-text {
+  color: var(--bright-cyan);
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+.identity-check-panel.success {
+  border-color: rgba(74, 222, 128, 0.45);
+}
+.identity-check-panel.success .identity-text {
+  color: var(--success-green);
+}
+.identity-check-panel.error {
+  border-color: rgba(255, 107, 107, 0.5);
+}
+.identity-check-panel.error .identity-text {
+  color: var(--error-red);
+}
+
 </style>
 <base target="_top">
 </head>
@@ -71,6 +115,15 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷填寫與預約面試</h1>
     </div>
+
+    <!-- ⚡ LINE 身份識別與履歷比對狀態 -->
+    <div id="identityCheckPanel" class="identity-check-panel">
+      <div class="identity-check-inner">
+        <span id="identityCheckSpinner" class="identity-spinner" aria-hidden="true"></span>
+        <span id="identityCheckText" class="identity-text">正在識別 LINE 身份與比對履歷紀錄...</span>
+      </div>
+    </div>
+
     <!-- 多履歷選擇彈窗/提示區塊 -->
     <div id="existingResumeBanner" class="hidden bg-darkPurple/60 border border-bright-cyan/40 p-5 rounded-xl mb-6 space-y-4">
       <div class="flex items-center justify-between border-b border-lightPurple/20 pb-3">
@@ -293,7 +346,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxacLIy8kyZhtHm0Mp5dtWlOgpknyUDDmFDbLA9CM7rQXPkfCUjMYHqtltAK0s9wn8hxA/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxorRCTeTmw0Hn8hgybVBVEHhcwJXDfVLnsRwYKuKRn4gKUV0KyZcWf_duWYWQNkIemqQ/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -371,31 +424,76 @@ function syncBirthdateValue() {
   }
 }
 
+
+function setIdentityCheckState(message, state = 'loading') {
+  const panel = document.getElementById('identityCheckPanel');
+  const text = document.getElementById('identityCheckText');
+  const spinner = document.getElementById('identityCheckSpinner');
+
+  if (!panel || !text || !spinner) return;
+
+  panel.classList.remove('hidden', 'success', 'error');
+  text.textContent = message;
+
+  if (state === 'loading') {
+    spinner.classList.remove('hidden');
+  } else {
+    spinner.classList.add('hidden');
+    if (state === 'success') panel.classList.add('success');
+    if (state === 'error') panel.classList.add('error');
+  }
+}
+
+function hideIdentityCheck(delay = 700) {
+  const panel = document.getElementById('identityCheckPanel');
+  if (!panel) return;
+
+  setTimeout(() => {
+    panel.classList.add('hidden');
+  }, delay);
+}
+
 async function initLiff() {
   try {
+    setIdentityCheckState('正在識別 LINE 身份與比對履歷紀錄...', 'loading');
+
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
+
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
+
         window.lineUserId = profile.userId;
         document.getElementById('lineUserId').value = profile.userId;
-        
-        checkExistingProfiles(profile.userId);
+
+        setIdentityCheckState('LINE 身份識別完成，正在比對履歷紀錄...', 'loading');
+
+        await checkExistingProfiles(profile.userId);
+      } else {
+        setIdentityCheckState('目前未取得 LINE 登入身份，請由 LINE 內開啟此頁面。', 'error');
       }
+    } else {
+      setIdentityCheckState('無法初始化 LINE 身份識別。', 'error');
     }
   } catch (err) {
     console.warn('LIFF 初始化跳過:', err);
+    setIdentityCheckState('LINE 身份識別暫時失敗，請重新開啟頁面再試一次。', 'error');
   }
 }
 
 async function checkExistingProfiles(lineUserId) {
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
+
   if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
+    setIdentityCheckState(`已找到 ${res.profiles.length} 筆履歷紀錄`, 'success');
+    hideIdentityCheck(900);
+
     window.userProfiles = res.profiles;
     const banner = document.getElementById('existingResumeBanner');
     const cardsList = document.getElementById('resumeCardsList');
     const tag = document.getElementById('resumeCountTag');
     banner.classList.remove('hidden');
+
     if (res.profiles.length === 1) {
       tag.innerText = '找到 1 筆歷史履歷';
       cardsList.classList.add('hidden');
@@ -405,6 +503,7 @@ async function checkExistingProfiles(lineUserId) {
       document.getElementById('resumeBannerText').innerText = '系統偵測到此帳號有多筆登記的履歷，請點選您要修改的履歷，或填寫新履歷：';
       cardsList.innerHTML = '';
       cardsList.classList.remove('hidden');
+
       res.profiles.forEach((p, idx) => {
         const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
         const card = document.createElement('div');
@@ -419,14 +518,29 @@ async function checkExistingProfiles(lineUserId) {
         `;
         cardsList.appendChild(card);
       });
+
       document.getElementById('btnModifyExisting').classList.add('hidden');
     }
+
     document.getElementById('btnAddNewResume').onclick = () => {
       banner.classList.add('hidden');
       document.getElementById('formFields').classList.remove('hidden');
       const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
       if (agreeRadio) agreeRadio.checked = true;
     };
+
+  } else if (res && res.status === 'not_found') {
+
+    setIdentityCheckState('LINE 身份確認完成，尚無歷史履歷紀錄', 'success');
+    hideIdentityCheck(900);
+
+  } else {
+
+    const msg = (res && res.message)
+      ? `履歷比對失敗：${res.message}`
+      : '履歷比對暫時失敗，請重新開啟頁面再試一次。';
+
+    setIdentityCheckState(msg, 'error');
   }
 }
 
