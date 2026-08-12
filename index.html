@@ -569,7 +569,7 @@ function displayAppointmentSection(resumeInfo) {
   window.scrollTo(0, 0);
 }
 
-// 🌟 核心：呈現兩大按鈕「關閉網頁」與「查詢職缺資訊」
+// 🌟 呈現兩大按鈕「關閉網頁」與「職缺資訊 (job.html)」
 function handleFinalSuccess(r) {
   const successMessageContent = document.getElementById('successMessageContent');
   const successMessageContainer = document.getElementById('successMessageContainer');
@@ -583,14 +583,14 @@ function handleFinalSuccess(r) {
     h += '<div class="booked-list text-lg mb-6">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
   }
 
-  // 🌟 新增兩個按鈕：「關閉網頁」與「查詢職缺資訊」
+  // 🌟 按鈕連結修改為 job.html
   h += `
     <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4 border-t border-lightPurple/20">
       <button onclick="closeWebPage()" class="secondary-btn w-full sm:w-1/2 py-3.5 text-xl font-bold">
         關閉網頁
       </button>
-      <a href="query.html" class="submit-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center">
-        查詢職缺資訊
+      <a href="job.html" class="submit-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center">
+        職缺資訊
       </a>
     </div>
   `;
