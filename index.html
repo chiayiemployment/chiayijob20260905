@@ -585,13 +585,26 @@ function handleFinalSuccess(r) {
 
   // 🌟 按鈕連結修改為 job.html
   h += `
-    <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4 border-t border-lightPurple/20">
-      <button onclick="closeWebPage()" class="secondary-btn w-full sm:w-1/2 py-3.5 text-xl font-bold">
+    <div class="flex fle// 🌟 呈現單一按鈕：「關閉網頁」
+function handleFinalSuccess(r) {
+  const successMessageContent = document.getElementById('successMessageContent');
+  const successMessageContainer = document.getElementById('successMessageContainer');
+  const m = r.message ? r.message.split('\n') : []; 
+  const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
+
+  let h = `<div class="text-center text-3xl font-extrabold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！'}</div>`;
+  if (m[1]) h += `<div class="text-center text-xl mb-4 font-medium text-purple-100">${m[1]}</div>`;
+  
+  if (bItems.length > 0) {
+    h += '<div class="booked-list text-lg mb-6">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
+  }
+
+  // 🌟 僅保留「關閉網頁」按鈕
+  h += `
+    <div class="flex justify-center items-center pt-4 border-t border-lightPurple/20">
+      <button onclick="closeWebPage()" class="submit-btn w-full sm:w-2/3 py-3.5 text-xl font-bold">
         關閉網頁
       </button>
-      <a href="job.html" class="submit-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center">
-        職缺資訊
-      </a>
     </div>
   `;
 
