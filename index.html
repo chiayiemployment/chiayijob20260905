@@ -71,6 +71,11 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷填寫與預約面試</h1>
     </div>
+    <!-- 偵測載入中提示 -->
+    <div id="detectingStatus" class="text-center py-6 text-circuitCyan flex items-center justify-center gap-3 text-lg">
+      <span class="spinner"></span>
+      <span>正在識別身分並尋找紀錄...</span>
+    </div>
     <!-- 多履歷選擇彈窗/提示區塊 -->
     <div id="existingResumeBanner" class="hidden bg-darkPurple/60 border border-bright-cyan/40 p-5 rounded-xl mb-6 space-y-4">
       <div class="flex items-center justify-between border-b border-lightPurple/20 pb-3">
@@ -293,7 +298,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz2xQfmHJTglbx_qgbsTrUB3hePbdMXFgzjFPtswddNONF8TZPfkBTqh8ncHlXfXGScbw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzelJctELEvrLpL_9I5d4glSid_WV-wOZaj8tiCCI-0fnG72XdSbAdX0EQhzadlecw9QQ/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -368,49 +373,65 @@ function syncBirthdateValue() {
   }
 }
 
-// 🌟 異步並行與極速觸發優化
+// 🌟 修正後的完整異步 LIFF 與履歷自動偵測流程
 async function initLiff() {
+  const detectingStatus = document.getElementById('detectingStatus');
+  const formFields = document.getElementById('formFields');
+  
   const urlParams = new URLSearchParams(window.location.search);
   let uid = urlParams.get('uid') || '';
 
-  // 1. 若 URL 中有 uid 參數，直接秒發發送查詢，不卡死等待 LIFF
+  // 1. 若 URL 中有帶 uid，優先發送檢索
   if (uid) {
     window.lineUserId = uid;
     document.getElementById('lineUserId').value = uid;
-    checkExistingProfiles(uid);
+    await checkExistingProfiles(uid);
+    if (detectingStatus) detectingStatus.classList.add('hidden');
+    return;
   }
 
-  // 2. 背景靜默初始化 LIFF
+  // 2. 初始化 LIFF SDK
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
         if (profile && profile.userId) {
-          const fetchedUid = profile.userId;
-          if (fetchedUid !== uid) {
-            window.lineUserId = fetchedUid;
-            document.getElementById('lineUserId').value = fetchedUid;
-            checkExistingProfiles(fetchedUid);
-          }
+          window.lineUserId = profile.userId;
+          document.getElementById('lineUserId').value = profile.userId;
+          await checkExistingProfiles(profile.userId);
+        } else {
+          // 未查到 userId 時預設直接顯示表單
+          if (formFields) formFields.classList.remove('hidden');
         }
+      } else {
+        // 未登入情境預設直接顯示表單
+        if (formFields) formFields.classList.remove('hidden');
       }
+    } else {
+      if (formFields) formFields.classList.remove('hidden');
     }
   } catch (err) {
-    console.warn('LIFF 初始化跳過:', err);
+    console.warn('LIFF 初始化跳過或非 LINE 環境:', err);
+    if (formFields) formFields.classList.remove('hidden');
+  } finally {
+    if (detectingStatus) detectingStatus.classList.add('hidden');
   }
 }
 
 async function checkExistingProfiles(lineUserId) {
+  const formFields = document.getElementById('formFields');
+  const banner = document.getElementById('existingResumeBanner');
+  const cardsList = document.getElementById('resumeCardsList');
   const tag = document.getElementById('resumeCountTag');
-  if (tag) tag.innerText = '比對身分中...';
 
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
+  
   if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
     window.userProfiles = res.profiles;
-    const banner = document.getElementById('existingResumeBanner');
-    const cardsList = document.getElementById('resumeCardsList');
     banner.classList.remove('hidden');
+    if (formFields) formFields.classList.add('hidden'); // 找到舊履歷時先藏起填寫表單，讓使用者選擇
+
     if (res.profiles.length === 1) {
       tag.innerText = '找到 1 筆歷史履歷';
       cardsList.classList.add('hidden');
@@ -420,7 +441,7 @@ async function checkExistingProfiles(lineUserId) {
       document.getElementById('resumeBannerText').innerText = '系統偵測到此帳號有多筆登記的履歷，請點選您要修改的履歷，或填寫新履歷：';
       cardsList.innerHTML = '';
       cardsList.classList.remove('hidden');
-      res.profiles.forEach((p, idx) => {
+      res.profiles.forEach((p) => {
         const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
         const card = document.createElement('div');
         card.className = 'user-card';
@@ -436,14 +457,17 @@ async function checkExistingProfiles(lineUserId) {
       });
       document.getElementById('btnModifyExisting').classList.add('hidden');
     }
+
     document.getElementById('btnAddNewResume').onclick = () => {
       banner.classList.add('hidden');
-      document.getElementById('formFields').classList.remove('hidden');
+      if (formFields) formFields.classList.remove('hidden');
       const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
       if (agreeRadio) agreeRadio.checked = true;
     };
   } else {
-    if (tag) tag.innerText = '';
+    // 沒找到歷史紀錄，自動直接顯示空白填寫表單
+    if (banner) banner.classList.add('hidden');
+    if (formFields) formFields.classList.remove('hidden');
   }
 }
 
@@ -620,11 +644,12 @@ document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
   
-  // 🌟 核心修復：併行載入職缺列表與身份比對，提升 300% 速度
+  // 🌟 背景預先加載公司資料
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
   
+  // 🌟 正確觸發 LIFF 認證與自動偵測
   initLiff();
 
   const agreementRadios = document.getElementsByName('agreement');
@@ -641,7 +666,6 @@ document.addEventListener('DOMContentLoaded', function() {
     Array.from(agreementRadios).forEach(r => {
       r.addEventListener('change', function() {
         const isAgree = this.value === '同意' && this.checked;
-        if (formFields) formFields.classList.toggle('hidden', !isAgree);
         if (agreementError) agreementError.classList.toggle('hidden', isAgree);
       });
     });
