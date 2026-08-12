@@ -305,21 +305,27 @@ window.formData = {};
 window.companyData = []; 
 window.currentBookingInfo = {};
 window.userProfiles = [];
-let isProfileChecked = false; // 🌟 防重複旗標，確保只比對一次
 
+// 🌟 API 呼叫工具 (加入 timeout 避免無限卡死)
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超時保護
+
     if (method === 'GET') {
       const query = new URLSearchParams({ action, ...payload }).toString();
-      const resp = await fetch(`${GAS_API_URL}?${query}`);
+      const resp = await fetch(`${GAS_API_URL}?${query}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       return await resp.json();
     } else {
       const resp = await fetch(GAS_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action, ...payload }),
-        redirect: 'follow'
+        redirect: 'follow',
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       return await resp.json();
     }
   } catch (err) {
@@ -377,99 +383,82 @@ function syncBirthdateValue() {
   }
 }
 
-// 🌟 1 秒極速啟動：LIFF 與背景 API 併行處理
-async function initLiffFast() {
-  const detectingStatus = document.getElementById('detectingStatus');
+// 🌟 核心優化：零等待，背景靜默啟動偵測
+function startBackgroundDetection() {
   const formFields = document.getElementById('formFields');
+  // 1. 立即展示填寫表單，讓使用者零等待
+  if (formFields) formFields.classList.remove('hidden');
+
   const urlParams = new URLSearchParams(window.location.search);
   let uid = urlParams.get('uid') || '';
 
-  // 1. 如果 URL 已帶 UID，秒級觸發查詢（只查一次）
-  if (uid && !isProfileChecked) {
-    isProfileChecked = true;
+  // 2. 背景觸發 LIFF 取得 ID
+  if (typeof liff !== 'undefined' && LIFF_ID) {
+    liff.init({ liffId: LIFF_ID }).then(() => {
+      if (liff.isLoggedIn()) {
+        return liff.getProfile();
+      }
+    }).then(profile => {
+      if (profile && profile.userId) {
+        window.lineUserId = profile.userId;
+        document.getElementById('lineUserId').value = profile.userId;
+        // 背景檢查是否有舊履歷
+        checkExistingProfilesSilent(profile.userId);
+      }
+    }).catch(err => {
+      console.warn('背景 LIFF 初始化跳過:', err);
+    });
+  } else if (uid) {
     window.lineUserId = uid;
     document.getElementById('lineUserId').value = uid;
-    checkExistingProfiles(uid).finally(() => {
-      if (detectingStatus) detectingStatus.classList.add('hidden');
-    });
-    return;
-  }
-
-  // 2. LIFF 靜默初始化
-  try {
-    if (typeof liff !== 'undefined' && LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile && profile.userId && !isProfileChecked) {
-          isProfileChecked = true;
-          window.lineUserId = profile.userId;
-          document.getElementById('lineUserId').value = profile.userId;
-          await checkExistingProfiles(profile.userId);
-        } else if (!isProfileChecked) {
-          if (formFields) formFields.classList.remove('hidden');
-        }
-      } else {
-        if (formFields) formFields.classList.remove('hidden');
-      }
-    } else {
-      if (formFields) formFields.classList.remove('hidden');
-    }
-  } catch (err) {
-    console.warn('LIFF 初始化跳過:', err);
-    if (formFields) formFields.classList.remove('hidden');
-  } finally {
-    if (detectingStatus) detectingStatus.classList.add('hidden');
+    checkExistingProfilesSilent(uid);
   }
 }
 
-async function checkExistingProfiles(lineUserId) {
-  const formFields = document.getElementById('formFields');
-  const banner = document.getElementById('existingResumeBanner');
-  const cardsList = document.getElementById('resumeCardsList');
-  const tag = document.getElementById('resumeCountTag');
+// 🌟 背景靜默檢查履歷
+function checkExistingProfilesSilent(lineUserId) {
+  callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId }).then(res => {
+    if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
+      window.userProfiles = res.profiles;
+      const banner = document.getElementById('existingResumeBanner');
+      const cardsList = document.getElementById('resumeCardsList');
+      const tag = document.getElementById('resumeCountTag');
+      
+      if (banner) banner.classList.remove('hidden');
 
-  const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
-  if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
-    window.userProfiles = res.profiles;
-    banner.classList.remove('hidden');
-    if (formFields) formFields.classList.add('hidden');
+      if (res.profiles.length === 1) {
+        if (tag) tag.innerText = '找到 1 筆歷史履歷';
+        if (cardsList) cardsList.classList.add('hidden');
+        document.getElementById('btnModifyExisting').onclick = () => loadProfileIntoForm(res.profiles[0]);
+      } else {
+        if (tag) tag.innerText = `找到 ${res.profiles.length} 筆歷史履歷`;
+        document.getElementById('resumeBannerText').innerText = '系統偵測到此帳號有多筆登記的履歷，請點選您要修改的履歷，或填寫新履歷：';
+        cardsList.innerHTML = '';
+        cardsList.classList.remove('hidden');
+        res.profiles.forEach((p) => {
+          const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
+          const card = document.createElement('div');
+          card.className = 'user-card';
+          card.onclick = () => loadProfileIntoForm(p);
+          card.innerHTML = `
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-white text-lg">${p.name} (${maskedId})</span>
+              <span class="text-xs text-circuitCyan border border-circuitCyan/40 px-2 py-0.5 rounded">修改此筆</span>
+            </div>
+            <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
+          `;
+          cardsList.appendChild(card);
+        });
+        document.getElementById('btnModifyExisting').classList.add('hidden');
+      }
 
-    if (res.profiles.length === 1) {
-      tag.innerText = '找到 1 筆歷史履歷';
-      cardsList.classList.add('hidden');
-      document.getElementById('btnModifyExisting').onclick = () => loadProfileIntoForm(res.profiles[0]);
-    } else {
-      tag.innerText = `找到 ${res.profiles.length} 筆歷史履歷`;
-      document.getElementById('resumeBannerText').innerText = '系統偵測到此帳號有多筆登記的履歷，請點選您要修改的履歷，或填寫新履歷：';
-      cardsList.innerHTML = '';
-      cardsList.classList.remove('hidden');
-      res.profiles.forEach((p) => {
-        const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
-        const card = document.createElement('div');
-        card.className = 'user-card';
-        card.onclick = () => loadProfileIntoForm(p);
-        card.innerHTML = `
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-white text-lg">${p.name} (${maskedId})</span>
-            <span class="text-xs text-circuitCyan border border-circuitCyan/40 px-2 py-0.5 rounded">修改此筆</span>
-          </div>
-          <div class="text-xs text-lightPurple mt-1">登記時間: ${p.timestamp}</div>
-        `;
-        cardsList.appendChild(card);
-      });
-      document.getElementById('btnModifyExisting').classList.add('hidden');
+      document.getElementById('btnAddNewResume').onclick = () => {
+        banner.classList.add('hidden');
+        const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
+        if (agreeRadio) agreeRadio.checked = true;
+      };
     }
-    document.getElementById('btnAddNewResume').onclick = () => {
-      banner.classList.add('hidden');
-      if (formFields) formFields.classList.remove('hidden');
-      const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
-      if (agreeRadio) agreeRadio.checked = true;
-    };
-  } else {
-    if (banner) banner.classList.add('hidden');
-    if (formFields) formFields.classList.remove('hidden');
-  }
+  });
 }
 
 function loadProfileIntoForm(profile) {
@@ -645,13 +634,13 @@ document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
   
-  // 🌟 1. 背景靜默並行加載廠商資料 (不阻塞頁面)
+  // 1. 背景靜默預加載廠商資料
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
   
-  // 🌟 2. 啟動極速身分偵測
-  initLiffFast();
+  // 2. 啟動零等待背景偵測
+  startBackgroundDetection();
 
   const agreementRadios = document.getElementsByName('agreement');
   const formFields = document.getElementById('formFields');
