@@ -393,7 +393,7 @@ function initBirthdatePicker() {
   const yearSelect = document.getElementById('birthYear');
   const monthSelect = document.getElementById('birthMonth');
   const daySelect = document.getElementById('birthDay');
-  for (let y = 115; y >= 30; y--) {
+  for (let y = 109; y >= 30; y--) {
     const opt = document.createElement('option');
     opt.value = y.toString().padStart(3, '0');
     opt.textContent = `民國 ${y} 年 (${y + 1911})`;
