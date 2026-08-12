@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwOdRxr5zc-h50PxYcl1-k4_TLo5d5AWuVf_U1ctbgcv1bm-8BXY7IYobm0uX9V6VlwOQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxOhJtUWfb-IUgjNtg-qo1uRCByVBAXpXmnJdZ_Z9Cq08YvQvJUgt4HCmbFI38Pme6djA/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -306,6 +306,61 @@ function renderCompanyOptions() {
   }
 }
 
+
+function createAppointmentRequestId() {
+  const rand = Math.random().toString(36).slice(2, 10);
+  return Date.now().toString(36) + '_' + rand;
+}
+
+async function postAppointmentWithTimeout(payload, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const params = new URLSearchParams();
+    params.append('postData', JSON.stringify(payload));
+
+    const resp = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: params,
+      signal: controller.signal
+    });
+
+    if (!resp.ok) {
+      throw new Error('HTTP ' + resp.status);
+    }
+
+    const text = await resp.text();
+
+    if (!text) {
+      throw new Error('GAS 回應內容為空白');
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (jsonErr) {
+      throw new Error('GAS 回應格式錯誤');
+    }
+
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function submitAppointmentSafely(payload) {
+  try {
+    return await postAppointmentWithTimeout(payload, 12000);
+
+  } catch (firstErr) {
+    console.warn('第一次預約連線失敗，準備自動重試：', firstErr);
+
+    // 同一 requestId 重送；後端會避免重複寫入。
+    await new Promise(resolve => setTimeout(resolve, 700));
+
+    return await postAppointmentWithTimeout(payload, 12000);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   initPage();
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
@@ -342,18 +397,20 @@ document.addEventListener('DOMContentLoaded', function() {
     submitBtn.disabled = true;
     document.getElementById('submitBtnText').innerHTML = '預約中... <span class="spinner"></span>';
     try {
-      const params = new URLSearchParams();
-      params.append('postData', JSON.stringify({
+      const requestId = createAppointmentRequestId();
+
+      const payload = {
         action: 'processFormData',
         appointmentData: {
           name: nameVal,
           idNumber: idVal,
           companyPositions: pos,
-          lineUserId: window.lineUserId || ''
+          lineUserId: window.lineUserId || '',
+          requestId: requestId
         }
-      }));
-      const resp = await fetch(GAS_API_URL, { method: 'POST', body: params });
-      const r = await resp.json();
+      };
+
+      const r = await submitAppointmentSafely(payload);
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
       if (r.success) {
@@ -375,7 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-      showCustomAlert('連線失敗，請稍後再試');
+      showCustomAlert('預約連線暫時不穩定，系統已自動重試仍未成功。請確認網路後再試一次。');
     }
   });
 });
