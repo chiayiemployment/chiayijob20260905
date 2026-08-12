@@ -328,7 +328,6 @@ function closeWebPage() {
     liff.closeWindow();
   } else {
     window.close();
-    // 若瀏覽器安全限制無法 direct close，跳出友善提示
     setTimeout(() => {
       alert('請直接關閉此瀏覽器分頁。');
     }, 300);
@@ -569,36 +568,20 @@ function displayAppointmentSection(resumeInfo) {
   window.scrollTo(0, 0);
 }
 
-// 🌟 呈現兩大按鈕「關閉網頁」與「職缺資訊 (job.html)」
+// 🌟 呈現單一按鈕：「關閉網頁」
 function handleFinalSuccess(r) {
   const successMessageContent = document.getElementById('successMessageContent');
   const successMessageContainer = document.getElementById('successMessageContainer');
   const m = r.message ? r.message.split('\n') : []; 
   const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
-
-  let h = `<div class="text-center text-3xl font-extrabold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！'}</div>`;
+  
+  let h = `<div class="text-center text-3xl font-extrabold mb-4 text-successGreen">${m[0] || '預約成功！'}</div>`;
   if (m[1]) h += `<div class="text-center text-xl mb-4 font-medium text-purple-100">${m[1]}</div>`;
   
   if (bItems.length > 0) {
     h += '<div class="booked-list text-lg mb-6">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
   }
-
-  // 🌟 按鈕連結修改為 job.html
-  h += `
-    <div class="flex fle// 🌟 呈現單一按鈕：「關閉網頁」
-function handleFinalSuccess(r) {
-  const successMessageContent = document.getElementById('successMessageContent');
-  const successMessageContainer = document.getElementById('successMessageContainer');
-  const m = r.message ? r.message.split('\n') : []; 
-  const bItems = (r.data && r.data.bookedItemsArray) ? r.data.bookedItemsArray : [];
-
-  let h = `<div class="text-center text-3xl font-extrabold mb-4" style="color: var(--success-green);">${m[0] || '預約成功！'}</div>`;
-  if (m[1]) h += `<div class="text-center text-xl mb-4 font-medium text-purple-100">${m[1]}</div>`;
   
-  if (bItems.length > 0) {
-    h += '<div class="booked-list text-lg mb-6">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
-  }
-
   // 🌟 僅保留「關閉網頁」按鈕
   h += `
     <div class="flex justify-center items-center pt-4 border-t border-lightPurple/20">
@@ -607,7 +590,7 @@ function handleFinalSuccess(r) {
       </button>
     </div>
   `;
-
+  
   if(successMessageContent) successMessageContent.innerHTML = h; 
   if(successMessageContainer) successMessageContainer.classList.remove('hidden'); 
   ['formContainer', 'reviewSection', 'appointmentSection'].forEach(id => {
