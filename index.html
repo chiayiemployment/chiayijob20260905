@@ -298,13 +298,14 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzelJctELEvrLpL_9I5d4glSid_WV-wOZaj8tiCCI-0fnG72XdSbAdX0EQhzadlecw9QQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwqbRpUI5bFAi7wEgfKUda0t-xdcwEEVAcKEzxEQsFwo8st68YsTmB0SZnLZPI0jDXs/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
 window.companyData = []; 
 window.currentBookingInfo = {};
 window.userProfiles = [];
+let isProfileChecked = false; // 🌟 防重複旗標，確保只比對一次
 
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
@@ -332,9 +333,7 @@ function closeWebPage() {
     liff.closeWindow();
   } else {
     window.close();
-    setTimeout(() => {
-      alert('請直接關閉此瀏覽器分頁。');
-    }, 300);
+    setTimeout(() => { alert('請直接關閉此瀏覽器分頁。'); }, 300);
   }
 }
 
@@ -342,6 +341,11 @@ function initBirthdatePicker() {
   const yearSelect = document.getElementById('birthYear');
   const monthSelect = document.getElementById('birthMonth');
   const daySelect = document.getElementById('birthDay');
+  if(!yearSelect) return;
+  yearSelect.innerHTML = '<option value="" disabled selected>民國年</option>';
+  monthSelect.innerHTML = '<option value="" disabled selected>月</option>';
+  daySelect.innerHTML = '<option value="" disabled selected>日</option>';
+
   for (let y = 115; y >= 30; y--) {
     const opt = document.createElement('option');
     opt.value = y.toString().padStart(3, '0');
@@ -373,46 +377,46 @@ function syncBirthdateValue() {
   }
 }
 
-// 🌟 修正後的完整異步 LIFF 與履歷自動偵測流程
-async function initLiff() {
+// 🌟 1 秒極速啟動：LIFF 與背景 API 併行處理
+async function initLiffFast() {
   const detectingStatus = document.getElementById('detectingStatus');
   const formFields = document.getElementById('formFields');
-  
   const urlParams = new URLSearchParams(window.location.search);
   let uid = urlParams.get('uid') || '';
 
-  // 1. 若 URL 中有帶 uid，優先發送檢索
-  if (uid) {
+  // 1. 如果 URL 已帶 UID，秒級觸發查詢（只查一次）
+  if (uid && !isProfileChecked) {
+    isProfileChecked = true;
     window.lineUserId = uid;
     document.getElementById('lineUserId').value = uid;
-    await checkExistingProfiles(uid);
-    if (detectingStatus) detectingStatus.classList.add('hidden');
+    checkExistingProfiles(uid).finally(() => {
+      if (detectingStatus) detectingStatus.classList.add('hidden');
+    });
     return;
   }
 
-  // 2. 初始化 LIFF SDK
+  // 2. LIFF 靜默初始化
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-        if (profile && profile.userId) {
+        if (profile && profile.userId && !isProfileChecked) {
+          isProfileChecked = true;
           window.lineUserId = profile.userId;
           document.getElementById('lineUserId').value = profile.userId;
           await checkExistingProfiles(profile.userId);
-        } else {
-          // 未查到 userId 時預設直接顯示表單
+        } else if (!isProfileChecked) {
           if (formFields) formFields.classList.remove('hidden');
         }
       } else {
-        // 未登入情境預設直接顯示表單
         if (formFields) formFields.classList.remove('hidden');
       }
     } else {
       if (formFields) formFields.classList.remove('hidden');
     }
   } catch (err) {
-    console.warn('LIFF 初始化跳過或非 LINE 環境:', err);
+    console.warn('LIFF 初始化跳過:', err);
     if (formFields) formFields.classList.remove('hidden');
   } finally {
     if (detectingStatus) detectingStatus.classList.add('hidden');
@@ -426,11 +430,10 @@ async function checkExistingProfiles(lineUserId) {
   const tag = document.getElementById('resumeCountTag');
 
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
-  
   if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
     window.userProfiles = res.profiles;
     banner.classList.remove('hidden');
-    if (formFields) formFields.classList.add('hidden'); // 找到舊履歷時先藏起填寫表單，讓使用者選擇
+    if (formFields) formFields.classList.add('hidden');
 
     if (res.profiles.length === 1) {
       tag.innerText = '找到 1 筆歷史履歷';
@@ -457,7 +460,6 @@ async function checkExistingProfiles(lineUserId) {
       });
       document.getElementById('btnModifyExisting').classList.add('hidden');
     }
-
     document.getElementById('btnAddNewResume').onclick = () => {
       banner.classList.add('hidden');
       if (formFields) formFields.classList.remove('hidden');
@@ -465,7 +467,6 @@ async function checkExistingProfiles(lineUserId) {
       if (agreeRadio) agreeRadio.checked = true;
     };
   } else {
-    // 沒找到歷史紀錄，自動直接顯示空白填寫表單
     if (banner) banner.classList.add('hidden');
     if (formFields) formFields.classList.remove('hidden');
   }
@@ -644,13 +645,13 @@ document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
   
-  // 🌟 背景預先加載公司資料
+  // 🌟 1. 背景靜默並行加載廠商資料 (不阻塞頁面)
   callGasApi('getCompanyData', {}, 'GET').then(res => {
     window.companyData = Array.isArray(res) ? res : [];
   });
   
-  // 🌟 正確觸發 LIFF 認證與自動偵測
-  initLiff();
+  // 🌟 2. 啟動極速身分偵測
+  initLiffFast();
 
   const agreementRadios = document.getElementsByName('agreement');
   const formFields = document.getElementById('formFields');
@@ -659,7 +660,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const confirmAppointmentBtn = document.getElementById('confirmAppointmentBtn');
 
   ['birthYear', 'birthMonth', 'birthDay'].forEach(id => {
-    document.getElementById(id).addEventListener('change', syncBirthdateValue);
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', syncBirthdateValue);
   });
 
   if (agreementRadios && agreementRadios.length > 0) {
