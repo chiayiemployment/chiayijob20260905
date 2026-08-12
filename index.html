@@ -293,11 +293,13 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw9I7nFMFPp7h25LizqoOQDVOYxt1KHWCM0_SOASM8K0WQn26PCt6LjWa7OUroc1tEfUg/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyGNKeJGuFsNuV5t5zakNMjVYS7Lh6g36H705qofAhKhKv5Knlyist6Yd6CHKaXpU6PFQ/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
-window.companyData = []; 
+window.companyData = [];
+window.companyDataLoaded = false;
+window.companyDataPromise = null;
 window.currentBookingInfo = {};
 window.userProfiles = [];
 
@@ -426,6 +428,38 @@ async function checkExistingProfiles(lineUserId) {
       if (agreeRadio) agreeRadio.checked = true;
     };
   }
+}
+
+
+// ============================================================
+// ⚡ 速度優化：職缺資料只載入一次，並延後到使用者進入履歷確認階段再預載
+// 不改變原本的 companyData 結構與 displayAppointmentSection 流程
+// ============================================================
+async function loadCompanyDataOnce() {
+  if (window.companyDataLoaded) {
+    return window.companyData;
+  }
+
+  if (window.companyDataPromise) {
+    return window.companyDataPromise;
+  }
+
+  window.companyDataPromise = callGasApi('getCompanyData', {}, 'GET')
+    .then(res => {
+      window.companyData = Array.isArray(res) ? res : [];
+      window.companyDataLoaded = true;
+      return window.companyData;
+    })
+    .catch(err => {
+      console.error('職缺資料載入失敗:', err);
+      window.companyData = [];
+      return window.companyData;
+    })
+    .finally(() => {
+      window.companyDataPromise = null;
+    });
+
+  return window.companyDataPromise;
 }
 
 function loadProfileIntoForm(profile) {
@@ -623,10 +657,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  callGasApi('getCompanyData', {}, 'GET').then(res => {
-    window.companyData = Array.isArray(res) ? res : [];
-  });
-
   // 表單檢查提交
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
@@ -659,6 +689,10 @@ document.addEventListener('DOMContentLoaded', function() {
     dReview['rowNum'] = document.getElementById('editingRowNum').value || '';
     window.formData = dReview; 
     displayDataInReview(dReview);
+
+    // ⚡ 使用者檢查履歷時，背景預載職缺資料
+    // 不阻塞履歷預覽，也不影響原本操作流程
+    loadCompanyDataOnce();
   });
 
   document.getElementById('editBtn').addEventListener('click', () => { 
@@ -682,6 +716,10 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmBtn.innerHTML = '確認履歷並預約面試';
     if (r.status === 'resume_saved') {
       await showCustomAlert(r.message || '履歷提交成功！');
+
+      // ⚡ 若背景預載尚未完成，這裡才等待；已完成則直接使用
+      await loadCompanyDataOnce();
+
       displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
     } else {
       showCustomAlert(r.message || '儲存失敗，請重試');
