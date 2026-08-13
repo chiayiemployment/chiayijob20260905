@@ -665,6 +665,51 @@ function createAppointmentRequestId() {
   return Date.now().toString(36) + '_' + rand;
 }
 
+async function verifyAppointmentRequest(requestId) {
+  if (!requestId) {
+    return {
+      completed: false
+    };
+  }
+
+  try {
+    // POST 回應中斷後稍等一下，讓 GAS 有時間完成 Cache 寫入
+    await new Promise(resolve => setTimeout(resolve, 900));
+
+    const resp = await fetch(
+      `${GAS_API_URL}?action=getAppointmentRequestStatus&requestId=${encodeURIComponent(requestId)}&_=${Date.now()}`
+    );
+
+    if (!resp.ok) {
+      return {
+        completed: false
+      };
+    }
+
+    const res = await resp.json();
+
+    if (
+      res &&
+      res.success === true &&
+      res.completed === true &&
+      res.result &&
+      res.result.success === true
+    ) {
+      return {
+        completed: true,
+        result: res.result
+      };
+    }
+
+  } catch (e) {
+    console.warn('預約結果確認失敗：', e);
+  }
+
+  return {
+    completed: false
+  };
+}
+
 async function submitAppointmentOnce(payload) {
   const params = new URLSearchParams();
   params.append('postData', JSON.stringify(payload));
@@ -685,6 +730,24 @@ async function submitAppointmentOnce(payload) {
   }
 
   return JSON.parse(text);
+}
+
+function showAppointmentSuccess(nameVal, pos) {
+  let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約成功！請隨時留意LINE的面試通知！</div>`;
+  h += `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
+  h += '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
+
+  pos.forEach(i => {
+    h += `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
+  });
+
+  h += '</div>';
+  h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">查看預約紀錄</a></div>';
+
+  document.getElementById('successMessageContent').innerHTML = h;
+  document.getElementById('appointmentSection').classList.add('hidden');
+  document.getElementById('successMessageContainer').classList.remove('hidden');
+  window.scrollTo(0, 0);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -722,9 +785,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
     document.getElementById('submitBtnText').innerHTML = '預約中... <span class="spinner"></span>';
-    try {
-      const requestId = createAppointmentRequestId();
 
+    const requestId = createAppointmentRequestId();
+
+    try {
       const payload = {
         action: 'processFormData',
         appointmentData: {
@@ -751,25 +815,28 @@ document.addEventListener('DOMContentLoaded', function() {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
       if (r.success) {
-        let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約成功！請隨時留意LINE的面試通知！</div>`;
-        h += `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
-        h += '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
-        pos.forEach(i => {
-          h += `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
-        });
-        h += '</div>';
-        h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">查看預約紀錄</a></div>';
-        document.getElementById('successMessageContent').innerHTML = h;
-        document.getElementById('appointmentSection').classList.add('hidden');
-        document.getElementById('successMessageContainer').classList.remove('hidden');
-        window.scrollTo(0,0);
+        showAppointmentSuccess(nameVal, pos);
       } else {
         showCustomAlert(r.message || '預約失敗，請確認是否已填寫個人履歷', r.needResume);
       }
     } catch (err) {
+      // POST 的回應可能中斷，但 GAS 可能已經成功寫入。
+      // 先用 requestId 查詢後端成功 Cache，不重新送出預約。
+      document.getElementById('submitBtnText').innerHTML =
+        '正在確認預約結果... <span class="spinner"></span>';
+
+      const verified = await verifyAppointmentRequest(requestId);
+
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-      showCustomAlert('預約送出時連線中斷，請稍後再試一次。');
+
+      if (verified.completed) {
+        showAppointmentSuccess(nameVal, pos);
+      } else {
+        showCustomAlert(
+          '預約連線暫時中斷，且目前無法確認預約結果。請先點選「查看預約紀錄」確認後，再決定是否重新送出。'
+        );
+      }
     }
   });
 });
