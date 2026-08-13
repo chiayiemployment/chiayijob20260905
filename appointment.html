@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbx1ISARAoBWZaSPhw7K0XZy_Ii1IQC0yz6s8e6dEZsUXyNL9cqs1xWNPkjCqz_R_OuFfw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw0pJWjniItbZnRBK2TpVOK3j-e-Z5swP-ZMHKFL3TUFfAaqxWCLWJQShLwWRIiJn0KDg/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -154,7 +154,18 @@ window.isManualMode = false; // 標記是否為手動輸入模式
 window.diagnosticTiming = {
   pageStart: performance.now(),
   marks: {},
-  lastServerTiming: {}
+  lastServerTiming: {},
+  httpResponse: {
+    status: null,
+    statusText: '',
+    url: '',
+    redirected: null,
+    contentType: '',
+    responsePreview: '',
+    fetchMs: null,
+    jsonStage: '',
+    errorMessage: ''
+  }
 };
 
 function timingMark(name) {
@@ -177,6 +188,7 @@ function timingDiff(fromName, toName) {
 function buildTimingText() {
   const m = window.diagnosticTiming.marks;
   const s = window.diagnosticTiming.lastServerTiming || {};
+  const h = window.diagnosticTiming.httpResponse || {};
 
   const diff = (a, b) =>
     (typeof m[a] === 'number' && typeof m[b] === 'number') ? (m[b] - m[a]) : null;
@@ -208,7 +220,22 @@ function buildTimingText() {
     '讀取預約表：' + formatMs(s.readSheetMs),
     '建立查重索引：' + formatMs(s.buildIndexMs),
     '寫入資料：' + formatMs(s.writeSheetMs),
-    'processFormData總耗時：' + formatMs(s.processFormDataMs)
+    'processFormData總耗時：' + formatMs(s.processFormDataMs),
+    '',
+    '【HTTP 回應診斷】',
+    'resp.status：' + (h.status !== null ? h.status : '-'),
+    'resp.statusText：' + (h.statusText || '-'),
+    'resp.url：' + (h.url || '-'),
+    'resp.redirected：' + (
+      h.redirected === true ? 'true' :
+      h.redirected === false ? 'false' : '-'
+    ),
+    'Content-Type：' + (h.contentType || '-'),
+    'fetch 耗時：' + formatMs(h.fetchMs),
+    'JSON 解析階段：' + (h.jsonStage || '-'),
+    '錯誤訊息：' + (h.errorMessage || '-'),
+    'response.text() 前 300 字：',
+    h.responsePreview || '-'
   ].join('\n');
 }
 
@@ -743,26 +770,111 @@ async function submitAppointmentOnce(payload) {
   const params = new URLSearchParams();
   params.append('postData', JSON.stringify(payload));
 
+  const httpDiag = window.diagnosticTiming.httpResponse;
+
+  // 每次正式預約前重置 HTTP 診斷欄位
+  httpDiag.status = null;
+  httpDiag.statusText = '';
+  httpDiag.url = '';
+  httpDiag.redirected = null;
+  httpDiag.contentType = '';
+  httpDiag.responsePreview = '';
+  httpDiag.fetchMs = null;
+  httpDiag.jsonStage = 'fetch 尚未開始';
+  httpDiag.errorMessage = '';
+
   timingMark('submitFetchStart');
+  httpDiag.jsonStage = 'fetch 進行中';
 
-  const resp = await fetch(GAS_API_URL, {
-    method: 'POST',
-    body: params
-  });
+  let resp;
 
-  timingMark('submitFetchEnd');
+  try {
+    resp = await fetch(GAS_API_URL, {
+      method: 'POST',
+      body: params
+    });
+
+    timingMark('submitFetchEnd');
+
+    httpDiag.fetchMs =
+      window.diagnosticTiming.marks.submitFetchEnd -
+      window.diagnosticTiming.marks.submitFetchStart;
+
+    httpDiag.status = resp.status;
+    httpDiag.statusText = resp.statusText || '';
+    httpDiag.url = resp.url || '';
+    httpDiag.redirected = resp.redirected;
+    httpDiag.contentType = resp.headers.get('content-type') || '';
+    httpDiag.jsonStage = 'fetch 完成，準備讀取 response.text()';
+
+  } catch (fetchErr) {
+    timingMark('submitFetchEnd');
+
+    httpDiag.fetchMs =
+      window.diagnosticTiming.marks.submitFetchEnd -
+      window.diagnosticTiming.marks.submitFetchStart;
+
+    httpDiag.jsonStage = 'fetch 階段失敗';
+    httpDiag.errorMessage =
+      fetchErr && fetchErr.message
+        ? fetchErr.message
+        : String(fetchErr);
+
+    throw fetchErr;
+  }
 
   if (!resp.ok) {
-    throw new Error('HTTP ' + resp.status);
+    httpDiag.jsonStage = 'HTTP 狀態非成功，尚未進入 JSON 解析';
+    httpDiag.errorMessage =
+      'HTTP ' + resp.status + ' ' + (resp.statusText || '');
+
+    throw new Error(httpDiag.errorMessage);
   }
 
-  const text = await resp.text();
+  let text = '';
+
+  try {
+    text = await resp.text();
+
+    // 最多保留前 300 字，避免診斷畫面過長
+    httpDiag.responsePreview = text
+      ? text.slice(0, 300)
+      : '';
+
+    httpDiag.jsonStage = 'response.text() 完成，準備 JSON.parse';
+
+  } catch (textErr) {
+    httpDiag.jsonStage = 'response.text() 階段失敗';
+    httpDiag.errorMessage =
+      textErr && textErr.message
+        ? textErr.message
+        : String(textErr);
+
+    throw textErr;
+  }
 
   if (!text) {
-    throw new Error('GAS 回應內容為空白');
+    httpDiag.jsonStage = 'response.text() 為空白';
+    httpDiag.errorMessage = 'GAS 回應內容為空白';
+
+    throw new Error(httpDiag.errorMessage);
   }
 
-  const result = JSON.parse(text);
+  let result;
+
+  try {
+    result = JSON.parse(text);
+    httpDiag.jsonStage = 'JSON.parse 成功';
+
+  } catch (jsonErr) {
+    httpDiag.jsonStage = 'JSON.parse 失敗';
+    httpDiag.errorMessage =
+      jsonErr && jsonErr.message
+        ? jsonErr.message
+        : String(jsonErr);
+
+    throw jsonErr;
+  }
 
   timingMark('submitResponseDone');
 
@@ -857,7 +969,19 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-      showCustomAlert('預約送出時連線中斷，請稍後再試一次。\n\n' + buildTimingText());
+
+      if (
+        !window.diagnosticTiming.httpResponse.errorMessage &&
+        err
+      ) {
+        window.diagnosticTiming.httpResponse.errorMessage =
+          err.message || String(err);
+      }
+
+      showCustomAlert(
+        '預約送出時連線中斷，請稍後再試一次。\n\n' +
+        buildTimingText()
+      );
     }
   });
 });
