@@ -150,7 +150,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbySryuYh1PXQoy39opsbkvLdeCPg0sXLrlYVlTUAtUVhkPRC3oaz1lRzWW1H8brtyD2yg/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyM7Y--2Grws8Vb_zKLnAK1t1m9JLwf2w8ZneBH5um3oDZZ8-N-96upUjVguyXkASuLWA/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -342,13 +342,9 @@ async function initPage() {
   createCircuitBackground();
 
   // ==========================================================
-  // 0. 頁面一開啟就先走真正 POST 網路路徑
-  // 與 LIFF 身份辨識、履歷卡片載入平行進行
-  // ==========================================================
-  startPostNetworkWarmup();
-
-  // ==========================================================
   // ① 先穩定取得 LINE 身份
+  // 卡片優先：此階段不啟動 POST 預熱，避免與初始化 GET 併發
+  // ==========================================================
   // ==========================================================
   const identity = await getStableLineIdentity();
   const uid = identity.uid || '';
@@ -361,6 +357,9 @@ async function initPage() {
   if (uid && sessionProfiles.length > 0) {
     window.isManualMode = false;
     renderUserSelector(sessionProfiles);
+
+    // 已有 session 履歷時，也是在卡片顯示後才開始 POST 預熱
+    warmPostInBackground();
   }
 
   // ==========================================================
@@ -451,6 +450,10 @@ async function initPage() {
       saveProfilesToSession(uid, profiles);
       renderUserSelector(profiles);
 
+      // ★ 卡片成功顯示後才開始真正 POST 網路預熱
+      // 使用者挑選職缺時，背景暖起正式 POST 路徑
+      warmPostInBackground();
+
     } else if (!uid && !identity.inLineClient) {
       // 真正從一般瀏覽器開啟，才進網頁手動模式
       window.isManualMode = true;
@@ -490,7 +493,7 @@ async function initPage() {
     }
 
     // 保留已成功的 POST 預熱
-    warmPostInBackground();
+    
 
   } catch (err) {
     console.warn('初始化失敗：', err);
