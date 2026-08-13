@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxUVKeTtoMaDiaRllIWWQ1DR2L6PgpVtdeOLcucLlUZBtzEY8y9uiTeF6AzzpyLiM2THg/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz2hRAAvR24t35vYv9qHnVEARPjXOoJ_ZIhzEqzJ7JWKm7O1daxwBy4qekqBIq8Ji9Z6A/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -187,6 +187,131 @@ function hideCustomAlert() {
   document.getElementById('customAlertModal').classList.add('hidden');
 }
 
+async function getStableLineIdentity() {
+  let cachedUid = '';
+
+  try {
+    cachedUid = sessionStorage.getItem('appointment_line_user_id') || '';
+  } catch (e) {}
+
+  if (typeof liff === 'undefined' || !LIFF_ID) {
+    return {
+      uid: '',
+      inLineClient: false,
+      source: 'no_liff'
+    };
+  }
+
+  try {
+    await liff.init({ liffId: LIFF_ID });
+
+    const inLineClient = typeof liff.isInClient === 'function'
+      ? liff.isInClient()
+      : false;
+
+    if (!liff.isLoggedIn()) {
+      return {
+        uid: cachedUid,
+        inLineClient: inLineClient,
+        source: cachedUid ? 'session' : 'not_logged_in'
+      };
+    }
+
+    // LIFF profile 偶發沒有立即回來時，最多嘗試 3 次
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const profile = await liff.getProfile();
+
+        if (profile && profile.userId) {
+          const uid = String(profile.userId).trim();
+
+          try {
+            sessionStorage.setItem(
+              'appointment_line_user_id',
+              uid
+            );
+          } catch (e) {}
+
+          return {
+            uid: uid,
+            inLineClient: inLineClient,
+            source: 'liff'
+          };
+        }
+      } catch (profileErr) {
+        console.warn(
+          `LIFF profile 第 ${attempt} 次取得失敗：`,
+          profileErr
+        );
+      }
+
+      if (attempt < 3) {
+        await new Promise(resolve =>
+          setTimeout(resolve, attempt * 400)
+        );
+      }
+    }
+
+    // LIFF 本次不穩定，但同一 WebView 曾成功取得過 UID
+    return {
+      uid: cachedUid,
+      inLineClient: inLineClient,
+      source: cachedUid ? 'session' : 'profile_failed'
+    };
+
+  } catch (e) {
+    console.warn('LIFF 初始化失敗：', e);
+
+    return {
+      uid: cachedUid,
+      inLineClient: true,
+      source: cachedUid ? 'session' : 'init_failed'
+    };
+  }
+}
+
+function saveProfilesToSession(uid, profiles) {
+  if (!uid || !Array.isArray(profiles) || profiles.length === 0) return;
+
+  try {
+    sessionStorage.setItem(
+      'appointment_profiles_' + uid,
+      JSON.stringify({
+        savedAt: Date.now(),
+        profiles: profiles
+      })
+    );
+  } catch (e) {}
+}
+
+function getProfilesFromSession(uid) {
+  if (!uid) return [];
+
+  try {
+    const raw = sessionStorage.getItem(
+      'appointment_profiles_' + uid
+    );
+
+    if (!raw) return [];
+
+    const data = JSON.parse(raw);
+
+    // 同一個 LINE 視窗內暫存 10 分鐘
+    if (
+      !data ||
+      !Array.isArray(data.profiles) ||
+      Date.now() - Number(data.savedAt || 0) > 600000
+    ) {
+      return [];
+    }
+
+    return data.profiles;
+
+  } catch (e) {
+    return [];
+  }
+}
+
 async function retryUserProfilesOnce(uid) {
   if (!uid) {
     return {
@@ -212,24 +337,25 @@ async function retryUserProfilesOnce(uid) {
 async function initPage() {
   createCircuitBackground();
 
-  let uid = '';
-
-  try {
-    if (typeof liff !== 'undefined' && LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile) uid = profile.userId;
-      }
-    }
-  } catch (e) {
-    console.warn('LIFF 驗證跳過：', e);
-  }
+  // ==========================================================
+  // ① 先穩定取得 LINE 身份
+  // ==========================================================
+  const identity = await getStableLineIdentity();
+  const uid = identity.uid || '';
 
   window.lineUserId = uid;
 
-  // 單一 GET：一次取得職缺 + 履歷，避免兩支 GAS 請求互相拖慢
+  // 如果同一 LINE 視窗已成功載入過履歷，重新整理時先立即顯示
+  const sessionProfiles = getProfilesFromSession(uid);
+
+  if (uid && sessionProfiles.length > 0) {
+    window.isManualMode = false;
+    renderUserSelector(sessionProfiles);
+  }
+
+  // ==========================================================
+  // ② 單一 GET 取得最新職缺 + 最新履歷
+  // ==========================================================
   try {
     const resp = await fetch(
       `${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
@@ -243,100 +369,144 @@ async function initPage() {
 
     document.getElementById('verifyingStatus').classList.add('hidden');
 
-    if (res && res.success) {
-      window.companyData = Array.isArray(res.companyData)
-        ? res.companyData
-        : [];
+    if (!res || !res.success) {
+      throw new Error(
+        res && res.message
+          ? res.message
+          : '初始化 API 回應失敗'
+      );
+    }
 
-      renderCompanyOptions();
+    window.companyData = Array.isArray(res.companyData)
+      ? res.companyData
+      : [];
 
-      let profiles = Array.isArray(res.userProfiles)
-        ? res.userProfiles
-        : [];
+    renderCompanyOptions();
 
-      let profileLookupSuccess = res.profileLookupSuccess !== false;
+    let profiles = Array.isArray(res.userProfiles)
+      ? res.userProfiles
+      : [];
 
-      // 有 LINE ID 但第一次沒拿到履歷時，不直接判定「查無履歷」。
-      // 自動再確認一次，避免冷啟動造成誤進網頁預約模式。
-      if (uid && profiles.length === 0) {
-        document.getElementById('verifyingStatus').classList.remove('hidden');
-        document.getElementById('verifyingStatus').querySelector('span:last-child').innerText =
+    let profileStatus = res.profileStatus || (
+      profiles.length > 0 ? 'found' : 'error'
+    );
+
+    // ========================================================
+    // ③ 有 LINE ID 但第一次沒找到時，再確認一次
+    //    不直接誤判成「網頁預約模式」
+    // ========================================================
+    if (
+      uid &&
+      profiles.length === 0 &&
+      profileStatus !== 'found'
+    ) {
+      document.getElementById('verifyingStatus').classList.remove('hidden');
+
+      const statusText =
+        document.getElementById('verifyingStatus')
+          .querySelector('span:last-child');
+
+      if (statusText) {
+        statusText.innerText =
           'LINE 身份已識別，正在再次確認履歷紀錄...';
+      }
 
-        try {
-          const retryRes = await retryUserProfilesOnce(uid);
+      try {
+        const retryRes = await retryUserProfilesOnce(uid);
 
-          if (retryRes && retryRes.success) {
-            profiles = Array.isArray(retryRes.userProfiles)
-              ? retryRes.userProfiles
-              : [];
+        if (retryRes) {
+          profiles = Array.isArray(retryRes.userProfiles)
+            ? retryRes.userProfiles
+            : [];
 
-            profileLookupSuccess = true;
-          } else {
-            profileLookupSuccess = false;
-          }
-
-        } catch (retryErr) {
-          console.warn('履歷第二次確認失敗：', retryErr);
-          profileLookupSuccess = false;
+          profileStatus = retryRes.status || (
+            profiles.length > 0 ? 'found' : 'error'
+          );
         }
 
-        document.getElementById('verifyingStatus').classList.add('hidden');
+      } catch (retryErr) {
+        console.warn('履歷第二次確認失敗：', retryErr);
+        profileStatus = 'error';
       }
 
-      if (uid && profiles.length > 0) {
-        window.isManualMode = false;
-        renderUserSelector(profiles);
+      document.getElementById('verifyingStatus').classList.add('hidden');
+    }
 
-      } else if (!uid) {
-        window.isManualMode = true;
-        document
-          .getElementById('manualInputBox')
-          .classList.remove('hidden');
+    // ========================================================
+    // ④ 根據「真正狀態」決定畫面
+    // ========================================================
+    if (uid && profiles.length > 0) {
+      window.isManualMode = false;
 
-      } else if (!profileLookupSuccess) {
-        // 查詢失敗 ≠ 查無履歷
-        // 不再錯誤顯示「未偵測到 LINE 帳號」
-        window.isManualMode = false;
+      saveProfilesToSession(uid, profiles);
+      renderUserSelector(profiles);
 
-        showCustomAlert(
-          'LINE 身份已識別，但履歷資料暫時無法完成比對，請重新整理頁面再試一次。'
-        );
-
-      } else {
-        // 兩次都正常查詢、確實找不到履歷，才進手動模式
-        window.isManualMode = true;
-        document
-          .getElementById('manualInputBox')
-          .classList.remove('hidden');
-
-        showCustomAlert(
-          '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
-          true
-        );
-      }
-
-      // 畫面已完成後，背景走真正 POST 預熱
-      warmPostInBackground();
-
-    } else {
+    } else if (!uid && !identity.inLineClient) {
+      // 真正從一般瀏覽器開啟，才進網頁手動模式
       window.isManualMode = true;
+
       document
         .getElementById('manualInputBox')
         .classList.remove('hidden');
+
+    } else if (!uid && identity.inLineClient) {
+      // 在 LINE 裡，但 LINE 身份沒有成功取得
+      window.isManualMode = false;
+
+      showCustomAlert(
+        '目前在 LINE 中開啟，但 LINE 身份尚未成功識別。請關閉此頁後重新開啟一次。'
+      );
+
+    } else if (profileStatus === 'not_found') {
+      // 有 LINE 身份，而且後端確實正常查完兩次都沒有履歷
+      window.isManualMode = true;
+
+      document
+        .getElementById('manualInputBox')
+        .classList.remove('hidden');
+
+      showCustomAlert(
+        '系統已完成 LINE 身份辨識，但查無您的求職登記履歷。可前往填寫求職登記表，或直接在下方輸入姓名與身分證預約。',
+        true
+      );
+
+    } else {
+      // 查詢錯誤不能當成查無履歷
+      window.isManualMode = false;
+
+      showCustomAlert(
+        'LINE 身份已識別，但履歷資料暫時無法完成比對。請重新整理頁面再試一次。'
+      );
     }
+
+    // 保留已成功的 POST 預熱
+    warmPostInBackground();
 
   } catch (err) {
     console.warn('初始化失敗：', err);
 
     document.getElementById('verifyingStatus').classList.add('hidden');
-    document.getElementById('companyListContainer').innerHTML =
-      '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
 
-    window.isManualMode = true;
-    document
-      .getElementById('manualInputBox')
-      .classList.remove('hidden');
+    // 若本地已有成功履歷卡片，不因這次網路失敗切回手動模式
+    if (uid && sessionProfiles.length > 0) {
+      window.isManualMode = false;
+      return;
+    }
+
+    if (!uid && !identity.inLineClient) {
+      window.isManualMode = true;
+
+      document
+        .getElementById('manualInputBox')
+        .classList.remove('hidden');
+
+    } else {
+      window.isManualMode = false;
+
+      showCustomAlert(
+        'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
+      );
+    }
   }
 }
 
