@@ -154,6 +154,10 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxY-9U9z1k4P6G-5iX7
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 async function callGasApi(action, payload = {}, method = 'GET') {
+  // ★ 職缺改由 HTML 直接提供；其他 API（包含履歷）完全走原本 V2 流程
+  if (action === 'getCompanyData') {
+    return STATIC_COMPANY_DATA;
+  }
   try {
     if (method === 'GET') {
       const query = new URLSearchParams({ action, ...payload }).toString();
@@ -181,13 +185,8 @@ async function callGasApi(action, payload = {}, method = 'GET') {
 window.companyData = [];
 
 // ============================================================
-// ★ 靜態職缺資料區
-// 只要修改這一段即可，其他程式不用動。
-// 每家公司格式：
-// {
-//   company: '公司名稱',
-//   positions: ['職缺1', '職缺2']
-// }
+// ★ 靜態職缺資料：只修改此區即可
+// 原本 V2 的履歷 / LINE / initPage 流程完全不動
 // ============================================================
 const STATIC_COMPANY_DATA = [
   {
@@ -582,8 +581,6 @@ const STATIC_COMPANY_DATA = [
     ]
   }
 ];
-
-window.companyData = STATIC_COMPANY_DATA;
 window.isManualMode = false; // 標記是否為手動輸入模式
 
 function createCircuitBackground() {
@@ -768,95 +765,47 @@ async function retryUserProfilesOnce(uid) {
   return await resp.json();
 }
 
-
-async function getProfilesStable(lineUserId) {
-  if (!lineUserId) {
-    return {
-      status: 'not_found',
-      profiles: []
-    };
-  }
-
-  // 直接沿用「履歷填寫＋預約面試」已驗證穩定版的 GET API。
-  const first = await callGasApi(
-    'getProfilesByLineUserId',
-    { lineUserId: lineUserId },
-    'GET'
-  );
-
-  if (
-    first &&
-    (first.status === 'found' || first.status === 'not_found')
-  ) {
-    return first;
-  }
-
-  // LINE WebView 首次連線偶發失敗時，只補查一次。
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  return await callGasApi(
-    'getProfilesByLineUserId',
-    {
-      lineUserId: lineUserId,
-      retry: Date.now()
-    },
-    'GET'
-  );
-}
-
 async function initPage() {
   createCircuitBackground();
 
-  // ==========================================================
-  // 0. 職缺已經綁在 HTML：頁面一開啟就直接顯示
-  //    不再等待 LINE / GAS 履歷查詢。
-  // ==========================================================
-  window.companyData = STATIC_COMPANY_DATA;
-  renderCompanyOptions();
+  let uid = '';
 
-  // ==========================================================
-  // 1. 使用既有的穩定 LINE 身份取得函式
-  //    內含 LIFF getProfile 最多 3 次 + sessionStorage UID fallback
-  // ==========================================================
-  const identity = await getStableLineIdentity();
-  const uid = identity && identity.uid
-    ? String(identity.uid).trim()
-    : '';
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile && profile.userId) {
+          uid = String(profile.userId).trim();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('LIFF 初始化失敗：', e);
+  }
 
   window.lineUserId = uid;
 
-  // ==========================================================
-  // 2. 同一 LINE WebView 若先前成功載入過履歷，
-  //    先立即顯示，不等 GAS。
-  // ==========================================================
-  const sessionProfiles = getProfilesFromSession(uid);
-
-  if (uid && sessionProfiles.length > 0) {
-    window.isManualMode = false;
-    renderUserSelector(sessionProfiles);
-    document.getElementById('verifyingStatus').classList.add('hidden');
-  }
-
-  // ==========================================================
-  // 3. 沒有 LINE UID：才真正進入網頁手動預約模式
-  // ==========================================================
-  if (!uid) {
-    document.getElementById('verifyingStatus').classList.add('hidden');
-    window.isManualMode = true;
-    document.getElementById('manualInputBox').classList.remove('hidden');
-    return;
-  }
-
-  // ==========================================================
-  // 4. 向 GAS 查最新履歷。
-  //    若第一次是 Load failed，只補查一次。
-  // ==========================================================
   try {
-    const profileRes = await getProfilesStable(uid);
+    let profileRes = {
+      status: 'not_found',
+      profiles: []
+    };
+
+    // 先完成 LINE 履歷辨識，避免與職缺 GET 同時搶首次連線
+    if (uid) {
+      profileRes = await callGasApi(
+        'getProfilesByLineUserId',
+        { lineUserId: uid },
+        'GET'
+      );
+    }
 
     document.getElementById('verifyingStatus').classList.add('hidden');
 
     if (
+      uid &&
       profileRes &&
       profileRes.status === 'found' &&
       Array.isArray(profileRes.profiles) &&
@@ -870,55 +819,58 @@ async function initPage() {
         timestamp: p.timestamp || ''
       }));
 
-      saveProfilesToSession(uid, profiles);
       renderUserSelector(profiles);
-      return;
-    }
 
-    if (profileRes && profileRes.status === 'not_found') {
-      // 如果本機已有之前成功的履歷，不因這次 not_found 把卡片清掉。
-      if (sessionProfiles.length > 0) {
-        window.isManualMode = false;
-        return;
-      }
+    } else if (!uid) {
+      window.isManualMode = true;
+      document.getElementById('manualInputBox').classList.remove('hidden');
 
+    } else if (profileRes && profileRes.status === 'not_found') {
       window.isManualMode = true;
       document.getElementById('manualInputBox').classList.remove('hidden');
 
       showCustomAlert(
-        '系統已完成 LINE 身份辨識，但查無您的求職登記履歷。可前往填寫求職登記表，或直接在下方輸入姓名與身分證預約。',
+        '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
         true
       );
-      return;
-    }
 
-    // API 傳輸失敗：如果 Session 已有履歷就繼續使用，
-    // 不跳錯誤、不切回手動模式。
-    if (sessionProfiles.length > 0) {
+    } else {
       window.isManualMode = false;
-      return;
+      showCustomAlert(
+        (profileRes && profileRes.message)
+          ? '履歷比對失敗：' + profileRes.message
+          : 'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
+      );
     }
 
-    window.isManualMode = false;
-    showCustomAlert(
-      (profileRes && profileRes.message)
-        ? '履歷資料連線暫時失敗：' + profileRes.message + '，系統未切換為手動模式，請重新整理再試一次。'
-        : '履歷比對暫時失敗，請重新整理頁面再試一次。'
+    // 履歷身份畫面處理完成後，再載入職缺清單
+    const companyRes = await callGasApi(
+      'getCompanyData',
+      {},
+      'GET'
     );
+
+    window.companyData = Array.isArray(companyRes)
+      ? companyRes
+      : [];
+
+    renderCompanyOptions();
 
   } catch (err) {
-    console.warn('履歷查詢失敗：', err);
+    console.warn('初始化失敗：', err);
     document.getElementById('verifyingStatus').classList.add('hidden');
 
-    if (sessionProfiles.length > 0) {
-      window.isManualMode = false;
-      return;
+    if (!uid) {
+      window.isManualMode = true;
+      document.getElementById('manualInputBox').classList.remove('hidden');
+    } else {
+      showCustomAlert(
+        'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
+      );
     }
 
-    window.isManualMode = false;
-    showCustomAlert(
-      '履歷比對暫時失敗，請重新整理頁面再試一次。'
-    );
+    document.getElementById('companyListContainer').innerHTML =
+      '<p class="text-center text-red-400 py-6 text-lg">職缺清單載入失敗，請重新整理頁面。</p>';
   }
 }
 
@@ -990,7 +942,7 @@ function renderCompanyOptions() {
       }, 300);
     }
   } else {
-    container.innerHTML = '<p class="text-center text-red-400 text-lg">目前 HTML 尚未設定職缺清單。</p>';
+    container.innerHTML = '<p class="text-center text-red-400 text-lg">目前尚無職缺清單。</p>';
   }
 }
 
