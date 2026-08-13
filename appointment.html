@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwYC8z2vWDXuE86dlbc1s5qkxZagJk3REX16FGEedeFiBvotEi8nGH5zzYH-6EJR2CYSQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw6c2Nst0GPI9JgkcwxV_BFqRlsDUnukqcMAzNiGx7XMsGoC3oYU1BMDePgIQxZfxcy3Q/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -338,6 +338,12 @@ async function initPage() {
   createCircuitBackground();
 
   // ==========================================================
+  // 0. 頁面一開啟就先走真正 POST 網路路徑
+  // 與 LIFF 身份辨識、履歷卡片載入平行進行
+  // ==========================================================
+  startPostNetworkWarmup();
+
+  // ==========================================================
   // ① 先穩定取得 LINE 身份
   // ==========================================================
   const identity = await getStableLineIdentity();
@@ -510,25 +516,68 @@ async function initPage() {
   }
 }
 
-async function warmPostInBackground() {
-  try {
-    const params = new URLSearchParams();
+function startPostNetworkWarmup(force = false) {
+  // 已有進行中 / 已成功的預熱，直接沿用
+  if (!force && window.postWarmPromise) {
+    return window.postWarmPromise;
+  }
 
-    params.append(
-      'postData',
-      JSON.stringify({
-        action: 'warmPost'
-      })
-    );
+  window.postWarmPromise = (async () => {
+    try {
+      const params = new URLSearchParams();
 
-    // 不 await，不阻塞使用者操作
-    fetch(GAS_API_URL, {
-      method: 'POST',
-      body: params
-    }).catch(() => {});
+      params.append(
+        'postData',
+        JSON.stringify({
+          action: 'warmPostNetwork',
+          t: Date.now()
+        })
+      );
 
-  } catch (e) {
-    // 預熱失敗不影響正式預約
+      const resp = await fetch(GAS_API_URL, {
+        method: 'POST',
+        body: params,
+        cache: 'no-store'
+      });
+
+      if (!resp.ok) {
+        throw new Error('Warm POST HTTP ' + resp.status);
+      }
+
+      const text = await resp.text();
+
+      if (!text) {
+        throw new Error('Warm POST 回應空白');
+      }
+
+      const result = JSON.parse(text);
+
+      if (!result || result.success !== true) {
+        throw new Error('Warm POST 未成功');
+      }
+
+      window.postWarmReady = true;
+      return true;
+
+    } catch (err) {
+      console.warn('POST 網路預熱失敗：', err);
+
+      window.postWarmReady = false;
+
+      // 失敗後清掉 Promise，讓卡片載入完成時可再試一次
+      window.postWarmPromise = null;
+
+      return false;
+    }
+  })();
+
+  return window.postWarmPromise;
+}
+
+function warmPostInBackground() {
+  // 相容原本呼叫名稱；若第一次預熱失敗，這裡會再試一次
+  if (!window.postWarmReady) {
+    startPostNetworkWarmup(true);
   }
 }
 
@@ -680,6 +729,17 @@ document.addEventListener('DOMContentLoaded', function() {
           requestId: requestId
         }
       };
+
+      // 若頁面剛開啟、POST 預熱仍在進行，
+      // 先讓同一條 POST 路徑完成暖機，再送正式預約。
+      if (window.postWarmPromise && !window.postWarmReady) {
+        try {
+          await Promise.race([
+            window.postWarmPromise,
+            new Promise(resolve => setTimeout(resolve, 2500))
+          ]);
+        } catch (e) {}
+      }
 
       const r = await submitAppointmentOnce(payload);
       submitBtn.disabled = false;
