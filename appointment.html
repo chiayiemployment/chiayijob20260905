@@ -777,14 +777,11 @@ async function getProfilesStable(lineUserId) {
     };
   }
 
-  // ==========================================================
-  // 履歷比對改走 POST
-  // 與目前已驗證可正常送出預約的 POST 路徑一致。
-  // ==========================================================
-  let first = await callGasApi(
+  // 直接沿用「履歷填寫＋預約面試」已驗證穩定版的 GET API。
+  const first = await callGasApi(
     'getProfilesByLineUserId',
     { lineUserId: lineUserId },
-    'POST'
+    'GET'
   );
 
   if (
@@ -794,16 +791,17 @@ async function getProfilesStable(lineUserId) {
     return first;
   }
 
-  // 第一次若為網路傳輸失敗，只補查一次。
+  // LINE WebView 首次連線偶發失敗時，只補查一次。
   await new Promise(resolve => setTimeout(resolve, 800));
 
-  let second = await callGasApi(
+  return await callGasApi(
     'getProfilesByLineUserId',
-    { lineUserId: lineUserId },
-    'POST'
+    {
+      lineUserId: lineUserId,
+      retry: Date.now()
+    },
+    'GET'
   );
-
-  return second || first;
 }
 
 async function initPage() {
