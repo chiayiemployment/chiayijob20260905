@@ -150,8 +150,8 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwHGiGG2NI-mcj2b46caR7t2UkDRHaDwbR_pp_r-j8w-nKGRZL8A3zMjCBGt8ZVLzS_oA/exec';
-const LIFF_ID = '2010785535-mhv97vPS';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxGdBTZe_DI8AILbTjfqocL21Fxk8-fA_v-Dn3MDSzG9gVEfBu_eFuBmQS6-h3NDJq6uQ/exec';
+const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
@@ -374,50 +374,33 @@ async function initPage() {
 
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-
         if (profile && profile.userId) {
-          uid = profile.userId;
+          uid = String(profile.userId).trim();
         }
       }
     }
   } catch (e) {
-    console.warn('LIFF 初始化跳過：', e);
+    console.warn('LIFF 初始化失敗：', e);
   }
 
   window.lineUserId = uid;
 
   try {
-    // 沿用「履歷填寫與預約面試」最終穩定版：
-    // 履歷與職缺各自使用既有 API，不使用額外預熱/結果確認機制。
-    const profilePromise = uid
-      ? callGasApi(
-          'getProfilesByLineUserId',
-          { lineUserId: uid },
-          'GET'
-        )
-      : Promise.resolve({
-          status: 'not_found',
-          profiles: []
-        });
+    let profileRes = {
+      status: 'not_found',
+      profiles: []
+    };
 
-    const companyPromise = callGasApi(
-      'getCompanyData',
-      {},
-      'GET'
-    );
-
-    const [profileRes, companyRes] = await Promise.all([
-      profilePromise,
-      companyPromise
-    ]);
+    // 先完成 LINE 履歷辨識，避免與職缺 GET 同時搶首次連線
+    if (uid) {
+      profileRes = await callGasApi(
+        'getProfilesByLineUserId',
+        { lineUserId: uid },
+        'GET'
+      );
+    }
 
     document.getElementById('verifyingStatus').classList.add('hidden');
-
-    window.companyData = Array.isArray(companyRes)
-      ? companyRes
-      : [];
-
-    renderCompanyOptions();
 
     if (
       uid &&
@@ -428,8 +411,6 @@ async function initPage() {
     ) {
       window.isManualMode = false;
 
-      // appointment 卡片只需要姓名/身分證/時間，
-      // 直接沿用主系統回傳的完整多履歷資料。
       const profiles = profileRes.profiles.map(p => ({
         name: p.name || '',
         idNumber: p.idNumber || '',
@@ -439,18 +420,12 @@ async function initPage() {
       renderUserSelector(profiles);
 
     } else if (!uid) {
-      // 真的沒有 LINE 身份時才進網頁預約模式
       window.isManualMode = true;
-      document
-        .getElementById('manualInputBox')
-        .classList.remove('hidden');
+      document.getElementById('manualInputBox').classList.remove('hidden');
 
     } else if (profileRes && profileRes.status === 'not_found') {
-      // LINE 身份有取得，但確實查無履歷，可手動輸入
       window.isManualMode = true;
-      document
-        .getElementById('manualInputBox')
-        .classList.remove('hidden');
+      document.getElementById('manualInputBox').classList.remove('hidden');
 
       showCustomAlert(
         '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
@@ -458,9 +433,7 @@ async function initPage() {
       );
 
     } else {
-      // API 錯誤不誤判成網頁模式
       window.isManualMode = false;
-
       showCustomAlert(
         (profileRes && profileRes.message)
           ? '履歷比對失敗：' + profileRes.message
@@ -468,22 +441,34 @@ async function initPage() {
       );
     }
 
+    // 履歷身份畫面處理完成後，再載入職缺清單
+    const companyRes = await callGasApi(
+      'getCompanyData',
+      {},
+      'GET'
+    );
+
+    window.companyData = Array.isArray(companyRes)
+      ? companyRes
+      : [];
+
+    renderCompanyOptions();
+
   } catch (err) {
     console.warn('初始化失敗：', err);
-
     document.getElementById('verifyingStatus').classList.add('hidden');
 
     if (!uid) {
       window.isManualMode = true;
-      document
-        .getElementById('manualInputBox')
-        .classList.remove('hidden');
+      document.getElementById('manualInputBox').classList.remove('hidden');
     } else {
-      window.isManualMode = false;
       showCustomAlert(
         'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
       );
     }
+
+    document.getElementById('companyListContainer').innerHTML =
+      '<p class="text-center text-red-400 py-6 text-lg">職缺清單載入失敗，請重新整理頁面。</p>';
   }
 }
 
