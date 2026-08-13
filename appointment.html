@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxm4ZcdqMS_nwWtU9MwfsklsNv1IqPqBForzHK1jEIjILzI9NPBBWHf8mmHUrkJCDm9ow/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxUVKeTtoMaDiaRllIWWQ1DR2L6PgpVtdeOLcucLlUZBtzEY8y9uiTeF6AzzpyLiM2THg/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -185,6 +185,28 @@ function showCustomAlert(msg, needResume = false) {
 
 function hideCustomAlert() {
   document.getElementById('customAlertModal').classList.add('hidden');
+}
+
+async function retryUserProfilesOnce(uid) {
+  if (!uid) {
+    return {
+      success: true,
+      userProfiles: []
+    };
+  }
+
+  // 第一次冷啟動若沒拿到履歷，短暫等待後單獨再確認一次
+  await new Promise(resolve => setTimeout(resolve, 700));
+
+  const resp = await fetch(
+    `${GAS_API_URL}?action=getUserProfiles&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
+  );
+
+  if (!resp.ok) {
+    throw new Error('Profile Retry HTTP ' + resp.status);
+  }
+
+  return await resp.json();
 }
 
 async function initPage() {
@@ -228,9 +250,39 @@ async function initPage() {
 
       renderCompanyOptions();
 
-      const profiles = Array.isArray(res.userProfiles)
+      let profiles = Array.isArray(res.userProfiles)
         ? res.userProfiles
         : [];
+
+      let profileLookupSuccess = res.profileLookupSuccess !== false;
+
+      // 有 LINE ID 但第一次沒拿到履歷時，不直接判定「查無履歷」。
+      // 自動再確認一次，避免冷啟動造成誤進網頁預約模式。
+      if (uid && profiles.length === 0) {
+        document.getElementById('verifyingStatus').classList.remove('hidden');
+        document.getElementById('verifyingStatus').querySelector('span:last-child').innerText =
+          'LINE 身份已識別，正在再次確認履歷紀錄...';
+
+        try {
+          const retryRes = await retryUserProfilesOnce(uid);
+
+          if (retryRes && retryRes.success) {
+            profiles = Array.isArray(retryRes.userProfiles)
+              ? retryRes.userProfiles
+              : [];
+
+            profileLookupSuccess = true;
+          } else {
+            profileLookupSuccess = false;
+          }
+
+        } catch (retryErr) {
+          console.warn('履歷第二次確認失敗：', retryErr);
+          profileLookupSuccess = false;
+        }
+
+        document.getElementById('verifyingStatus').classList.add('hidden');
+      }
 
       if (uid && profiles.length > 0) {
         window.isManualMode = false;
@@ -242,7 +294,17 @@ async function initPage() {
           .getElementById('manualInputBox')
           .classList.remove('hidden');
 
+      } else if (!profileLookupSuccess) {
+        // 查詢失敗 ≠ 查無履歷
+        // 不再錯誤顯示「未偵測到 LINE 帳號」
+        window.isManualMode = false;
+
+        showCustomAlert(
+          'LINE 身份已識別，但履歷資料暫時無法完成比對，請重新整理頁面再試一次。'
+        );
+
       } else {
+        // 兩次都正常查詢、確實找不到履歷，才進手動模式
         window.isManualMode = true;
         document
           .getElementById('manualInputBox')
@@ -254,7 +316,7 @@ async function initPage() {
         );
       }
 
-      // 畫面已完成後，背景走「真正 POST」預熱寫入路徑
+      // 畫面已完成後，背景走真正 POST 預熱
       warmPostInBackground();
 
     } else {
