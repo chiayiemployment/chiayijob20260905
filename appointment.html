@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxdKzq5frz7zA3YrmcGU01OHnLju9KuEz6EJWTYqcxTpHd8QJALIY_9s5zFaUolc2vplQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbysxpyAYe5YqBHsaFLZGMwvQiGNwSdgIpSDzbc61R6ZYIWxwcz8oW_fFpa-z-03FqvRQw/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -190,7 +190,10 @@ function hideCustomAlert() {
 async function initPage() {
   createCircuitBackground();
 
-  // 職缺清單先開始抓，與 LIFF 初始化平行進行
+  // ==========================================================
+  // ① 職缺清單：一進頁面立即背景載入
+  // 不再讓它阻塞履歷卡片顯示
+  // ==========================================================
   const companyPromise = fetch(
     `${GAS_API_URL}?action=getCompanyData&_=${Date.now()}`
   )
@@ -198,11 +201,26 @@ async function initPage() {
       if (!resp.ok) throw new Error('Company HTTP ' + resp.status);
       return resp.json();
     })
+    .then(companyData => {
+      window.companyData = Array.isArray(companyData)
+        ? companyData
+        : [];
+
+      renderCompanyOptions();
+      return window.companyData;
+    })
     .catch(err => {
       console.warn('職缺清單載入失敗：', err);
+
+      document.getElementById('companyListContainer').innerHTML =
+        '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
+
       return [];
     });
 
+  // ==========================================================
+  // ② LINE 身份識別
+  // ==========================================================
   let uid = '';
 
   try {
@@ -220,43 +238,48 @@ async function initPage() {
 
   window.lineUserId = uid;
 
-  const profilePromise = uid
-    ? fetch(
-        `${GAS_API_URL}?action=getUserProfiles&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
-      )
-        .then(resp => {
-          if (!resp.ok) throw new Error('Profile HTTP ' + resp.status);
-          return resp.json();
-        })
-        .then(res => Array.isArray(res.userProfiles) ? res.userProfiles : [])
-        .catch(err => {
-          console.warn('履歷查詢失敗：', err);
-          return [];
-        })
-    : Promise.resolve([]);
-
+  // ==========================================================
+  // ③ 履歷卡片：取得 User ID 後立即單獨查詢
+  // 查到就馬上顯示，不再等待職缺清單
+  // ==========================================================
   try {
-    const [companyData, profiles] = await Promise.all([
-      companyPromise,
-      profilePromise
-    ]);
+    let profiles = [];
+
+    if (uid) {
+      const resp = await fetch(
+        `${GAS_API_URL}?action=getUserProfiles&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
+      );
+
+      if (!resp.ok) {
+        throw new Error('Profile HTTP ' + resp.status);
+      }
+
+      const res = await resp.json();
+
+      profiles = Array.isArray(res.userProfiles)
+        ? res.userProfiles
+        : [];
+    }
 
     document.getElementById('verifyingStatus').classList.add('hidden');
 
-    window.companyData = Array.isArray(companyData) ? companyData : [];
-    renderCompanyOptions();
-
     if (uid && profiles.length > 0) {
       window.isManualMode = false;
+
+      // ★ 履歷一查到，立即出卡片
       renderUserSelector(profiles);
 
     } else if (!uid) {
       window.isManualMode = true;
-      document.getElementById('manualInputBox').classList.remove('hidden');
+      document
+        .getElementById('manualInputBox')
+        .classList.remove('hidden');
 
     } else {
       window.isManualMode = true;
-      document.getElementById('manualInputBox').classList.remove('hidden');
+      document
+        .getElementById('manualInputBox')
+        .classList.remove('hidden');
 
       showCustomAlert(
         '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
@@ -264,21 +287,23 @@ async function initPage() {
       );
     }
 
-    // 畫面完成後背景暖啟動預約寫入路徑
+    // 卡片出現後才在背景暖啟動預約寫入路徑
     fetch(
       `${GAS_API_URL}?action=warmAppointmentWrite&_=${Date.now()}`
     ).catch(() => {});
 
   } catch (err) {
-    console.warn('初始化失敗：', err);
+    console.warn('履歷查詢失敗：', err);
 
     document.getElementById('verifyingStatus').classList.add('hidden');
-    document.getElementById('companyListContainer').innerHTML =
-      '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
 
     window.isManualMode = true;
-    document.getElementById('manualInputBox').classList.remove('hidden');
+    document
+      .getElementById('manualInputBox')
+      .classList.remove('hidden');
   }
+
+  // 職缺 Promise 不需要 await；讓它自己完成並更新畫面
 }
 
 function renderUserSelector(profiles) {
@@ -378,11 +403,7 @@ async function submitAppointmentOnce(payload) {
     throw new Error('GAS 回應內容為空白');
   }
 
-  try {
-    return JSON.parse(text);
-  } catch (e) {
-    throw new Error('GAS 回應格式錯誤');
-  }
+  return JSON.parse(text);
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -434,17 +455,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       };
 
-      const slowNoticeTimer = setTimeout(() => {
-        document.getElementById('submitBtnText').innerHTML =
-          '系統處理中，請勿重複點擊... <span class="spinner"></span>';
-      }, 6000);
-
-      let r;
-      try {
-        r = await submitAppointmentOnce(payload);
-      } finally {
-        clearTimeout(slowNoticeTimer);
-      }
+      const r = await submitAppointmentOnce(payload);
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
       if (r.success) {
@@ -466,7 +477,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-      showCustomAlert('預約送出時連線中斷，請稍後再試一次。');
+      showCustomAlert('預約連線暫時不穩定，系統已自動重試仍未成功。請確認網路後再試一次。');
     }
   });
 });
