@@ -146,7 +146,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxOhJtUWfb-IUgjNtg-qo1uRCByVBAXpXmnJdZ_Z9Cq08YvQvJUgt4HCmbFI38Pme6djA/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxdKzq5frz7zA3YrmcGU01OHnLju9KuEz6EJWTYqcxTpHd8QJALIY_9s5zFaUolc2vplQ/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
@@ -189,46 +189,93 @@ function hideCustomAlert() {
 
 async function initPage() {
   createCircuitBackground();
+
+  // 職缺清單先開始抓，與 LIFF 初始化平行進行
+  const companyPromise = fetch(
+    `${GAS_API_URL}?action=getCompanyData&_=${Date.now()}`
+  )
+    .then(resp => {
+      if (!resp.ok) throw new Error('Company HTTP ' + resp.status);
+      return resp.json();
+    })
+    .catch(err => {
+      console.warn('職缺清單載入失敗：', err);
+      return [];
+    });
+
   let uid = '';
+
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
+
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
         if (profile) uid = profile.userId;
       }
     }
-  } catch (e) { console.warn('LIFF 驗證跳過'); }
+  } catch (e) {
+    console.warn('LIFF 驗證跳過：', e);
+  }
+
   window.lineUserId = uid;
 
-  // 抓取初始資料
+  const profilePromise = uid
+    ? fetch(
+        `${GAS_API_URL}?action=getUserProfiles&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
+      )
+        .then(resp => {
+          if (!resp.ok) throw new Error('Profile HTTP ' + resp.status);
+          return resp.json();
+        })
+        .then(res => Array.isArray(res.userProfiles) ? res.userProfiles : [])
+        .catch(err => {
+          console.warn('履歷查詢失敗：', err);
+          return [];
+        })
+    : Promise.resolve([]);
+
   try {
-    const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
-    const res = await resp.json();
+    const [companyData, profiles] = await Promise.all([
+      companyPromise,
+      profilePromise
+    ]);
+
     document.getElementById('verifyingStatus').classList.add('hidden');
-    if (res && res.success) {
-      window.companyData = Array.isArray(res.companyData) ? res.companyData : [];
-      renderCompanyOptions();
-      const profiles = res.userProfiles || [];
-      if (uid && profiles.length > 0) {
-        window.isManualMode = false;
-        renderUserSelector(profiles);
-      } else if (!uid) {
-        window.isManualMode = true;
-        document.getElementById('manualInputBox').classList.remove('hidden');
-      } else {
-        window.isManualMode = true;
-        document.getElementById('manualInputBox').classList.remove('hidden');
-        showCustomAlert('系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！', true);
-      }
-    } else {
-      renderCompanyOptions();
+
+    window.companyData = Array.isArray(companyData) ? companyData : [];
+    renderCompanyOptions();
+
+    if (uid && profiles.length > 0) {
+      window.isManualMode = false;
+      renderUserSelector(profiles);
+
+    } else if (!uid) {
       window.isManualMode = true;
       document.getElementById('manualInputBox').classList.remove('hidden');
+
+    } else {
+      window.isManualMode = true;
+      document.getElementById('manualInputBox').classList.remove('hidden');
+
+      showCustomAlert(
+        '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
+        true
+      );
     }
+
+    // 畫面完成後背景暖啟動預約寫入路徑
+    fetch(
+      `${GAS_API_URL}?action=warmAppointmentWrite&_=${Date.now()}`
+    ).catch(() => {});
+
   } catch (err) {
+    console.warn('初始化失敗：', err);
+
     document.getElementById('verifyingStatus').classList.add('hidden');
-    document.getElementById('companyListContainer').innerHTML = '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
+    document.getElementById('companyListContainer').innerHTML =
+      '<p class="text-center text-red-400 text-lg">無法載入職缺清單，請重新整理。</p>';
+
     window.isManualMode = true;
     document.getElementById('manualInputBox').classList.remove('hidden');
   }
@@ -312,52 +359,29 @@ function createAppointmentRequestId() {
   return Date.now().toString(36) + '_' + rand;
 }
 
-async function postAppointmentWithTimeout(payload, timeoutMs = 12000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+async function submitAppointmentOnce(payload) {
+  const params = new URLSearchParams();
+  params.append('postData', JSON.stringify(payload));
 
-  try {
-    const params = new URLSearchParams();
-    params.append('postData', JSON.stringify(payload));
+  const resp = await fetch(GAS_API_URL, {
+    method: 'POST',
+    body: params
+  });
 
-    const resp = await fetch(GAS_API_URL, {
-      method: 'POST',
-      body: params,
-      signal: controller.signal
-    });
-
-    if (!resp.ok) {
-      throw new Error('HTTP ' + resp.status);
-    }
-
-    const text = await resp.text();
-
-    if (!text) {
-      throw new Error('GAS 回應內容為空白');
-    }
-
-    try {
-      return JSON.parse(text);
-    } catch (jsonErr) {
-      throw new Error('GAS 回應格式錯誤');
-    }
-
-  } finally {
-    clearTimeout(timer);
+  if (!resp.ok) {
+    throw new Error('HTTP ' + resp.status);
   }
-}
 
-async function submitAppointmentSafely(payload) {
+  const text = await resp.text();
+
+  if (!text) {
+    throw new Error('GAS 回應內容為空白');
+  }
+
   try {
-    return await postAppointmentWithTimeout(payload, 12000);
-
-  } catch (firstErr) {
-    console.warn('第一次預約連線失敗，準備自動重試：', firstErr);
-
-    // 同一 requestId 重送；後端會避免重複寫入。
-    await new Promise(resolve => setTimeout(resolve, 700));
-
-    return await postAppointmentWithTimeout(payload, 12000);
+    return JSON.parse(text);
+  } catch (e) {
+    throw new Error('GAS 回應格式錯誤');
   }
 }
 
@@ -410,7 +434,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       };
 
-      const r = await submitAppointmentSafely(payload);
+      const slowNoticeTimer = setTimeout(() => {
+        document.getElementById('submitBtnText').innerHTML =
+          '系統處理中，請勿重複點擊... <span class="spinner"></span>';
+      }, 6000);
+
+      let r;
+      try {
+        r = await submitAppointmentOnce(payload);
+      } finally {
+        clearTimeout(slowNoticeTimer);
+      }
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
       if (r.success) {
@@ -432,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (err) {
       submitBtn.disabled = false;
       document.getElementById('submitBtnText').innerText = '提交預約面試';
-      showCustomAlert('預約連線暫時不穩定，系統已自動重試仍未成功。請確認網路後再試一次。');
+      showCustomAlert('預約送出時連線中斷，請稍後再試一次。');
     }
   });
 });
