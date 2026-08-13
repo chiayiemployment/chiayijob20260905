@@ -150,7 +150,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbykyJmaeZtSluoqsESSh_XTBLoUmc30JmiyhtkdweU9rwLPWk2nx_q36H1w5bQ-3tj2ug/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxY-9U9z1k4P6G-5iX78tF9ZGvu2f27IdzVs6cKUYtaLPK_b2n8KDU-z2rHWkQ5CDCRgA/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 async function callGasApi(action, payload = {}, method = 'GET') {
@@ -777,11 +777,14 @@ async function getProfilesStable(lineUserId) {
     };
   }
 
-  // 第一次正常查詢
+  // ==========================================================
+  // 履歷比對改走 POST
+  // 與目前已驗證可正常送出預約的 POST 路徑一致。
+  // ==========================================================
   let first = await callGasApi(
     'getProfilesByLineUserId',
     { lineUserId: lineUserId },
-    'GET'
+    'POST'
   );
 
   if (
@@ -791,17 +794,13 @@ async function getProfilesStable(lineUserId) {
     return first;
   }
 
-  // 只有「資料傳輸失敗 / Load failed」才短暫補查一次。
-  // 不重複查正常的 not_found。
+  // 第一次若為網路傳輸失敗，只補查一次。
   await new Promise(resolve => setTimeout(resolve, 800));
 
   let second = await callGasApi(
     'getProfilesByLineUserId',
-    {
-      lineUserId: lineUserId,
-      retry: Date.now()
-    },
-    'GET'
+    { lineUserId: lineUserId },
+    'POST'
   );
 
   return second || first;
@@ -905,7 +904,7 @@ async function initPage() {
     window.isManualMode = false;
     showCustomAlert(
       (profileRes && profileRes.message)
-        ? '履歷比對暫時失敗：' + profileRes.message + '，系統未切換為手動模式，請重新整理再試一次。'
+        ? '履歷資料連線暫時失敗：' + profileRes.message + '，系統未切換為手動模式，請重新整理再試一次。'
         : '履歷比對暫時失敗，請重新整理頁面再試一次。'
     );
 
