@@ -150,9 +150,34 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 </div>
 
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyM7Y--2Grws8Vb_zKLnAK1t1m9JLwf2w8ZneBH5um3oDZZ8-N-96upUjVguyXkASuLWA/exec';
-const LIFF_ID = '2010785535-qIFwOa8w';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwHGiGG2NI-mcj2b46caR7t2UkDRHaDwbR_pp_r-j8w-nKGRZL8A3zMjCBGt8ZVLzS_oA/exec';
+const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
+async function callGasApi(action, payload = {}, method = 'GET') {
+  try {
+    if (method === 'GET') {
+      const query = new URLSearchParams({ action, ...payload }).toString();
+      const resp = await fetch(`${GAS_API_URL}?${query}`);
+      return await resp.json();
+    } else {
+      const resp = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action, ...payload }),
+        redirect: 'follow'
+      });
+      return await resp.json();
+    }
+  } catch (err) {
+    console.error('API 呼叫失敗:', err);
+    return {
+      status: 'error',
+      message: '資料傳輸失敗：' + (err.message || '請檢查網路連線')
+    };
+  }
+}
+
+
 window.companyData = [];
 window.isManualMode = false; // 標記是否為手動輸入模式
 
@@ -341,249 +366,124 @@ async function retryUserProfilesOnce(uid) {
 async function initPage() {
   createCircuitBackground();
 
-  // ==========================================================
-  // ① 先穩定取得 LINE 身份
-  // 卡片優先：此階段不啟動 POST 預熱，避免與初始化 GET 併發
-  // ==========================================================
-  // ==========================================================
-  const identity = await getStableLineIdentity();
-  const uid = identity.uid || '';
+  let uid = '';
+
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+
+        if (profile && profile.userId) {
+          uid = profile.userId;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('LIFF 初始化跳過：', e);
+  }
 
   window.lineUserId = uid;
 
-  // 如果同一 LINE 視窗已成功載入過履歷，重新整理時先立即顯示
-  const sessionProfiles = getProfilesFromSession(uid);
-
-  if (uid && sessionProfiles.length > 0) {
-    window.isManualMode = false;
-    renderUserSelector(sessionProfiles);
-
-    // 已有 session 履歷時，也是在卡片顯示後才開始 POST 預熱
-    warmPostInBackground();
-  }
-
-  // ==========================================================
-  // ② 單一 GET 取得最新職缺 + 最新履歷
-  // ==========================================================
   try {
-    const resp = await fetch(
-      `${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}&_=${Date.now()}`
+    // 沿用「履歷填寫與預約面試」最終穩定版：
+    // 履歷與職缺各自使用既有 API，不使用額外預熱/結果確認機制。
+    const profilePromise = uid
+      ? callGasApi(
+          'getProfilesByLineUserId',
+          { lineUserId: uid },
+          'GET'
+        )
+      : Promise.resolve({
+          status: 'not_found',
+          profiles: []
+        });
+
+    const companyPromise = callGasApi(
+      'getCompanyData',
+      {},
+      'GET'
     );
 
-    if (!resp.ok) {
-      throw new Error('Initial HTTP ' + resp.status);
-    }
-
-    const res = await resp.json();
+    const [profileRes, companyRes] = await Promise.all([
+      profilePromise,
+      companyPromise
+    ]);
 
     document.getElementById('verifyingStatus').classList.add('hidden');
 
-    if (!res || !res.success) {
-      throw new Error(
-        res && res.message
-          ? res.message
-          : '初始化 API 回應失敗'
-      );
-    }
-
-    window.companyData = Array.isArray(res.companyData)
-      ? res.companyData
+    window.companyData = Array.isArray(companyRes)
+      ? companyRes
       : [];
 
     renderCompanyOptions();
 
-    let profiles = Array.isArray(res.userProfiles)
-      ? res.userProfiles
-      : [];
-
-    let profileStatus = res.profileStatus || (
-      profiles.length > 0 ? 'found' : 'error'
-    );
-
-    // ========================================================
-    // ③ 有 LINE ID 但第一次沒找到時，再確認一次
-    //    不直接誤判成「網頁預約模式」
-    // ========================================================
     if (
       uid &&
-      profiles.length === 0 &&
-      profileStatus !== 'found'
+      profileRes &&
+      profileRes.status === 'found' &&
+      Array.isArray(profileRes.profiles) &&
+      profileRes.profiles.length > 0
     ) {
-      document.getElementById('verifyingStatus').classList.remove('hidden');
-
-      const statusText =
-        document.getElementById('verifyingStatus')
-          .querySelector('span:last-child');
-
-      if (statusText) {
-        statusText.innerText =
-          'LINE 身份已識別，正在再次確認履歷紀錄...';
-      }
-
-      try {
-        const retryRes = await retryUserProfilesOnce(uid);
-
-        if (retryRes) {
-          profiles = Array.isArray(retryRes.userProfiles)
-            ? retryRes.userProfiles
-            : [];
-
-          profileStatus = retryRes.status || (
-            profiles.length > 0 ? 'found' : 'error'
-          );
-        }
-
-      } catch (retryErr) {
-        console.warn('履歷第二次確認失敗：', retryErr);
-        profileStatus = 'error';
-      }
-
-      document.getElementById('verifyingStatus').classList.add('hidden');
-    }
-
-    // ========================================================
-    // ④ 根據「真正狀態」決定畫面
-    // ========================================================
-    if (uid && profiles.length > 0) {
       window.isManualMode = false;
 
-      saveProfilesToSession(uid, profiles);
+      // appointment 卡片只需要姓名/身分證/時間，
+      // 直接沿用主系統回傳的完整多履歷資料。
+      const profiles = profileRes.profiles.map(p => ({
+        name: p.name || '',
+        idNumber: p.idNumber || '',
+        timestamp: p.timestamp || ''
+      }));
+
       renderUserSelector(profiles);
 
-      // ★ 卡片成功顯示後才開始真正 POST 網路預熱
-      // 使用者挑選職缺時，背景暖起正式 POST 路徑
-      warmPostInBackground();
-
-    } else if (!uid && !identity.inLineClient) {
-      // 真正從一般瀏覽器開啟，才進網頁手動模式
+    } else if (!uid) {
+      // 真的沒有 LINE 身份時才進網頁預約模式
       window.isManualMode = true;
-
       document
         .getElementById('manualInputBox')
         .classList.remove('hidden');
 
-    } else if (!uid && identity.inLineClient) {
-      // 在 LINE 裡，但 LINE 身份沒有成功取得
-      window.isManualMode = false;
-
-      showCustomAlert(
-        '目前在 LINE 中開啟，但 LINE 身份尚未成功識別。請關閉此頁後重新開啟一次。'
-      );
-
-    } else if (profileStatus === 'not_found') {
-      // 有 LINE 身份，而且後端確實正常查完兩次都沒有履歷
+    } else if (profileRes && profileRes.status === 'not_found') {
+      // LINE 身份有取得，但確實查無履歷，可手動輸入
       window.isManualMode = true;
-
       document
         .getElementById('manualInputBox')
         .classList.remove('hidden');
 
       showCustomAlert(
-        '系統已完成 LINE 身份辨識，但查無您的求職登記履歷。可前往填寫求職登記表，或直接在下方輸入姓名與身分證預約。',
+        '系統查無您的求職登記履歷。請先點選「前往填寫求職登記表」，或直接在下方輸入姓名與身分證預約！',
         true
       );
 
     } else {
-      // 查詢錯誤不能當成查無履歷
+      // API 錯誤不誤判成網頁模式
       window.isManualMode = false;
 
       showCustomAlert(
-        'LINE 身份已識別，但履歷資料暫時無法完成比對。請重新整理頁面再試一次。'
+        (profileRes && profileRes.message)
+          ? '履歷比對失敗：' + profileRes.message
+          : 'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
       );
     }
-
-    // 保留已成功的 POST 預熱
-    
 
   } catch (err) {
     console.warn('初始化失敗：', err);
 
     document.getElementById('verifyingStatus').classList.add('hidden');
 
-    // 若本地已有成功履歷卡片，不因這次網路失敗切回手動模式
-    if (uid && sessionProfiles.length > 0) {
-      window.isManualMode = false;
-      return;
-    }
-
-    if (!uid && !identity.inLineClient) {
+    if (!uid) {
       window.isManualMode = true;
-
       document
         .getElementById('manualInputBox')
         .classList.remove('hidden');
-
     } else {
       window.isManualMode = false;
-
       showCustomAlert(
         'LINE 身份或履歷資料載入暫時不穩定，請重新整理頁面再試一次。'
       );
     }
-  }
-}
-
-function startPostNetworkWarmup(force = false) {
-  // 已有進行中 / 已成功的預熱，直接沿用
-  if (!force && window.postWarmPromise) {
-    return window.postWarmPromise;
-  }
-
-  window.postWarmPromise = (async () => {
-    try {
-      const params = new URLSearchParams();
-
-      params.append(
-        'postData',
-        JSON.stringify({
-          action: 'warmPostNetwork',
-          t: Date.now()
-        })
-      );
-
-      const resp = await fetch(GAS_API_URL, {
-        method: 'POST',
-        body: params,
-        cache: 'no-store'
-      });
-
-      if (!resp.ok) {
-        throw new Error('Warm POST HTTP ' + resp.status);
-      }
-
-      const text = await resp.text();
-
-      if (!text) {
-        throw new Error('Warm POST 回應空白');
-      }
-
-      const result = JSON.parse(text);
-
-      if (!result || result.success !== true) {
-        throw new Error('Warm POST 未成功');
-      }
-
-      window.postWarmReady = true;
-      return true;
-
-    } catch (err) {
-
-      window.postWarmReady = false;
-
-      // 失敗後清掉 Promise，讓卡片載入完成時可再試一次
-      window.postWarmPromise = null;
-
-      return false;
-    }
-  })();
-
-  return window.postWarmPromise;
-}
-
-function warmPostInBackground() {
-  // 相容原本呼叫名稱；若第一次預熱失敗，這裡會再試一次
-  if (!window.postWarmReady) {
-    startPostNetworkWarmup(true);
   }
 }
 
@@ -660,183 +560,109 @@ function renderCompanyOptions() {
 }
 
 
-function createAppointmentRequestId() {
-  const rand = Math.random().toString(36).slice(2, 10);
-  return Date.now().toString(36) + '_' + rand;
-}
-
-async function verifyAppointmentRequest(requestId) {
-  if (!requestId) {
-    return {
-      completed: false
-    };
-  }
-
-  try {
-    // POST 回應中斷後稍等一下，讓 GAS 有時間完成 Cache 寫入
-    await new Promise(resolve => setTimeout(resolve, 900));
-
-    const resp = await fetch(
-      `${GAS_API_URL}?action=getAppointmentRequestStatus&requestId=${encodeURIComponent(requestId)}&_=${Date.now()}`
-    );
-
-    if (!resp.ok) {
-      return {
-        completed: false
-      };
-    }
-
-    const res = await resp.json();
-
-    if (
-      res &&
-      res.success === true &&
-      res.completed === true &&
-      res.result &&
-      res.result.success === true
-    ) {
-      return {
-        completed: true,
-        result: res.result
-      };
-    }
-
-  } catch (e) {
-    console.warn('預約結果確認失敗：', e);
-  }
-
-  return {
-    completed: false
-  };
-}
-
-async function submitAppointmentOnce(payload) {
-  const params = new URLSearchParams();
-  params.append('postData', JSON.stringify(payload));
-
-  const resp = await fetch(GAS_API_URL, {
-    method: 'POST',
-    body: params
-  });
-
-  if (!resp.ok) {
-    throw new Error('HTTP ' + resp.status);
-  }
-
-  const text = await resp.text();
-
-  if (!text) {
-    throw new Error('GAS 回應內容為空白');
-  }
-
-  return JSON.parse(text);
-}
-
-function showAppointmentSuccess(nameVal, pos) {
-  let h = `<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">預約成功！請隨時留意LINE的面試通知！</div>`;
-  h += `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
-  h += '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
-
-  pos.forEach(i => {
-    h += `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
-  });
-
-  h += '</div>';
-  h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">查看預約紀錄</a></div>';
-
-  document.getElementById('successMessageContent').innerHTML = h;
-  document.getElementById('appointmentSection').classList.add('hidden');
-  document.getElementById('successMessageContainer').classList.remove('hidden');
-  window.scrollTo(0, 0);
-}
-
 document.addEventListener('DOMContentLoaded', function() {
   initPage();
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+
     let nameVal = '';
     let idVal = '';
+
     if (window.isManualMode) {
       nameVal = document.getElementById('manualName').value.trim();
       idVal = document.getElementById('manualIdNumber').value.trim().toUpperCase();
-      if (!nameVal) {
-        showCustomAlert('請輸入求職者姓名！');
+
+      if (!nameVal || !idVal) {
+        showCustomAlert('請輸入姓名與身分證字號！');
         return;
       }
-      if (!idVal || idVal.length !== 10) {
-        showCustomAlert('請輸入正確的 10 位身分證字號！');
-        return;
-      }
+
     } else {
       nameVal = document.getElementById('selectedName').value;
       idVal = document.getElementById('selectedIdNumber').value;
+
       if (!nameVal || !idVal) {
         showCustomAlert('請點選上方卡片選擇應徵者身份！');
         return;
       }
     }
+
     const sels = document.querySelectorAll('select[data-company]');
     const pos = [];
-    sels.forEach(s => { if(s.value) pos.push({ company: s.dataset.company, position: s.value }); });
+
+    sels.forEach(s => {
+      if (s.value) {
+        pos.push({
+          company: s.dataset.company,
+          position: s.value
+        });
+      }
+    });
+
     if (pos.length === 0) {
       showCustomAlert('請至少選擇一個職務進行預約！');
       return;
     }
+
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = true;
-    document.getElementById('submitBtnText').innerHTML = '預約中... <span class="spinner"></span>';
 
-    const requestId = createAppointmentRequestId();
+    document.getElementById('submitBtnText').innerHTML =
+      '預約中... <span class="spinner"></span>';
 
-    try {
-      const payload = {
-        action: 'processFormData',
+    // 完全沿用「履歷填寫與預約面試」最終穩定版的 bookAppointments API
+    const r = await callGasApi(
+      'bookAppointments',
+      {
         appointmentData: {
           name: nameVal,
-          idNumber: idVal,
+          id: idVal,
           companyPositions: pos,
-          lineUserId: window.lineUserId || '',
-          requestId: requestId
+          lineUserId: window.lineUserId || ''
         }
-      };
+      },
+      'POST'
+    );
 
-      // 若頁面剛開啟、POST 預熱仍在進行，
-      // 先讓同一條 POST 路徑完成暖機，再送正式預約。
-      if (window.postWarmPromise && !window.postWarmReady) {
-        try {
-          await Promise.race([
-            window.postWarmPromise,
-            new Promise(resolve => setTimeout(resolve, 2500))
-          ]);
-        } catch (e) {}
-      }
+    submitBtn.disabled = false;
+    document.getElementById('submitBtnText').innerText = '提交預約面試';
 
-      const r = await submitAppointmentOnce(payload);
-      submitBtn.disabled = false;
-      document.getElementById('submitBtnText').innerText = '提交預約面試';
-      if (r.success) {
-        showAppointmentSuccess(nameVal, pos);
-      } else {
-        showCustomAlert(r.message || '預約失敗，請確認是否已填寫個人履歷', r.needResume);
-      }
-    } catch (err) {
-      // POST 的回應可能中斷，但 GAS 可能已經成功寫入。
-      // 先用 requestId 查詢後端成功 Cache，不重新送出預約。
-      document.getElementById('submitBtnText').innerHTML =
-        '正在確認預約結果... <span class="spinner"></span>';
+    if (r && r.status === 'success') {
+      let h =
+        '<div class="text-center text-3xl sm:text-4xl font-extrabold mb-4 text-successGreen">' +
+        '預約成功！請隨時留意LINE的面試通知！</div>';
 
-      const verified = await verifyAppointmentRequest(requestId);
+      h +=
+        `<p class="text-center text-lg sm:text-xl mb-6 text-nearWhite">` +
+        `已成功為 <span class="text-circuitCyan font-bold">${nameVal}</span> 完成預約：</p>`;
 
-      submitBtn.disabled = false;
-      document.getElementById('submitBtnText').innerText = '提交預約面試';
+      h +=
+        '<div class="space-y-3 bg-darkPurple/60 p-5 sm:p-6 rounded-2xl border border-lightPurple/30 mb-8">';
 
-      if (verified.completed) {
-        showAppointmentSuccess(nameVal, pos);
-      } else {
-        showCustomAlert(
-          '預約連線暫時中斷，且目前無法確認預約結果。請先點選「查看預約紀錄」確認後，再決定是否重新送出。'
-        );
-      }
+      pos.forEach(i => {
+        h +=
+          `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl">` +
+          `<span class="text-circuitCyan font-bold">${i.company}</span> ➔ ` +
+          `<span class="text-white">${i.position}</span></div>`;
+      });
+
+      h += '</div>';
+      h +=
+        '<div class="text-center">' +
+        '<a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">' +
+        '查看預約紀錄</a></div>';
+
+      document.getElementById('successMessageContent').innerHTML = h;
+      document.getElementById('appointmentSection').classList.add('hidden');
+      document.getElementById('successMessageContainer').classList.remove('hidden');
+      window.scrollTo(0, 0);
+
+    } else {
+      showCustomAlert(
+        (r && r.message)
+          ? r.message
+          : '預約失敗，請重試'
+      );
     }
   });
 });
