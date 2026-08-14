@@ -113,7 +113,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷填寫與預約面試</h1>
     </div>
-    <!-- ⚡ LINE 身份識別與履歷比對狀態 -->
+    <!-- LINE 身份識別與履歷比對狀態 -->
     <div id="identityCheckPanel" class="identity-check-panel">
       <div class="identity-check-inner">
         <span id="identityCheckSpinner" class="identity-spinner" aria-hidden="true"></span>
@@ -342,7 +342,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw4DYcyugkvj-2tQW4nlLpUAc2CUB259Lq83KNxOABBP3qUn4DEIYDSo-8s1hABl5pu-Q/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyC-1oKYdIHgwKGke-OzVSy5MjPHDAI8wqyN1pWfMEYoRLUPiuH_obGvFnkYoZzfGLweQ/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -766,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 🌟 表單檢查提交
+  // 表單檢查提交
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
     
@@ -801,12 +801,12 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCompanyDataOnce();
   });
 
-  // 🌟【修復處】點擊「返回重新編輯」按鈕時，同步確保表單內層欄位 #formFields 可見
+  // 🌟【修復 1】返回重新編輯時，解開 #formFields 的隱藏，確保欄位全數可輸入
   document.getElementById('editBtn').addEventListener('click', () => { 
     document.getElementById('reviewSection').classList.add('hidden'); 
     document.getElementById('formContainer').classList.remove('hidden'); 
     const formFieldsEl = document.getElementById('formFields');
-    if (formFieldsEl) formFieldsEl.classList.remove('hidden'); // 強制解除隱藏
+    if (formFieldsEl) formFieldsEl.classList.remove('hidden');
   });
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => { 
@@ -814,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
 
-  // 確認送出履歷並進入選擇職缺
+  // 🌟【修復 2】確認送出履歷：寫入成功後自動記住 rowNum，防止退回再提交時誤判為重複履歷
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
     confirmBtn.disabled = true; 
@@ -823,16 +823,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const r = await callGasApi('processFormData', { formData: d }, 'POST');
     confirmBtn.disabled = false; 
     confirmBtn.innerHTML = '確認履歷並預約面試';
+
     if (r.status === 'resume_saved') {
+      // 記住新寫入的列號，未來再次按確認時系統會自動走 overwriteRow 覆蓋
+      if (r.rowNum) {
+        document.getElementById('editingRowNum').value = r.rowNum;
+        window.formData.rowNum = r.rowNum;
+      }
+      
       await showCustomAlert(r.message || '履歷提交成功！');
       await loadCompanyDataOnce();
       displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
+
+    } else if (r.status === 'duplicate_found') {
+      // 若萬一觸發重複判斷，自動詢問是否直接覆蓋更新
+      const confirmCover = confirm(r.message || '系統發現已有您的履歷紀錄，是否覆蓋並更新？');
+      if (confirmCover && r.rowNum) {
+        document.getElementById('editingRowNum').value = r.rowNum;
+        window.formData.rowNum = r.rowNum;
+        confirmBtn.click(); // 自動再執行一次提交
+      }
     } else {
       showCustomAlert(r.message || '儲存失敗，請重試');
     }
   });
 
-  // 確認預約面試提交
   confirmAppointmentBtn.addEventListener('click', async function() {
     const companyListContainer = document.getElementById('companyListContainer');
     const sels = companyListContainer.querySelectorAll('select[data-company]'); 
