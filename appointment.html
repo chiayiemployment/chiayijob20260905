@@ -73,14 +73,12 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
     <div class="form-header -mx-6 sm:-mx-8 md:-mx-10 lg:-mx-12 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 mb-8 py-6 px-6 sm:py-7 md:px-10 rounded-t-2xl">
       <h1 class="form-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center tracking-wide">預約面試</h1>
     </div>
-
-    <!-- 驗證狀態 / 身分選擇區 (零 Icon，字體與間距放大) -->
+    <!-- 驗證狀態 / 身分選擇區 -->
     <div id="statusBanner" class="bg-darkPurple/60 p-5 sm:p-7 rounded-2xl mb-8 border border-lightPurple/40">
       <div id="verifyingStatus" class="flex items-center gap-3 text-circuitCyan text-lg sm:text-xl font-medium">
         <span class="spinner"></span>
         <span>正在識別 LINE 身份與比對履歷紀錄...</span>
       </div>
-
       <!-- 多人履歷切換區塊 (LINE 用戶顯示) -->
       <div id="userSelectorBox" class="hidden space-y-4">
         <div class="flex items-center justify-between">
@@ -89,8 +87,7 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
         </div>
         <div id="userCardsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
       </div>
-
-      <!-- 現場手動輸入區塊 (未偵測到 LINE ID / 工作人員模式顯示) -->
+      <!-- 現場手動輸入區塊 -->
       <div id="manualInputBox" class="hidden space-y-5 pt-1">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lightPurple/20 pb-3 gap-2">
           <span class="text-amber-300 font-bold text-xl sm:text-2xl">網頁預約模式</span>
@@ -108,19 +105,14 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
         </div>
       </div>
     </div>
-
     <form id="reservationForm" class="space-y-6">
-      <!-- 隱藏式當前選中用戶欄位 -->
       <input type="hidden" id="selectedName" name="selectedName">
       <input type="hidden" id="selectedIdNumber" name="selectedIdNumber">
-
       <p class="text-lg sm:text-xl font-bold text-left text-[#FFC72C] my-4">一家廠商只能選擇一項工作，如欲應徵兩項以上，請於面試時告知。</p>
-
       <!-- 公司職缺選擇列表 -->
       <div class="space-y-5 mb-8" id="companyListContainer">
         <p class="text-center text-lightPurple py-6 text-lg">載入職缺清單中...</p>
       </div>
-
       <div class="pt-4">
         <button type="submit" id="submitBtn" class="submit-btn w-full py-4 text-xl sm:text-2xl font-bold hover:opacity-90 transition">
           <span id="submitBtnText">提交預約面試</span>
@@ -128,13 +120,11 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
       </div>
     </form>
   </div>
-
   <!-- 預約成功結果頁 -->
   <div id="successMessageContainer" class="form-container p-8 sm:p-10 lg:p-12 hidden mt-10">
     <div id="successMessageContent"></div>
   </div>
 </div>
-
 <!-- 客製化 Alert Modal -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
   <div class="form-container p-6 sm:p-8 rounded-2xl shadow-2xl max-w-lg w-full mx-auto text-center space-y-6">
@@ -144,13 +134,21 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
     </div>
   </div>
 </div>
-
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbynR0o_NTrA8jeMVJBFypd_byhMCFptoRXH7etPvwE6M6NBBAtZFq7aY9F2FFvkODAfiQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby_DYxTm4q0xwQRm3N7mXcvdbnfCTI61cjKgU99w2z-mW5Yx7RRyMr8CZGxpitxdixBMg/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
 window.lineUserId = '';
 window.companyData = [];
-window.isManualMode = false; // 標記是否為手動輸入模式
+window.isManualMode = false;
+
+function closeWebPage() {
+  if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
+    liff.closeWindow();
+  } else {
+    window.close();
+    setTimeout(() => { alert('請直接關閉此瀏覽器分頁。'); }, 300);
+  }
+}
 
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
@@ -187,25 +185,13 @@ function hideCustomAlert() {
   document.getElementById('customAlertModal').classList.add('hidden');
 }
 
-async function initPage() {
-  createCircuitBackground();
-  let uid = '';
-  try {
-    if (typeof liff !== 'undefined' && LIFF_ID) {
-      await liff.init({ liffId: LIFF_ID });
-      if (liff.isLoggedIn()) {
-        const profile = await liff.getProfile();
-        if (profile) uid = profile.userId;
-      }
-    }
-  } catch (e) { console.warn('LIFF 驗證跳過'); }
-  window.lineUserId = uid;
-
-  // 抓取初始資料
+// 🌟 極速平行加載邏輯
+async function fetchInitialDataFast(uid) {
   try {
     const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
     const res = await resp.json();
     document.getElementById('verifyingStatus').classList.add('hidden');
+    
     if (res && res.success) {
       window.companyData = Array.isArray(res.companyData) ? res.companyData : [];
       renderCompanyOptions();
@@ -232,6 +218,35 @@ async function initPage() {
     window.isManualMode = true;
     document.getElementById('manualInputBox').classList.remove('hidden');
   }
+}
+
+async function initPageFast() {
+  createCircuitBackground();
+  const urlParams = new URLSearchParams(window.location.search);
+  let uid = urlParams.get('uid') || '';
+
+  // 1. 如果 URL 中帶有 uid 參數，直接秒發向 GAS 要求初始資料（不等待 LIFF init）
+  if (uid) {
+    window.lineUserId = uid;
+    fetchInitialDataFast(uid);
+    return;
+  }
+
+  // 2. 否則並行啟動 LIFF
+  try {
+    if (typeof liff !== 'undefined' && LIFF_ID) {
+      await liff.init({ liffId: LIFF_ID });
+      if (liff.isLoggedIn()) {
+        const profile = await liff.getProfile();
+        if (profile && profile.userId) uid = profile.userId;
+      }
+    }
+  } catch (e) { 
+    console.warn('LIFF 驗證跳過:', e); 
+  }
+  
+  window.lineUserId = uid;
+  fetchInitialDataFast(uid);
 }
 
 function renderUserSelector(profiles) {
@@ -271,7 +286,6 @@ function renderCompanyOptions() {
   const urlParams = new URLSearchParams(window.location.search);
   const targetCompany = urlParams.get('company') ? decodeURIComponent(urlParams.get('company')) : '';
   const targetPosition = urlParams.get('position') ? decodeURIComponent(urlParams.get('position')) : '';
-
   if (window.companyData && window.companyData.length > 0) {
     window.companyData.forEach(c => {
       const d = document.createElement('div');
@@ -307,7 +321,8 @@ function renderCompanyOptions() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-  initPage();
+  initPageFast();
+  
   document.getElementById('reservationForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     let nameVal = '';
@@ -364,7 +379,19 @@ document.addEventListener('DOMContentLoaded', function() {
           h += `<div class="border-b border-lightPurple/20 pb-3 last:border-b-0 text-base sm:text-xl"><span class="text-circuitCyan font-bold">${i.company}</span> ➔ <span class="text-white">${i.position}</span></div>`;
         });
         h += '</div>';
-        h += '<div class="text-center"><a href="query.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">查看預約紀錄</a></div>';
+        
+        // 🌟 保留關閉網頁與查看預約紀錄按鈕
+        h += `
+          <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
+            <button onclick="closeWebPage()" class="submit-btn w-full sm:w-1/2 py-3.5 text-xl font-bold">
+              關閉網頁
+            </button>
+            <a href="query.html" class="secondary-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center">
+              查看預約紀錄
+            </a>
+          </div>
+        `;
+        
         document.getElementById('successMessageContent').innerHTML = h;
         document.getElementById('appointmentSection').classList.add('hidden');
         document.getElementById('successMessageContainer').classList.remove('hidden');
