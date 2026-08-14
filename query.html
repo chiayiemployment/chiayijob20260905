@@ -55,20 +55,17 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
 <div class="circuit-background" id="circuitBackground"></div>
 <div class="left-gradient"></div>
 <div class="main-content-area max-w-4xl mx-auto px-4 sm:px-6 space-y-6">
-
   <div class="form-container p-6 sm:p-8 md:p-10 lg:p-12">
     <!-- 頂部頁面標題 -->
     <div class="form-header -mx-6 sm:-mx-8 md:-mx-10 lg:-mx-12 -mt-6 sm:-mt-8 md:-mt-10 lg:-mt-12 mb-8 py-6 px-6 sm:py-7 md:px-10 rounded-t-2xl">
       <h1 class="form-title text-3xl sm:text-4xl lg:text-5xl font-extrabold text-center tracking-wide">履歷與面試紀錄查詢</h1>
     </div>
-
     <!-- ⚡ 讀取中提示 -->
     <div id="loadingStatus" class="text-center py-8 text-circuitCyan flex items-center justify-center gap-3 text-xl font-medium">
       <span class="spinner"></span>
       <span>正在識別 LINE 身份並讀取資料...</span>
     </div>
-
-    <!-- 🖥️ 工作人員手動輸入區塊 (大螢幕優化字級與間距) -->
+    <!-- 🖥️ 工作人員手動輸入區塊 -->
     <div id="manualSearchBox" class="hidden bg-darkPurple/60 p-6 sm:p-8 rounded-2xl border border-lightPurple/40 space-y-5 mb-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-lightPurple/20 pb-3 gap-2">
         <span class="text-amber-300 font-bold text-xl sm:text-2xl">網頁查詢模式</span>
@@ -88,10 +85,8 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         查詢求職紀錄
       </button>
     </div>
-
-    <!-- 📊 查詢結果區域 (無 Icon，適度放大字體) -->
+    <!-- 📊 查詢結果區域 -->
     <div id="queryResults" class="hidden space-y-10">
-      
       <!-- 📄 1. 個人履歷清單區塊 -->
       <div>
         <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-5">
@@ -102,7 +97,6 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         </div>
         <div id="resumeContainer" class="space-y-5"></div>
       </div>
-
       <!-- 📅 2. 預約面試紀錄區塊 -->
       <div>
         <div class="flex items-center justify-between border-b border-lightPurple/30 pb-3 mb-5">
@@ -113,9 +107,7 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         </div>
         <div id="apptContainer" class="space-y-5"></div>
       </div>
-
     </div>
-
     <!-- ⚠️ 查無資料/錯誤訊息 -->
     <div id="errorBox" class="hidden text-center py-10 space-y-5">
       <p id="errorMsgText" class="text-xl sm:text-2xl text-nearWhite leading-relaxed font-bold"></p>
@@ -123,12 +115,10 @@ input[type="text"] { background-color: rgba(31, 29, 83, 0.85) !important; border
         <a href="index.html" class="submit-btn inline-block px-10 py-3.5 text-xl font-bold">前往填寫求職登記表</a>
       </div>
     </div>
-
   </div>
 </div>
-
 <script>
-const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzRDN9ZCeKxPJzhF9NkcIyG0f1zeYHh3A7IxTFlIF3bPVQUARStAaxq8IHDrK3pwExfHg/exec'; 
+const QUERY_GAS_API_URL = 'https://script.google.com/macros/s/AKfycbySdsOh9iUmsYS9DVxl8irJdJOYnNC3QhmWehqo7EiYq2tYEs84kV9qhjqWb3i9X0giQQ/exec'; 
 const LIFF_ID = '2010785535-D0SuLqWN'; 
 
 function createCircuitBackground() {
@@ -148,9 +138,19 @@ function createCircuitBackground() {
   }
 }
 
-async function initQueryPage() {
+// 🌟 核心：極速非阻塞加載邏輯
+async function initQueryPageFast() {
   createCircuitBackground();
-  let lineUserId = '';
+  const urlParams = new URLSearchParams(window.location.search);
+  let lineUserId = urlParams.get('uid') || '';
+
+  // 1. 若網址參數已帶有 uid，0 秒直接發起查詢
+  if (lineUserId) {
+    fetchData(`${QUERY_GAS_API_URL}?action=queryByLineUserId&lineUserId=${encodeURIComponent(lineUserId)}`);
+    return;
+  }
+
+  // 2. 否則透過 LIFF 驗證取得 UID
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -174,7 +174,6 @@ async function initQueryPage() {
 function executeManualSearch() {
   const name = document.getElementById('manualName').value.trim();
   const idNumber = document.getElementById('manualIdNumber').value.trim().toUpperCase();
-
   if (!name) {
     alert('請輸入求職者姓名！');
     return;
@@ -183,11 +182,9 @@ function executeManualSearch() {
     alert('請輸入正確的 10 位身分證字號！');
     return;
   }
-
   document.getElementById('errorBox').classList.add('hidden');
   document.getElementById('queryResults').classList.add('hidden');
   document.getElementById('loadingStatus').classList.remove('hidden');
-
   const apiUrl = `${QUERY_GAS_API_URL}?action=queryByNameAndId&name=${encodeURIComponent(name)}&idNumber=${encodeURIComponent(idNumber)}`;
   fetchData(apiUrl);
 }
@@ -197,7 +194,6 @@ async function fetchData(url) {
     const resp = await fetch(url);
     const res = await resp.json();
     document.getElementById('loadingStatus').classList.add('hidden');
-
     if (res.success) {
       document.getElementById('errorBox').classList.add('hidden');
       renderResumes(res.resumes || []);
@@ -229,7 +225,6 @@ function renderResumes(resumes) {
           <span class="text-sm text-lightPurple">登記時間: ${r.timestamp}</span>
         </div>
         
-        <!-- 放大文字，移除全數 Icon -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-base sm:text-lg text-nearWhite">
           <div><span class="text-lightPurple font-bold">出生日期：</span>${r.birth || '未填'}</div>
           <div><span class="text-lightPurple font-bold">身分證/居留證：</span>${r.idNumber || '未填'}</div>
@@ -243,7 +238,6 @@ function renderResumes(resumes) {
           <div class="sm:col-span-2"><span class="text-lightPurple font-bold">電腦能力：</span>${r.computer || '未填'}</div>
           <div class="sm:col-span-2"><span class="text-lightPurple font-bold">語文能力：</span>${r.language || '未填'}</div>
         </div>
-
         ${r.experience ? `
           <div class="text-base bg-darkPurple/50 p-4 rounded-xl border border-lightPurple/20 text-gray-200">
             <span class="text-lightPurple font-bold block mb-1.5">工作經歷：</span>
@@ -292,7 +286,7 @@ function showError(msg) {
   document.getElementById('errorBox').classList.remove('hidden');
 }
 
-document.addEventListener('DOMContentLoaded', initQueryPage);
+document.addEventListener('DOMContentLoaded', initQueryPageFast);
 </script>
 </body>
 </html>
