@@ -59,7 +59,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
 .hidden { display: none !important; }
 .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--white); width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
 .identity-check-panel {
   background: rgba(31, 29, 83, 0.72);
   border: 1px solid rgba(40, 196, 255, 0.35);
@@ -102,7 +101,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
 .identity-check-panel.error .identity-text {
   color: var(--error-red);
 }
-
 </style>
 <base target="_top">
 </head>
@@ -115,7 +113,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div class="form-header -mx-5 sm:-mx-7 md:-mx-9 -mt-5 sm:-mt-7 md:-mt-9 mb-8 py-5 px-5 sm:py-6 sm:px-7 md:px-9 rounded-t-lg">
       <h1 class="form-title text-3xl lg:text-4xl font-bold text-center">履歷填寫與預約面試</h1>
     </div>
-
     <!-- ⚡ LINE 身份識別與履歷比對狀態 -->
     <div id="identityCheckPanel" class="identity-check-panel">
       <div class="identity-check-inner">
@@ -123,7 +120,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
         <span id="identityCheckText" class="identity-text">正在識別 LINE 身份與比對履歷紀錄...</span>
       </div>
     </div>
-
     <!-- 多履歷選擇彈窗/提示區塊 -->
     <div id="existingResumeBanner" class="hidden bg-darkPurple/60 border border-bright-cyan/40 p-5 rounded-xl mb-6 space-y-4">
       <div class="flex items-center justify-between border-b border-lightPurple/20 pb-3">
@@ -346,7 +342,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
   </div>
 </div>
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw3_3E5v-msZmzHZbwLR1XyLoMnLT4gbFASg8RIC_o8LYVBX6Z9Cu5f_EHTDN_KZTjU/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbw4DYcyugkvj-2tQW4nlLpUAc2CUB259Lq83KNxOABBP3qUn4DEIYDSo-8s1hABl5pu-Q/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -377,7 +373,6 @@ async function callGasApi(action, payload = {}, method = 'GET') {
   }
 }
 
-// 🌟 關閉頁面/網頁函式
 function closeWebPage() {
   if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
     liff.closeWindow();
@@ -424,17 +419,13 @@ function syncBirthdateValue() {
   }
 }
 
-
 function setIdentityCheckState(message, state = 'loading') {
   const panel = document.getElementById('identityCheckPanel');
   const text = document.getElementById('identityCheckText');
   const spinner = document.getElementById('identityCheckSpinner');
-
   if (!panel || !text || !spinner) return;
-
   panel.classList.remove('hidden', 'success', 'error');
   text.textContent = message;
-
   if (state === 'loading') {
     spinner.classList.remove('hidden');
   } else {
@@ -447,7 +438,6 @@ function setIdentityCheckState(message, state = 'loading') {
 function hideIdentityCheck(delay = 700) {
   const panel = document.getElementById('identityCheckPanel');
   if (!panel) return;
-
   setTimeout(() => {
     panel.classList.add('hidden');
   }, delay);
@@ -456,18 +446,13 @@ function hideIdentityCheck(delay = 700) {
 async function initLiff() {
   try {
     setIdentityCheckState('正在識別 LINE 身份與比對履歷紀錄...', 'loading');
-
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
-
       if (liff.isLoggedIn()) {
         const profile = await liff.getProfile();
-
         window.lineUserId = profile.userId;
         document.getElementById('lineUserId').value = profile.userId;
-
         setIdentityCheckState('LINE 身份識別完成，正在比對履歷紀錄...', 'loading');
-
         await checkExistingProfiles(profile.userId);
       } else {
         setIdentityCheckState('目前未取得 LINE 登入身份，請由 LINE 內開啟此頁面。', 'error');
@@ -481,19 +466,15 @@ async function initLiff() {
   }
 }
 
-
 function maskPhoneForResumeCard(phone) {
   const v = String(phone || '').trim();
   if (!v) return '未填';
-
   if (v.length >= 7) {
     return v.substring(0, 4) + '***' + v.substring(v.length - 3);
   }
-
   if (v.length >= 4) {
     return v.substring(0, 2) + '***' + v.substring(v.length - 1);
   }
-
   return '***';
 }
 
@@ -504,17 +485,14 @@ function safeResumeCardText(value, fallback = '未填') {
 
 async function checkExistingProfiles(lineUserId) {
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
-
   if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
     setIdentityCheckState(`已找到 ${res.profiles.length} 筆履歷紀錄`, 'success');
     hideIdentityCheck(900);
-
     window.userProfiles = res.profiles;
     const banner = document.getElementById('existingResumeBanner');
     const cardsList = document.getElementById('resumeCardsList');
     const tag = document.getElementById('resumeCountTag');
     banner.classList.remove('hidden');
-
     if (res.profiles.length === 1) {
       tag.innerText = '找到 1 筆歷史履歷';
       cardsList.classList.add('hidden');
@@ -524,7 +502,6 @@ async function checkExistingProfiles(lineUserId) {
       document.getElementById('resumeBannerText').innerText = '系統偵測到有多筆履歷，請擇一進行修改，或新增履歷：';
       cardsList.innerHTML = '';
       cardsList.classList.remove('hidden');
-
       res.profiles.forEach((p, idx) => {
         const maskedId = p.idNumber ? (p.idNumber.substring(0, 4) + '***') : '';
         const card = document.createElement('div');
@@ -533,7 +510,6 @@ async function checkExistingProfiles(lineUserId) {
         const maskedPhone = maskPhoneForResumeCard(p.phone);
         const educationText = safeResumeCardText(p.education);
         const schoolText = safeResumeCardText(p.school);
-
         card.innerHTML = `
           <div class="flex justify-between items-start gap-3">
             <div>
@@ -552,46 +528,32 @@ async function checkExistingProfiles(lineUserId) {
         `;
         cardsList.appendChild(card);
       });
-
       document.getElementById('btnModifyExisting').classList.add('hidden');
     }
-
     document.getElementById('btnAddNewResume').onclick = () => {
       banner.classList.add('hidden');
       document.getElementById('formFields').classList.remove('hidden');
       const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
       if (agreeRadio) agreeRadio.checked = true;
     };
-
   } else if (res && res.status === 'not_found') {
-
     setIdentityCheckState('LINE 身份確認完成，尚無歷史履歷紀錄', 'success');
     hideIdentityCheck(900);
-
   } else {
-
     const msg = (res && res.message)
       ? `履歷比對失敗：${res.message}`
       : '履歷比對暫時失敗，請重新開啟頁面再試一次。';
-
     setIdentityCheckState(msg, 'error');
   }
 }
 
-
-// ============================================================
-// ⚡ 速度優化：職缺資料只載入一次，並延後到使用者進入履歷確認階段再預載
-// 不改變原本的 companyData 結構與 displayAppointmentSection 流程
-// ============================================================
 async function loadCompanyDataOnce() {
   if (window.companyDataLoaded) {
     return window.companyData;
   }
-
   if (window.companyDataPromise) {
     return window.companyDataPromise;
   }
-
   window.companyDataPromise = callGasApi('getCompanyData', {}, 'GET')
     .then(res => {
       window.companyData = Array.isArray(res) ? res : [];
@@ -606,7 +568,6 @@ async function loadCompanyDataOnce() {
     .finally(() => {
       window.companyDataPromise = null;
     });
-
   return window.companyDataPromise;
 }
 
@@ -750,7 +711,6 @@ function displayAppointmentSection(resumeInfo) {
   window.scrollTo(0, 0);
 }
 
-// 🌟 呈現單一按鈕：「關閉網頁」
 function handleFinalSuccess(r) {
   const successMessageContent = document.getElementById('successMessageContent');
   const successMessageContainer = document.getElementById('successMessageContainer');
@@ -764,7 +724,6 @@ function handleFinalSuccess(r) {
     h += '<div class="booked-list text-lg mb-6">' + bItems.map(i => `<div class="booked-item mb-2"><span class="company-name font-bold text-circuitCyan">${i.company}</span><span class="position-name text-white"> ➔ ${i.position}</span></div>`).join('') + '</div>';
   }
   
-  // 🌟 僅保留「關閉網頁」按鈕
   h += `
     <div class="flex justify-center items-center pt-4 border-t border-lightPurple/20">
       <button onclick="closeWebPage()" class="submit-btn w-full sm:w-2/3 py-3.5 text-xl font-bold">
@@ -785,6 +744,7 @@ document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
   initLiff();
+
   const agreementRadios = document.getElementsByName('agreement');
   const formFields = document.getElementById('formFields');
   const agreementError = document.getElementById('agreementError');
@@ -792,7 +752,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const confirmAppointmentBtn = document.getElementById('confirmAppointmentBtn');
 
   ['birthYear', 'birthMonth', 'birthDay'].forEach(id => {
-    document.getElementById(id).addEventListener('change', syncBirthdateValue);
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('change', syncBirthdateValue);
   });
 
   if (agreementRadios && agreementRadios.length > 0) {
@@ -805,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 表單檢查提交
+  // 🌟 表單檢查提交
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
     
@@ -837,15 +798,15 @@ document.addEventListener('DOMContentLoaded', function() {
     dReview['rowNum'] = document.getElementById('editingRowNum').value || '';
     window.formData = dReview; 
     displayDataInReview(dReview);
-
-    // ⚡ 使用者檢查履歷時，背景預載職缺資料
-    // 不阻塞履歷預覽，也不影響原本操作流程
     loadCompanyDataOnce();
   });
 
+  // 🌟【修復處】點擊「返回重新編輯」按鈕時，同步確保表單內層欄位 #formFields 可見
   document.getElementById('editBtn').addEventListener('click', () => { 
     document.getElementById('reviewSection').classList.add('hidden'); 
     document.getElementById('formContainer').classList.remove('hidden'); 
+    const formFieldsEl = document.getElementById('formFields');
+    if (formFieldsEl) formFieldsEl.classList.remove('hidden'); // 強制解除隱藏
   });
 
   document.getElementById('backToReviewBtn').addEventListener('click', () => { 
@@ -864,10 +825,7 @@ document.addEventListener('DOMContentLoaded', function() {
     confirmBtn.innerHTML = '確認履歷並預約面試';
     if (r.status === 'resume_saved') {
       await showCustomAlert(r.message || '履歷提交成功！');
-
-      // ⚡ 若背景預載尚未完成，這裡才等待；已完成則直接使用
       await loadCompanyDataOnce();
-
       displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
     } else {
       showCustomAlert(r.message || '儲存失敗，請重試');
