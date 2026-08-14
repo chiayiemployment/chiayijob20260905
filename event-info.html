@@ -4,560 +4,413 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>數位永續 薪在嘉義</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome 圖標 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deepPurple: "#131138",
+                        darkPurple: "#201A52",
+                        cardBg: "rgba(31, 29, 83, 0.75)",
+                        circuitCyan: "#28C4FF",
+                        accentGold: "#FFC72C",
+                        glowPurple: "#7E2AFF",
+                        lightPurple: "#A48DCD",
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 20px rgba(40, 196, 255, 0.35)',
+                        'neon-purple': '0 0 25px rgba(126, 42, 255, 0.4)',
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                    }
+                }
+            }
+        }
+    </script>
+    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Noto Sans TC', sans-serif;
-        }
-
         body {
-            background-color: #1F1D53;
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #131138;
             color: #FFFFFF;
-            min-height: 100vh;
-            position: relative;
-            overflow-x: hidden; /* 避免在 iframe 中出現不必要的水平捲軸 */
+            overflow-x: hidden;
         }
-
-        /* 電路板背景 */
-        .circuit-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%; /* 由 JS 動態調整 */
-            z-index: -1;
-            overflow: hidden;
+        /* 霓虹漸層背景 */
+        .ambient-glow-1 {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(126, 42, 255, 0.25) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
         }
-
-        .circuit-line {
-            position: absolute;
-            background-color: #4C237C;
-            box-shadow: 0 0 8px #01529F;
+        .ambient-glow-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 55vw;
+            height: 55vw;
+            background: radial-gradient(circle, rgba(40, 196, 255, 0.2) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
         }
-
-        .circuit-dot {
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #28C4FF;
-            box-shadow: 0 0 10px #28C4FF;
-        }
-
-        .circuit-node {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #A48DCD;
-            border: 2px solid #28C4FF;
-            box-shadow: 0 0 15px rgba(40, 196, 255, 0.5);
-        }
-
-        .gradient-overlay {
-            position: absolute;
+        /* 電路網格紋理 */
+        .grid-pattern {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle at 20% 50%, #053D88 0%, transparent 40%),
-                        radial-gradient(circle at 80% 20%, #2956A8 0%, transparent 30%);
-            opacity: 0.7;
-            z-index: -1; /* 確保在電路板之上，內容之下 */
+            background-image: linear-gradient(rgba(164, 141, 205, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(164, 141, 205, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            z-index: 0;
+            pointer-events: none;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            position: relative; /* 確保內容在漸層之上 */
-            z-index: 1;
-        }
-
-        .banner {
-            width: 100%;
-            margin-bottom: 30px;
-            border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-            background-color: rgba(107, 37, 127, 0.3);
-            padding: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .banner::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, rgba(107, 37, 127, 0.2), transparent);
-            z-index: -1; /* 修正 z-index 以確保在 placeholder 之下 */
-        }
-
-        .banner-placeholder {
-            width: 100%;
-            height: 150px;
-            background-color: rgba(76, 35, 124, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 4px;
-            border: 1px solid #6B257F;
-        }
-
-        .section-header {
-            background: linear-gradient(135deg, #7E2AFF, #6A1BCB);
-            padding: 15px 25px;
-            border-radius: 12px 12px 0 0;
-            font-size: 22px;
-            font-weight: 700;
-            color: #FFFFFF;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            margin-top: 10px;
-        }
-
-        .section-header::before {
-            content: '';
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: #28C4FF;
-            border-radius: 50%;
-            opacity: 0.2;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .section-header::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 100px;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(40, 196, 255, 0.2));
-        }
-
-        .section-header span {
-            position: relative;
-            z-index: 2;
-            margin-left: 10px;
-        }
-
-        .content-section {
-            background-color: rgba(76, 35, 124, 0.3);
-            border-radius: 0 0 12px 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(164, 141, 205, 0.3);
-            border-top: none;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .content-section::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            background: radial-gradient(circle, rgba(40, 196, 255, 0.3), transparent 70%);
-            border-radius: 50%;
-            z-index: -1; /* 修正 z-index */
-        }
-        .centered-content {
-            text-align: center; /* 讓容器內的行內元素 (inline/inline-block) 水平置中 */
-        }
-
-        /* 確保圖片與文字垂直對齊良好 (可選，根據您的圖示調整) */
-        .centered-content img {
-            vertical-align: middle; /* 或 text-bottom, baseline 等，視情況調整 */
-        }
-
-
-        .activity-map-image {
-            max-width: 100%;  /* 圖片最大寬度為其容器 (info-image) 的100%，這樣它就不會溢出 */
-            height: auto;     /* 高度自動調整以保持圖片的原始長寬比 */
-            display: block;   /* 移除圖片底部可能出現的額外空白，並使其表現為塊級元素 */
-            border-radius: 4px; /* 可選：為圖片本身也加上一點圓角，使其與外框風格更一致 */
-            /* 原始圖片設定為 500x500，如果希望它最大就是這麼大，可以加上： */
-            /* max-height: 500px; */ /* 可選，視情況而定 */
-        }
-        .info-image {
-            width: 100%;
-            border-radius: 8px; /* 圓角 */
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* 陰影 */
-            background-color: rgba(76, 35, 124, 0.5); /* 背景顏色，目前看起來像一個紫色的襯底 */
-            min-height: 300px; /* 最小高度 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #6B257F; /* 邊框線條 */
-            margin: 20px 0;
-            }
-
-        .content-wrapper {
-            width: 100%;
-        }
-
-        /* 活動資訊樣式 */
-        .info-text {
-            line-height: 1.8;
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        .info-text p {
-            margin-bottom: 15px;
-        }
-
-        .info-text strong {
-            color: #28C4FF;
-            font-weight: 700;
-        }
-
-        .coupon-image {
-            width: 100%;
-            max-width: 300px;
-            height: 150px;
-            background-color: rgba(76, 35, 124, 0.5);
-            border-radius: 8px;
-            border: 1px solid #6B257F;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px auto;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .process-list {
-            list-style-position: inside;
-            padding-left: 20px; /* 確保項目符號有空間 */
-            margin-bottom: 20px;
-        }
-
-        .process-list li {
-            margin-bottom: 20px;
-            position: relative;
-            padding-left: 10px; /* 為 ::before 元素留出空間 */
-            display: flex; /* 改為 flex 以更好控制布局 */
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .process-list li::before {
-            content: '';
-            position: absolute;
-            left: -15px; /* 調整位置以使其在 padding-left 區域內 */
-            top: 10px; /* 根據字體大小微調 */
-            width: 8px;
-            height: 8px;
-            background-color: #28C4FF;
-            border-radius: 50%;
-        }
-
-        .process-button {
-            display: inline-block;
-            margin-left: 15px;
-            padding: 8px 15px;
-            background: linear-gradient(135deg, #AC3FFF, #6A1BCB);
-            color: #FFFFFF;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
+        .glass-card {
+            background: rgba(28, 25, 71, 0.78);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(164, 141, 205, 0.22);
+            border-radius: 18px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 10px rgba(172, 63, 255, 0.4);
-            text-decoration: none;
         }
-
-        .process-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(172, 63, 255, 0.6);
+        .glass-card:hover {
+            border-color: rgba(40, 196, 255, 0.45);
         }
-
-        .transportation {
-            margin-top: 20px;
+        .btn-gradient {
+            background: linear-gradient(135deg, #7E2AFF 0%, #28C4FF 100%);
+            transition: all 0.3s ease;
         }
-
-        .transportation h3 {
-            color: #AC3FFF;
-            margin-bottom: 10px;
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        .transportation p {
-            margin-bottom: 15px;
-            padding-left: 20px; /* 保持縮排 */
-        }
-        
-        .text-mcd-yellow {
-            color: #FFC72C; /* 麥當勞黃 */
-        }
-
-        .text-mcd-yellow strong {
-            color: #FFC72C; /* 確保 strong 標籤也是黃色 */
-        }
-
-        .info-value-multiline {
-            display: inline-block;
-            vertical-align: top;
-        }
-
-        @media (max-width: 768px) {
-            .info-text {
-                font-size: 16px;
-            }
-
-            .process-list li {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .process-button {
-                margin-left: 0;
-                margin-top: 10px;
-            }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 196, 255, 0.45);
         }
     </style>
 </head>
-<body>
-    <div class="circuit-background" id="circuitBackground"></div>
-    <div class="gradient-overlay"></div>
+<body class="min-h-screen pb-16 relative">
+    <!-- 背景裝飾 -->
+    <div class="ambient-glow-1"></div>
+    <div class="ambient-glow-2"></div>
+    <div class="grid-pattern"></div>
 
-    <div class="container">
-        <div class="banner">
-            <div class="banner-placeholder">
-                <img src="https://lh3.googleusercontent.com/pw/AP1GczMuIT4cfwenRre0EjS8-O0wEn-Maxg397HvL63RuSRbfX1s94mtGgQTi8XO0L4LQ5nn8GmB650lBRXnoYLkYbaQLZE-u6oJr8mVsrFtgsI71phQGRlHXTmj6F8smf7Jp2ciNzdObKkKl8Q7ixRs-UCr=w1920-h737-s-no-gm?authuser=0" alt="活動橫幅圖片" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+    <main class="relative z-10 max-w-4xl mx-auto px-4 pt-6 space-y-7">
+        
+        <!-- 頂部活動主橫幅 (Banner) -->
+        <div class="glass-card overflow-hidden shadow-neon-purple border-circuitCyan/30">
+            <div class="relative w-full aspect-[16/7] sm:aspect-[21/9] overflow-hidden bg-darkPurple">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczMuIT4cfwenRre0EjS8-O0wEn-Maxg397HvL63RuSRbfX1s94mtGgQTi8XO0L4LQ5nn8GmB650lBRXnoYLkYbaQLZE-u6oJr8mVsrFtgsI71phQGRlHXTmj6F8smf7Jp2ciNzdObKkKl8Q7ixRs-UCr=w1920-h737-s-no-gm?authuser=0" 
+                     alt="活動主視覺橫幅" 
+                     class="w-full h-full object-cover transform hover:scale-105 transition-all duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#131138] via-transparent to-transparent opacity-80"></div>
+                <div class="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-circuitCyan/20 text-circuitCyan border border-circuitCyan/40 backdrop-blur-md">
+                        <span class="w-2 h-2 rounded-full bg-circuitCyan animate-ping"></span>
+                        現場徵才盛會
+                    </span>
+                    <span class="text-xs text-purple-200 bg-black/40 px-2.5 py-1 rounded-md backdrop-blur-sm">
+                        勞動部勞動力發展署 嘉義就業中心
+                    </span>
+                </div>
             </div>
         </div>
 
-        <div class="content-wrapper">
-            <div class="section-header">
-                <span>活動資訊</span>
+        <!-- 核心資訊重點卡片 -->
+        <div class="glass-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-3 border-b border-lightPurple/20 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-glowPurple to-circuitCyan flex items-center justify-center text-white shadow-neon-cyan">
+                    <i class="fa-solid fa-calendar-star text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-black text-white tracking-wide">現場活動資訊</h1>
+                    <p class="text-xs sm:text-sm text-lightPurple">掌握時間、地點與早鳥專屬好禮</p>
+                </div>
             </div>
-            <div class="content-section" id="infoContent">
-                <div class="info-text">
-                    <p><strong>活動時間：</strong>115年9月5日  9:30 - 12:30</p>
-                    <p><strong>活動地點：</strong><span class="info-value-multiline">耐斯王子大飯店5樓宴會廳<br><span class="text-mcd-yellow">(請由新生路飯店大門入口進入)</span></span></p>
-                    <p><strong>活動地址：</strong>嘉義市忠孝路600號</p>
-                    <p><strong>洽詢專線：</strong>05-2240656</p>
-                    <p class="text-mcd-yellow"><strong>前500名參加者可領取「和牛招待券」</strong></p>
-                     </div>
-                           
-                <div class="coupon-image">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczO7OzSVRRNLyqDKvwJsingTGHOG64L0-Jsz9MIPWzx8oBxWXSq0SNQ7-rLaaXsPspV-DQYUGbGsbeaXYFFX-84TzAxdSwnO5qaCfDR2m44clUerhsp2cO_GRR68tSjTfUcCLGbshEVRNGCldDHzHtBN=w1920-h791-s-no-gm?authuser=0" alt="和牛招待券" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
-                </div>
 
-                <div class="text-mcd-yellow"><strong>
-                    如欲查詢「職缺資訊」或進行「履歷填寫」、「預約面試」，請點選LINE官方帳號中的選單
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMgvTk-aS_C1-i-_59i_We2wqYSaHsctuSzsc54--H4dupIik6DArGMqXQavVanO7r84sZbmlBc4hCtpn6CaJkw_alS7ffv0qyhruUP2GA_pDeRWJdkAQ7M0yhDae-EOjPG5ZYKsqrs0p4hT1fvFpOG=w73-h58-s-no-gm?authuser=0" alt="選單" style="width: 20px; height: 20px; vertical-align: middle; margin: 0 3px;"> 
-                        圖示。</strong>                
-                </div>
-                <div class="info-text">
-                    <h3><strong>活動流程：</strong></h3>
-                    <ol class="process-list">
-                        <li>
-                            確認好當天要應徵的公司與職缺。
-                        </li>
-                        <li>
-                            填寫線上履歷。
-                        </li>
-                        <li>
-                            預約當天要應徵的公司與職缺。
-                        </li>
-                        <li>活動當天穿著整齊來參加面試。</li>
-                    </ol>
-                </div>
-
-                <div class="info-text">
-                    <h3><strong>周邊活動：</strong></h3>
-                    <ol class="process-list">
-                        <li>
-                            AI職涯諮詢師、履歷健檢、模擬面試、職訓大觀園、創客DIY手作教室等多項活動。
-                        </li>
-                    </ol>
-                </div>
-
-                <div class="info-text">
-                    <p><strong>活動地圖：</strong></p>
-                </div>
-                <div class="info-image">
-                <img src="https://lh3.googleusercontent.com/pw/AP1GczPvri8SDrCk1RFM4zlNYTJmiLIELt4D2hafKs10fITVmBcqnReKbIHzRD8-E6pHk5-AOqeOQjx4Ps7nEt6RjVzG_rHq4M4KILQhdi5qx3ucwAQvqQEdp4pClR1O3l72hNcM547kJsSi2iWNDoea5BuQ=w1047-h919-s-no-gm?authuser=0" alt="活動地圖" class="activity-map-image">
-                </div>
-
-                <div class="info-text">
-                    <h3><strong>交通方式：</strong></h3>
-
-                    <div class="transportation">
-                        <h3>【開車】</h3>
-                        <p>請導航「耐斯廣場」，將車輛停放於地下停車場C區，再搭乘電梯至活動會場。</p>
-
-                        <h3>【騎機車】</h3>
-                        <p>請請導航「耐斯廣場」，將車輛停放於臺灣銀行嘉北分行旁之機車停車場，步行至飯店入口，搭乘電梯至活動會場。</p>
-
-                        <h3>【腳踏車/YouBike】</h3>
-                        <p>自有腳踏車請停放於機車停車場，騎YouBike者請於臺灣銀行嘉北分行(耐斯廣場站)站點停放，再步行至飯店入口，搭乘電梯至活動會場。</p>
-
-                        <h3>【搭火車】</h3>
-                        <p>請搭乘台鐵至嘉北站下車，騎YouBike者請於臺灣銀行嘉北分行(耐斯廣場站)站點停放，再步行至飯店入口，搭乘電梯至活動會場。</p>
-
-                        <h3>【搭公車】</h3>
-                        <p>搭乘公車者請於「耐斯廣場」站下車，再步行至飯店入口，搭乘電梯至活動會場。</p>
+            <!-- 資訊條列區 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <!-- 時間 -->
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-circuitCyan/40 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-circuitCyan/15 flex items-center justify-center text-circuitCyan shrink-0 mt-0.5">
+                        <i class="fa-regular fa-clock text-xl"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-circuitCyan uppercase tracking-wider">活動時間</span>
+                        <div class="text-lg font-bold text-white">115年9月5日 (星期六)</div>
+                        <div class="text-sm font-medium text-amber-300">09:30 - 12:30 (建議11:30前入場)</div>
                     </div>
                 </div>
+
+                <!-- 專線 -->
+                <div class="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-circuitCyan/40 transition-all">
+                    <div class="w-10 h-10 rounded-lg bg-green-500/15 flex items-center justify-center text-green-400 shrink-0 mt-0.5">
+                        <i class="fa-solid fa-phone-volume text-xl"></i>
+                    </div>
+                    <div class="space-y-1 flex-1">
+                        <span class="text-xs font-bold text-green-400 uppercase tracking-wider">洽詢專線</span>
+                        <div class="text-lg font-bold text-white">05-2240656</div>
+                        <a href="tel:052240656" class="inline-flex items-center gap-1.5 text-xs text-circuitCyan hover:underline pt-0.5">
+                            <i class="fa-solid fa-phone"></i> 點我直接撥號諮詢
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 地點與導航 (滿版) -->
+                <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-xl bg-white/5 border border-white/10 hover:border-circuitCyan/40 transition-all">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-300 shrink-0 mt-0.5">
+                            <i class="fa-solid fa-location-dot text-xl"></i>
+                        </div>
+                        <div class="space-y-1">
+                            <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">活動地點</span>
+                            <div class="text-lg font-bold text-white">耐斯王子大飯店 5樓宴會廳</div>
+                            <div class="text-sm text-gray-300">嘉義市忠孝路600號 <span class="text-accentGold font-medium">(請由新生路大門進入)</span></div>
+                        </div>
+                    </div>
+                    <a href="https://maps.google.com/?q=耐斯王子大飯店" target="_blank" 
+                       class="btn-gradient px-4 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-diamond-turn-right"></i> Google 地圖導航
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- 和牛早鳥券專區 (超級吸睛亮點) -->
+            <div class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-600/25 to-pink-500/20 border border-accentGold/40 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-full bg-accentGold text-black flex items-center justify-center font-black text-sm">
+                            <i class="fa-solid fa-crown"></i>
+                        </span>
+                        <h2 class="text-xl font-black text-accentGold tracking-wide">早鳥好康：和牛招待券！</h2>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-black bg-accentGold text-black animate-pulse">
+                        🔥 限量前 500 名入場
+                    </span>
+                </div>
+                
+                <p class="text-sm text-purple-100 leading-relaxed">
+                    凡當日前 500 名完成報到之求職者，即可於服務台免費領取「頂級和牛招待券」乙張！數量有限，送完為止！
+                </p>
+
+                <!-- 和牛券圖片展示 -->
+                <div class="w-full rounded-xl overflow-hidden border border-accentGold/30 shadow-lg bg-black/30">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczO7OzSVRRNLyqDKvwJsingTGHOG64L0-Jsz9MIPWzx8oBxWXSq0SNQ7-rLaaXsPspV-DQYUGbGsbeaXYFFX-84TzAxdSwnO5qaCfDR2m44clUerhsp2cO_GRR68tSjTfUcCLGbshEVRNGCldDHzHtBN=w1920-h791-s-no-gm?authuser=0" 
+                         alt="和牛招待券" 
+                         class="w-full h-auto object-cover hover:scale-102 transition-transform duration-500">
+                </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        // 生成電路板背景
-        function generateCircuitBackground() {
-            const background = document.getElementById('circuitBackground');
-            if (!background) return; // 如果找不到元素，則退出
+        <!-- 應徵 4 大流程 (視覺化 Step by Step) -->
+        <div class="glass-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-3 border-b border-lightPurple/20 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-circuitCyan/20 flex items-center justify-center text-circuitCyan">
+                    <i class="fa-solid fa-list-check text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white">面試求職流程</h2>
+                    <p class="text-xs sm:text-sm text-lightPurple">簡單 4 步驟，快速預約心儀職缺</p>
+                </div>
+            </div>
 
-            const width = window.innerWidth;
-            // 確保背景覆蓋整個 iframe 的可滾動內容高度
-            const height = Math.max(document.body.scrollHeight, window.innerHeight);
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="w-7 h-7 rounded-full bg-circuitCyan/20 text-circuitCyan font-black text-sm flex items-center justify-center">1</span>
+                        <i class="fa-solid fa-magnifying-glass text-lightPurple/40"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">確認職缺</div>
+                        <div class="text-xs text-gray-300 mt-1">提前查詢當天所有參展廠商與職缺內容。</div>
+                    </div>
+                </div>
 
-            // 清空現有背景
-            background.innerHTML = '';
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="w-7 h-7 rounded-full bg-circuitCyan/20 text-circuitCyan font-black text-sm flex items-center justify-center">2</span>
+                        <i class="fa-solid fa-file-signature text-lightPurple/40"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">填寫履歷</div>
+                        <div class="text-xs text-gray-300 mt-1">使用 LINE@ 線上履歷表快速登記資料。</div>
+                    </div>
+                </div>
 
-            // 生成水平線
-            for (let i = 0; i < 20; i++) {
-                const line = document.createElement('div');
-                line.className = 'circuit-line';
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="w-7 h-7 rounded-full bg-circuitCyan/20 text-circuitCyan font-black text-sm flex items-center justify-center">3</span>
+                        <i class="fa-solid fa-calendar-check text-lightPurple/40"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">預約面試</div>
+                        <div class="text-xs text-gray-300 mt-1">線上勾選有興趣之廠商職位進行排程。</div>
+                    </div>
+                </div>
 
-                const top = Math.random() * height;
-                const left = Math.random() * width * 0.3;
-                const width_line = Math.random() * width * 0.7 + width * 0.3;
+                <div class="p-4 rounded-xl bg-gradient-to-br from-glowPurple/30 to-circuitCyan/20 border border-circuitCyan/40 flex flex-col justify-between space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="w-7 h-7 rounded-full bg-accentGold text-black font-black text-sm flex items-center justify-center">4</span>
+                        <i class="fa-solid fa-user-tie text-accentGold"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">準時面試</div>
+                        <div class="text-xs text-purple-100 mt-1">當天著整齊服裝，到場掃碼直接面試！</div>
+                    </div>
+                </div>
 
-                line.style.top = `${top}px`;
-                line.style.left = `${left}px`;
-                line.style.width = `${width_line}px`;
-                line.style.height = '2px';
+            </div>
 
-                background.appendChild(line);
-            }
+            <!-- LINE 選單導流提醒 -->
+            <div class="p-4 rounded-xl bg-circuitCyan/10 border border-circuitCyan/30 flex items-center gap-3">
+                <i class="fa-brands fa-line text-3xl text-green-400 shrink-0"></i>
+                <p class="text-sm text-purple-100 leading-snug">
+                    💡 欲查詢職缺或填寫履歷，請直接使用下方 LINE@ 選單快捷功能開啟，現場免排紙本！
+                </p>
+            </div>
+        </div>
 
-            // 生成垂直線
-            for (let i = 0; i < 20; i_1) { // 修正變數名稱衝突
-                const line_1 = document.createElement('div'); // 修正變數名稱衝突
-                line_1.className = 'circuit-line';
+        <!-- 精彩周邊活動 -->
+        <div class="glass-card p-6 sm:p-8 space-y-5">
+            <div class="flex items-center gap-3 border-b border-lightPurple/20 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center text-pink-400">
+                    <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white">現場周邊豐富活動</h2>
+                    <p class="text-xs sm:text-sm text-lightPurple">多元就業支援與職涯互動體驗</p>
+                </div>
+            </div>
 
-                const top_1 = Math.random() * height * 0.3; // 修正變數名稱衝突
-                const left_1 = Math.random() * width; // 修正變數名稱衝突
-                const height_line = Math.random() * height * 0.7 + height * 0.3;
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-2 hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-robot text-2xl text-circuitCyan"></i>
+                    <div class="text-sm font-bold text-white">AI 職涯諮詢師</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-2 hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-file-pen text-2xl text-purple-300"></i>
+                    <div class="text-sm font-bold text-white">專業履歷健檢</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-2 hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-comments text-2xl text-pink-300"></i>
+                    <div class="text-sm font-bold text-white">現場模擬面試</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-2 hover:bg-white/10 transition-all">
+                    <i class="fa-solid fa-graduation-cap text-2xl text-amber-300"></i>
+                    <div class="text-sm font-bold text-white">職訓大觀園</div>
+                </div>
+                <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-center space-y-2 hover:bg-white/10 transition-all col-span-2 sm:col-span-2">
+                    <i class="fa-solid fa-scissors text-2xl text-green-300"></i>
+                    <div class="text-sm font-bold text-white">創客 DIY 手作體驗教室</div>
+                </div>
+            </div>
+        </div>
 
-                line_1.style.top = `${top_1}px`;
-                line_1.style.left = `${left_1}px`;
-                line_1.style.width = '2px';
-                line_1.style.height = `${height_line}px`;
+        <!-- 活動現場平面地圖 -->
+        <div class="glass-card p-6 sm:p-8 space-y-5">
+            <div class="flex items-center gap-3 border-b border-lightPurple/20 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-accentGold">
+                    <i class="fa-solid fa-map-location-dot text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white">活動現場攤位配置圖</h2>
+                    <p class="text-xs sm:text-sm text-lightPurple">耐斯王子大飯店 5 樓會場全區指引</p>
+                </div>
+            </div>
 
-                background.appendChild(line_1);
-            }
+            <div class="w-full rounded-xl overflow-hidden border border-white/15 bg-black/40 p-2 shadow-inner">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczPvri8SDrCk1RFM4zlNYTJmiLIELt4D2hafKs10fITVmBcqnReKbIHzRD8-E6pHk5-AOqeOQjx4Ps7nEt6RjVzG_rHq4M4KILQhdi5qx3ucwAQvqQEdp4pClR1O3l72hNcM547kJsSi2iWNDoea5BuQ=w1047-h919-s-no-gm?authuser=0" 
+                     alt="活動平面圖" 
+                     class="w-full h-auto object-contain rounded-lg mx-auto">
+            </div>
+        </div>
 
-            // 生成節點
-            for (let i = 0; i < 30; i_2) { // 修正變數名稱衝突
-                const dot = document.createElement('div');
-                dot.className = 'circuit-dot';
+        <!-- 交通指南 (直覺卡片式) -->
+        <div class="glass-card p-6 sm:p-8 space-y-6">
+            <div class="flex items-center gap-3 border-b border-lightPurple/20 pb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fa-solid fa-route text-lg"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold text-white">多元交通指南</h2>
+                    <p class="text-xs sm:text-sm text-lightPurple">前往耐斯王子大飯店之各類交通方式</p>
+                </div>
+            </div>
 
-                dot.style.top = `${Math.random() * height}px`;
-                dot.style.left = `${Math.random() * width}px`;
+            <div class="space-y-3.5">
+                
+                <!-- 開車 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                    <div class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-car"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">自行開車</div>
+                        <div class="text-sm text-gray-300 mt-0.5 leading-relaxed">請導航至「耐斯廣場」，車輛可停放於地下停車場 C 區，再搭乘電梯直達 5 樓活動會場。</div>
+                    </div>
+                </div>
 
-                background.appendChild(dot);
-            }
+                <!-- 騎機車 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                    <div class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-300 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">騎乘機車</div>
+                        <div class="text-sm text-gray-300 mt-0.5 leading-relaxed">請導航至「耐斯廣場」，將車輛停放於臺灣銀行嘉北分行旁之機車停車場，再由飯店新生路大門步行搭乘電梯至 5 樓。</div>
+                    </div>
+                </div>
 
-            // 生成大節點
-            for (let i = 0; i < 12; i_3) { // 修正變數名稱衝突
-                const node = document.createElement('div');
-                node.className = 'circuit-node';
+                <!-- YouBike -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                    <div class="w-9 h-9 rounded-lg bg-yellow-500/20 text-accentGold flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-bicycle"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">自行車 / YouBike 2.0</div>
+                        <div class="text-sm text-gray-300 mt-0.5 leading-relaxed">自有腳踏車請停於機車停車場；騎乘 YouBike 者可於「臺灣銀行嘉北分行(耐斯廣場站)」歸還車輛後步行入場。</div>
+                    </div>
+                </div>
 
-                node.style.top = `${Math.random() * height}px`;
-                node.style.left = `${Math.random() * width}px`;
+                <!-- 搭火車 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                    <div class="w-9 h-9 rounded-lg bg-green-500/20 text-green-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-train"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">搭乘台鐵火車</div>
+                        <div class="text-sm text-gray-300 mt-0.5 leading-relaxed">請於台鐵「嘉北站」下車，出站後步行約 8-10 分鐘（或於站前騎乘 YouBike 至耐斯廣場站）即可抵達會場。</div>
+                    </div>
+                </div>
 
-                background.appendChild(node);
-            }
-        }
+                <!-- 搭公車 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex items-start gap-4">
+                    <div class="w-9 h-9 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-bus"></i>
+                    </div>
+                    <div>
+                        <div class="font-bold text-white text-base">搭乘市區公車</div>
+                        <div class="text-sm text-gray-300 mt-0.5 leading-relaxed">搭乘嘉義市區公車至「耐斯廣場站」下車，步行由新生路飯店入口搭乘電梯至 5 樓宴會廳。</div>
+                    </div>
+                </div>
 
-        // 調整電路板背景高度以匹配內容
-        function adjustBackgroundHeight() {
-            const circuitBackground = document.getElementById('circuitBackground');
-            if (!circuitBackground) return;
-            // 設定背景高度為 iframe body 的實際滾動高度
-            const bodyHeight = document.body.scrollHeight;
-            circuitBackground.style.height = `${bodyHeight}px`;
+            </div>
+        </div>
 
-            // 同時調整漸層覆蓋的高度
-            const gradientOverlay = document.querySelector('.gradient-overlay');
-            if (gradientOverlay) {
-                gradientOverlay.style.height = `${bodyHeight}px`;
-            }
-        }
+        <!-- 頁尾宣告 -->
+        <footer class="text-center text-xs text-lightPurple/60 py-6 space-y-1">
+            <p>勞動部勞動力發展署 雲嘉南分署 嘉義就業中心</p>
+        </footer>
 
-        // 頁面加載和視窗大小改變時重新生成背景和調整高度
-        function setupDynamicBackground() {
-            generateCircuitBackground();
-            adjustBackgroundHeight();
-        }
-
-        window.addEventListener('load', setupDynamicBackground);
-        // 針對 iframe 內內容變化可能導致的高度改變，resize 事件可能不夠，
-        // 但在 Google Sites 中，iframe 大小通常是固定的或由協作平台控制。
-        // resize 事件主要應對 iframe 本身大小被調整的情況。
-        window.addEventListener('resize', setupDynamicBackground);
-
-        // 考慮到內容可能是動態載入或變更的，可以設置一個觀察器來監控 body 高度的變化
-        // 但這會增加複雜性，對於 Google Sites 嵌入，通常 iframe 高度由其設定決定
-        // 如果內容超出 iframe 預設高度，Google Sites 會出現捲軸
-        // 以下 MutationObserver 是進階選項，如果發現高度更新不及時可以考慮
-        /*
-        if (window.MutationObserver) {
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === "attributes" && mutation.attributeName === "style") {
-                        // This might be too frequent, be careful
-                        // adjustBackgroundHeight();
-                    } else if (mutation.type === "childList") {
-                        adjustBackgroundHeight();
-                    }
-                });
-            });
-
-            observer.observe(document.body, {
-                attributes: true, // observe attributes
-                childList: true, // observe child nodes
-                subtree: true, // observe all descendants
-                attributeFilter: ['style', 'class'] // optional: only specific attributes
-            });
-        }
-        */
-
-        // 確保在所有資源（包括圖片）加載完畢後再執行一次高度調整
-        // 因為圖片加載會影響 scrollHeight
-        window.addEventListener('load', function() {
-            // 給圖片一點時間渲染完成
-            setTimeout(adjustBackgroundHeight, 100); // 短暫延遲
-            setTimeout(adjustBackgroundHeight, 500); // 再次確認
-        });
-
-    </script>
-    </body>
+    </main>
+</body>
 </html>
