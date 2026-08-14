@@ -7,6 +7,8 @@
 <!-- LIFF SDK -->
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet" />
+<!-- FontAwesome 圖標 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
@@ -40,6 +42,8 @@ body { font-family: 'Noto Sans TC', sans-serif; background-color: var(--deep-pur
 input[type="text"], select { background-color: rgba(31, 29, 83, 0.85) !important; border: 1.5px solid var(--light-purple) !important; color: var(--white) !important; border-radius: 10px !important; }
 select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%23a48dcd"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>') !important; background-repeat: no-repeat !important; background-position: right 0.75rem center !important; background-size: 1.2em 1.2em !important; padding-right: 2.5rem !important; }
 .submit-btn { background: linear-gradient(135deg, var(--button-start), var(--button-end)); box-shadow: 0 4px 14px rgba(172, 63, 255, 0.35); border-radius: 10px; color: var(--white); font-weight: 700; border: none; cursor: pointer; text-align: center; }
+.secondary-btn { background-color: rgba(76, 35, 124, 0.6); border: 1px solid var(--light-purple); color: var(--near-white); border-radius: 10px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s ease; }
+.secondary-btn:hover { border-color: var(--bright-cyan); background-color: rgba(40, 196, 255, 0.15); color: var(--white); }
 /* 多人選擇卡片樣式 */
 .user-card {
   background: rgba(31, 29, 83, 0.6);
@@ -86,6 +90,14 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
           <span id="userCountTag" class="text-sm sm:text-base text-lightPurple"></span>
         </div>
         <div id="userCardsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+        
+        <!-- 🌟 新增：卡片下方的「履歷與面試紀錄查詢」快捷按鈕 -->
+        <div class="pt-2 border-t border-lightPurple/20 flex flex-col sm:flex-row justify-between items-center gap-3">
+          <span class="text-xs sm:text-sm text-purple-200">想確認已預約的職缺或修改履歷？</span>
+          <a id="btnGoToQuery" href="https://liff.line.me/2010785535-D0SuLqWN" class="secondary-btn px-4 py-2 text-sm sm:text-base font-bold flex items-center justify-center gap-2 w-full sm:w-auto">
+            <i class="fa-solid fa-clipboard-list text-circuitCyan"></i> 前往【履歷與面試紀錄查詢】
+          </a>
+        </div>
       </div>
       <!-- 現場手動輸入區塊 -->
       <div id="manualInputBox" class="hidden space-y-5 pt-1">
@@ -137,6 +149,9 @@ select { appearance: none; background-image: url('data:image/svg+xml;utf8,<svg x
 <script>
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxBH_q4x0ilf6X3MmouDqsDSYROuSu9RoOPqwU3C0sxTVadGu6gVUR-kCahmMR11597NA/exec';
 const LIFF_ID = '2010785535-qIFwOa8w';
+const LIFF_URL_QUERY = 'https://liff.line.me/2010785535-D0SuLqWN';
+const LIFF_URL_REGISTER = 'https://liff.line.me/2010785535-mhv97vPS';
+
 window.lineUserId = '';
 window.companyData = [];
 window.isManualMode = false;
@@ -149,7 +164,6 @@ function closeWebPage() {
     setTimeout(() => { alert('請直接關閉此瀏覽器分頁。'); }, 300);
   }
 }
-
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
   if (!circuitBg) return;
@@ -166,13 +180,12 @@ function createCircuitBackground() {
     circuitBg.appendChild(line);
   }
 }
-
 function showCustomAlert(msg, needResume = false) {
   document.getElementById('customAlertMessage').innerText = msg;
   const btns = document.getElementById('modalButtons');
   if (needResume) {
     btns.innerHTML = `
-      <a href="index.html" class="submit-btn px-6 py-3 text-base sm:text-lg font-bold">前往填寫求職登記表</a>
+      <a href="${LIFF_URL_REGISTER}" class="submit-btn px-6 py-3 text-base sm:text-lg font-bold">前往填寫求職登記表</a>
       <button onclick="hideCustomAlert()" class="px-5 py-3 text-base text-lightPurple hover:text-white">取消</button>
     `;
   } else {
@@ -180,12 +193,10 @@ function showCustomAlert(msg, needResume = false) {
   }
   document.getElementById('customAlertModal').classList.remove('hidden');
 }
-
 function hideCustomAlert() {
   document.getElementById('customAlertModal').classList.add('hidden');
 }
-
-// 🌟 極速平行加載邏輯
+// 極速平行加載邏輯
 async function fetchInitialDataFast(uid) {
   try {
     const resp = await fetch(`${GAS_API_URL}?action=getInitialData&lineUserId=${encodeURIComponent(uid)}`);
@@ -219,20 +230,15 @@ async function fetchInitialDataFast(uid) {
     document.getElementById('manualInputBox').classList.remove('hidden');
   }
 }
-
 async function initPageFast() {
   createCircuitBackground();
   const urlParams = new URLSearchParams(window.location.search);
   let uid = urlParams.get('uid') || '';
-
-  // 1. 如果 URL 中帶有 uid 參數，直接秒發向 GAS 要求初始資料（不等待 LIFF init）
   if (uid) {
     window.lineUserId = uid;
     fetchInitialDataFast(uid);
     return;
   }
-
-  // 2. 否則並行啟動 LIFF
   try {
     if (typeof liff !== 'undefined' && LIFF_ID) {
       await liff.init({ liffId: LIFF_ID });
@@ -248,7 +254,6 @@ async function initPageFast() {
   window.lineUserId = uid;
   fetchInitialDataFast(uid);
 }
-
 function renderUserSelector(profiles) {
   const box = document.getElementById('userSelectorBox');
   const list = document.getElementById('userCardsList');
@@ -272,14 +277,12 @@ function renderUserSelector(profiles) {
   selectUser(profiles[0], list.children[0]);
   box.classList.remove('hidden');
 }
-
 function selectUser(profile, cardEl) {
   document.querySelectorAll('.user-card').forEach(c => c.classList.remove('active'));
   if (cardEl) cardEl.classList.add('active');
   document.getElementById('selectedName').value = profile.name;
   document.getElementById('selectedIdNumber').value = profile.idNumber;
 }
-
 function renderCompanyOptions() {
   const container = document.getElementById('companyListContainer');
   container.innerHTML = '';
@@ -319,7 +322,6 @@ function renderCompanyOptions() {
     container.innerHTML = '<p class="text-center text-red-400 text-lg">目前尚無職缺清單。</p>';
   }
 }
-
 document.addEventListener('DOMContentLoaded', function() {
   initPageFast();
   
@@ -380,14 +382,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         h += '</div>';
         
-        // 🌟 保留關閉網頁與查看預約紀錄按鈕
+        // 🌟 關閉網頁與前往查詢紀錄按鈕
         h += `
           <div class="flex flex-col sm:flex-row justify-center items-center gap-4 pt-2">
             <button onclick="closeWebPage()" class="submit-btn w-full sm:w-1/2 py-3.5 text-xl font-bold">
               關閉網頁
             </button>
-            <a href="query.html" class="secondary-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center">
-              查看預約紀錄
+            <a href="${LIFF_URL_QUERY}" class="secondary-btn w-full sm:w-1/2 py-3.5 text-xl font-bold inline-block text-center flex items-center justify-center gap-2">
+              <i class="fa-solid fa-clipboard-list text-circuitCyan"></i> 查看預約紀錄
             </a>
           </div>
         `;
