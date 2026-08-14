@@ -332,17 +332,23 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div id="successMessageContent" class="status-message success form-container p-6 sm:p-8"></div>
   </div>
 </div>
-<!-- 客製化 Modal -->
+
+<!-- 🌟 升級版客製化彈窗 (支援雙按鈕) -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
-  <div class="form-container p-6 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-5">
-    <p id="customAlertMessage" class="text-white text-lg leading-relaxed whitespace-pre-line"></p>
-    <div class="flex justify-center">
+  <div class="form-container p-6 sm:p-8 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-6">
+    <p id="customAlertMessage" class="text-white text-xl leading-relaxed whitespace-pre-line font-medium"></p>
+    <div id="customAlertSingleBtnGroup" class="flex justify-center">
       <button id="customAlertOkBtn" class="submit-btn px-8 py-2.5 text-base font-bold">知道了</button>
+    </div>
+    <div id="customAlertDualBtnGroup" class="flex flex-col sm:flex-row justify-center gap-3 hidden">
+      <button id="modalActionSecondary" class="secondary-btn px-6 py-3 text-base font-bold">關閉網頁</button>
+      <button id="modalActionPrimary" class="submit-btn px-6 py-3 text-base font-bold">繼續預約</button>
     </div>
   </div>
 </div>
+
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyC-1oKYdIHgwKGke-OzVSy5MjPHDAI8wqyN1pWfMEYoRLUPiuH_obGvFnkYoZzfGLweQ/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxXW_kTGc6-uYyVztaYO6D1SzORSX9fRjS60tn8UaVa6jk4Ok67R6ALNNiwGdIMCko_cw/exec';
 const LIFF_ID = '2010785535-mhv97vPS';
 window.lineUserId = '';
 window.formData = {}; 
@@ -532,6 +538,7 @@ async function checkExistingProfiles(lineUserId) {
     }
     document.getElementById('btnAddNewResume').onclick = () => {
       banner.classList.add('hidden');
+      document.getElementById('editingRowNum').value = '';
       document.getElementById('formFields').classList.remove('hidden');
       const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
       if (agreeRadio) agreeRadio.checked = true;
@@ -575,6 +582,7 @@ function loadProfileIntoForm(profile) {
   document.getElementById('existingResumeBanner').classList.add('hidden');
   document.getElementById('formFields').classList.remove('hidden');
   
+  // 🌟 記住正在修改的列號
   document.getElementById('editingRowNum').value = profile.rowNum || '';
   const agreeRadio = document.querySelector('input[name="agreement"][value="同意"]');
   if (agreeRadio) agreeRadio.checked = true;
@@ -636,15 +644,46 @@ function createCircuitBackground() {
   }
 }
 
+// 🌟 一般提示彈窗 (單按鈕)
 function showCustomAlert(message) {
   const customAlertMessage = document.getElementById('customAlertMessage');
   const customAlertModal = document.getElementById('customAlertModal');
-  if(customAlertMessage) customAlertMessage.innerHTML = String(message).replace(/\n/g, '<br>');
-  if(customAlertModal) customAlertModal.classList.remove('hidden');
+  const singleBtnGroup = document.getElementById('customAlertSingleBtnGroup');
+  const dualBtnGroup = document.getElementById('customAlertDualBtnGroup');
+  
+  if (singleBtnGroup) singleBtnGroup.classList.remove('hidden');
+  if (dualBtnGroup) dualBtnGroup.classList.add('hidden');
+  if (customAlertMessage) customAlertMessage.innerHTML = String(message).replace(/\n/g, '<br>');
+  if (customAlertModal) customAlertModal.classList.remove('hidden');
+  
   return new Promise((resolve) => {
     document.getElementById('customAlertOkBtn').onclick = () => {
       customAlertModal.classList.add('hidden');
       resolve();
+    };
+  });
+}
+
+// 🌟 提交成功雙選項彈窗 (繼續預約 / 關閉網頁)
+function showPostSubmitChoiceModal(message) {
+  const customAlertMessage = document.getElementById('customAlertMessage');
+  const customAlertModal = document.getElementById('customAlertModal');
+  const singleBtnGroup = document.getElementById('customAlertSingleBtnGroup');
+  const dualBtnGroup = document.getElementById('customAlertDualBtnGroup');
+  
+  if (singleBtnGroup) singleBtnGroup.classList.add('hidden');
+  if (dualBtnGroup) dualBtnGroup.classList.remove('hidden');
+  if (customAlertMessage) customAlertMessage.innerHTML = String(message).replace(/\n/g, '<br>');
+  if (customAlertModal) customAlertModal.classList.remove('hidden');
+  
+  return new Promise((resolve) => {
+    document.getElementById('modalActionPrimary').onclick = () => {
+      customAlertModal.classList.add('hidden');
+      resolve('book'); // 繼續預約
+    };
+    document.getElementById('modalActionSecondary').onclick = () => {
+      customAlertModal.classList.add('hidden');
+      resolve('close'); // 關閉網頁
     };
   });
 }
@@ -744,18 +783,17 @@ document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
   initLiff();
-
   const agreementRadios = document.getElementsByName('agreement');
   const formFields = document.getElementById('formFields');
   const agreementError = document.getElementById('agreementError');
   const confirmBtn = document.getElementById('confirmBtn');
   const confirmAppointmentBtn = document.getElementById('confirmAppointmentBtn');
-
+  
   ['birthYear', 'birthMonth', 'birthDay'].forEach(id => {
     const el = document.getElementById(id);
     if(el) el.addEventListener('change', syncBirthdateValue);
   });
-
+  
   if (agreementRadios && agreementRadios.length > 0) {
     Array.from(agreementRadios).forEach(r => {
       r.addEventListener('change', function() {
@@ -795,13 +833,15 @@ document.addEventListener('DOMContentLoaded', function() {
     dReview['computerSkill'] = f.getAll('computerSkill'); 
     dReview['language'] = f.getAll('language');
     dReview['lineUserId'] = document.getElementById('lineUserId').value || window.lineUserId || '';
+    
+    // 🌟 確實傳遞目前編輯中的 rowNum
     dReview['rowNum'] = document.getElementById('editingRowNum').value || '';
     window.formData = dReview; 
     displayDataInReview(dReview);
     loadCompanyDataOnce();
   });
 
-  // 🌟【修復 1】返回重新編輯時，解開 #formFields 的隱藏，確保欄位全數可輸入
+  // 返回重新編輯
   document.getElementById('editBtn').addEventListener('click', () => { 
     document.getElementById('reviewSection').classList.add('hidden'); 
     document.getElementById('formContainer').classList.remove('hidden'); 
@@ -814,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
 
-  // 🌟【修復 2】確認送出履歷：寫入成功後自動記住 rowNum，防止退回再提交時誤判為重複履歷
+  // 🌟【關鍵修改】：確認送出履歷後提供「繼續預約」與「關閉網頁」雙選項
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
     confirmBtn.disabled = true; 
@@ -823,31 +863,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const r = await callGasApi('processFormData', { formData: d }, 'POST');
     confirmBtn.disabled = false; 
     confirmBtn.innerHTML = '確認履歷並預約面試';
-
+    
     if (r.status === 'resume_saved') {
-      // 記住新寫入的列號，未來再次按確認時系統會自動走 overwriteRow 覆蓋
       if (r.rowNum) {
         document.getElementById('editingRowNum').value = r.rowNum;
         window.formData.rowNum = r.rowNum;
       }
       
-      await showCustomAlert(r.message || '履歷提交成功！');
-      await loadCompanyDataOnce();
-      displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
-
+      // 🌟 彈出「履歷提交成功」並附帶「繼續預約」與「關閉網頁」
+      const choice = await showPostSubmitChoiceModal('🎉 履歷提交成功！\n\n請問您接下來要直接預約現場面試職缺，或是已完成登記？');
+      
+      if (choice === 'book') {
+        await loadCompanyDataOnce();
+        displayAppointmentSection({ name: d.name, idNumber: d.idNumber });
+      } else {
+        closeWebPage();
+      }
     } else if (r.status === 'duplicate_found') {
-      // 若萬一觸發重複判斷，自動詢問是否直接覆蓋更新
       const confirmCover = confirm(r.message || '系統發現已有您的履歷紀錄，是否覆蓋並更新？');
       if (confirmCover && r.rowNum) {
         document.getElementById('editingRowNum').value = r.rowNum;
         window.formData.rowNum = r.rowNum;
-        confirmBtn.click(); // 自動再執行一次提交
+        confirmBtn.click();
       }
     } else {
       showCustomAlert(r.message || '儲存失敗，請重試');
     }
   });
 
+  // 確認預約職缺
   confirmAppointmentBtn.addEventListener('click', async function() {
     const companyListContainer = document.getElementById('companyListContainer');
     const sels = companyListContainer.querySelectorAll('select[data-company]'); 
@@ -879,4 +923,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>
+</html>  
