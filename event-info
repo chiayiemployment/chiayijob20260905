@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>數位永續 薪在嘉義</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        body {
+            background-color: #1F1D53;
+            color: #FFFFFF;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden; /* 避免在 iframe 中出現不必要的水平捲軸 */
+        }
+
+        /* 電路板背景 */
+        .circuit-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%; /* 由 JS 動態調整 */
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .circuit-line {
+            position: absolute;
+            background-color: #4C237C;
+            box-shadow: 0 0 8px #01529F;
+        }
+
+        .circuit-dot {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #28C4FF;
+            box-shadow: 0 0 10px #28C4FF;
+        }
+
+        .circuit-node {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #A48DCD;
+            border: 2px solid #28C4FF;
+            box-shadow: 0 0 15px rgba(40, 196, 255, 0.5);
+        }
+
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 50%, #053D88 0%, transparent 40%),
+                        radial-gradient(circle at 80% 20%, #2956A8 0%, transparent 30%);
+            opacity: 0.7;
+            z-index: -1; /* 確保在電路板之上，內容之下 */
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative; /* 確保內容在漸層之上 */
+            z-index: 1;
+        }
+
+        .banner {
+            width: 100%;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            background-color: rgba(107, 37, 127, 0.3);
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(107, 37, 127, 0.2), transparent);
+            z-index: -1; /* 修正 z-index 以確保在 placeholder 之下 */
+        }
+
+        .banner-placeholder {
+            width: 100%;
+            height: 150px;
+            background-color: rgba(76, 35, 124, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            border: 1px solid #6B257F;
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #7E2AFF, #6A1BCB);
+            padding: 15px 25px;
+            border-radius: 12px 12px 0 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: #FFFFFF;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .section-header::before {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #28C4FF;
+            border-radius: 50%;
+            opacity: 0.2;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .section-header::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 100px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(40, 196, 255, 0.2));
+        }
+
+        .section-header span {
+            position: relative;
+            z-index: 2;
+            margin-left: 10px;
+        }
+
+        .content-section {
+            background-color: rgba(76, 35, 124, 0.3);
+            border-radius: 0 0 12px 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(164, 141, 205, 0.3);
+            border-top: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-section::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(40, 196, 255, 0.3), transparent 70%);
+            border-radius: 50%;
+            z-index: -1; /* 修正 z-index */
+        }
+        .centered-content {
+            text-align: center; /* 讓容器內的行內元素 (inline/inline-block) 水平置中 */
+        }
+
+        /* 確保圖片與文字垂直對齊良好 (可選，根據您的圖示調整) */
+        .centered-content img {
+            vertical-align: middle; /* 或 text-bottom, baseline 等，視情況調整 */
+        }
+
+
+        .activity-map-image {
+            max-width: 100%;  /* 圖片最大寬度為其容器 (info-image) 的100%，這樣它就不會溢出 */
+            height: auto;     /* 高度自動調整以保持圖片的原始長寬比 */
+            display: block;   /* 移除圖片底部可能出現的額外空白，並使其表現為塊級元素 */
+            border-radius: 4px; /* 可選：為圖片本身也加上一點圓角，使其與外框風格更一致 */
+            /* 原始圖片設定為 500x500，如果希望它最大就是這麼大，可以加上： */
+            /* max-height: 500px; */ /* 可選，視情況而定 */
+        }
+        .info-image {
+            width: 100%;
+            border-radius: 8px; /* 圓角 */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* 陰影 */
+            background-color: rgba(76, 35, 124, 0.5); /* 背景顏色，目前看起來像一個紫色的襯底 */
+            min-height: 300px; /* 最小高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #6B257F; /* 邊框線條 */
+            margin: 20px 0;
+            }
+
+        .content-wrapper {
+            width: 100%;
+        }
+
+        /* 活動資訊樣式 */
+        .info-text {
+            line-height: 1.8;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .info-text p {
+            margin-bottom: 15px;
+        }
+
+        .info-text strong {
+            color: #28C4FF;
+            font-weight: 700;
+        }
+
+        .coupon-image {
+            width: 100%;
+            max-width: 300px;
+            height: 150px;
+            background-color: rgba(76, 35, 124, 0.5);
+            border-radius: 8px;
+            border: 1px solid #6B257F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .process-list {
+            list-style-position: inside;
+            padding-left: 20px; /* 確保項目符號有空間 */
+            margin-bottom: 20px;
+        }
+
+        .process-list li {
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 10px; /* 為 ::before 元素留出空間 */
+            display: flex; /* 改為 flex 以更好控制布局 */
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .process-list li::before {
+            content: '';
+            position: absolute;
+            left: -15px; /* 調整位置以使其在 padding-left 區域內 */
+            top: 10px; /* 根據字體大小微調 */
+            width: 8px;
+            height: 8px;
+            background-color: #28C4FF;
+            border-radius: 50%;
+        }
+
+        .process-button {
+            display: inline-block;
+            margin-left: 15px;
+            padding: 8px 15px;
+            background: linear-gradient(135deg, #AC3FFF, #6A1BCB);
+            color: #FFFFFF;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(172, 63, 255, 0.4);
+            text-decoration: none;
+        }
+
+        .process-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(172, 63, 255, 0.6);
+        }
+
+        .transportation {
+            margin-top: 20px;
+        }
+
+        .transportation h3 {
+            color: #AC3FFF;
+            margin-bottom: 10px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .transportation p {
+            margin-bottom: 15px;
+            padding-left: 20px; /* 保持縮排 */
+        }
+        
+        .text-mcd-yellow {
+            color: #FFC72C; /* 麥當勞黃 */
+        }
+
+        .text-mcd-yellow strong {
+            color: #FFC72C; /* 確保 strong 標籤也是黃色 */
+        }
+
+        .info-value-multiline {
+            display: inline-block;
+            vertical-align: top;
+        }
+
+        @media (max-width: 768px) {
+            .info-text {
+                font-size: 16px;
+            }
+
+            .process-list li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .process-button {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="circuit-background" id="circuitBackground"></div>
+    <div class="gradient-overlay"></div>
+
+    <div class="container">
+        <div class="banner">
+            <div class="banner-placeholder">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczMuIT4cfwenRre0EjS8-O0wEn-Maxg397HvL63RuSRbfX1s94mtGgQTi8XO0L4LQ5nn8GmB650lBRXnoYLkYbaQLZE-u6oJr8mVsrFtgsI71phQGRlHXTmj6F8smf7Jp2ciNzdObKkKl8Q7ixRs-UCr=w1920-h737-s-no-gm?authuser=0" alt="活動橫幅圖片" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="section-header">
+                <span>活動資訊</span>
+            </div>
+            <div class="content-section" id="infoContent">
+                <div class="info-text">
+                    <p><strong>活動時間：</strong>115年9月5日  9:30 - 12:30</p>
+                    <p><strong>活動地點：</strong><span class="info-value-multiline">耐斯王子大飯店5樓宴會廳<br><span class="text-mcd-yellow">(請由新生路飯店大門入口進入)</span></span></p>
+                    <p><strong>活動地址：</strong>嘉義市忠孝路600號</p>
+                    <p><strong>洽詢專線：</strong>05-2240656</p>
+                    <p class="text-mcd-yellow"><strong>前500名參加者可領取「和牛招待券」</strong></p>
+                     </div>
+                           
+                <div class="coupon-image">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczO7OzSVRRNLyqDKvwJsingTGHOG64L0-Jsz9MIPWzx8oBxWXSq0SNQ7-rLaaXsPspV-DQYUGbGsbeaXYFFX-84TzAxdSwnO5qaCfDR2m44clUerhsp2cO_GRR68tSjTfUcCLGbshEVRNGCldDHzHtBN=w1920-h791-s-no-gm?authuser=0" alt="和牛招待券" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;">
+                </div>
+
+                <div class="text-mcd-yellow"><strong>
+                    如欲查詢「職缺資訊」或進行「履歷填寫」、「預約面試」，請點選LINE官方帳號中的選單
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMgvTk-aS_C1-i-_59i_We2wqYSaHsctuSzsc54--H4dupIik6DArGMqXQavVanO7r84sZbmlBc4hCtpn6CaJkw_alS7ffv0qyhruUP2GA_pDeRWJdkAQ7M0yhDae-EOjPG5ZYKsqrs0p4hT1fvFpOG=w73-h58-s-no-gm?authuser=0" alt="選單" style="width: 20px; height: 20px; vertical-align: middle; margin: 0 3px;"> 
+                        圖示。</strong>                
+                </div>
+                <div class="info-text">
+                    <h3><strong>活動流程：</strong></h3>
+                    <ol class="process-list">
+                        <li>
+                            確認好當天要應徵的公司與職缺。
+                        </li>
+                        <li>
+                            填寫線上履歷。
+                        </li>
+                        <li>
+                            預約當天要應徵的公司與職缺。
+                        </li>
+                        <li>活動當天穿著整齊來參加面試。</li>
+                    </ol>
+                </div>
+
+                <div class="info-text">
+                    <h3><strong>周邊活動：</strong></h3>
+                    <ol class="process-list">
+                        <li>
+                            AI職涯諮詢師、履歷健檢、模擬面試、職訓大觀園、創客DIY手作教室等多項活動。
+                        </li>
+                    </ol>
+                </div>
+
+                <div class="info-text">
+                    <p><strong>活動地圖：</strong></p>
+                </div>
+                <div class="info-image">
+                <img src="https://lh3.googleusercontent.com/pw/AP1GczPvri8SDrCk1RFM4zlNYTJmiLIELt4D2hafKs10fITVmBcqnReKbIHzRD8-E6pHk5-AOqeOQjx4Ps7nEt6RjVzG_rHq4M4KILQhdi5qx3ucwAQvqQEdp4pClR1O3l72hNcM547kJsSi2iWNDoea5BuQ=w1047-h919-s-no-gm?authuser=0" alt="活動地圖" class="activity-map-image">
+                </div>
+
+                <div class="info-text">
+                    <h3><strong>交通方式：</strong></h3>
+
+                    <div class="transportation">
+                        <h3>【開車】</h3>
+                        <p>請導航「耐斯廣場」，將車輛停放於地下停車場C區，再搭乘電梯至活動會場。</p>
+
+                        <h3>【騎機車】</h3>
+                        <p>請請導航「耐斯廣場」，將車輛停放於臺灣銀行嘉北分行旁之機車停車場，步行至飯店入口，搭乘電梯至活動會場。</p>
+
+                        <h3>【腳踏車/YouBike】</h3>
+                        <p>自有腳踏車請停放於機車停車場，騎YouBike者請於臺灣銀行嘉北分行(耐斯廣場站)站點停放，再步行至飯店入口，搭乘電梯至活動會場。</p>
+
+                        <h3>【搭火車】</h3>
+                        <p>請搭乘台鐵至嘉北站下車，騎YouBike者請於臺灣銀行嘉北分行(耐斯廣場站)站點停放，再步行至飯店入口，搭乘電梯至活動會場。</p>
+
+                        <h3>【搭公車】</h3>
+                        <p>搭乘公車者請於「耐斯廣場」站下車，再步行至飯店入口，搭乘電梯至活動會場。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 生成電路板背景
+        function generateCircuitBackground() {
+            const background = document.getElementById('circuitBackground');
+            if (!background) return; // 如果找不到元素，則退出
+
+            const width = window.innerWidth;
+            // 確保背景覆蓋整個 iframe 的可滾動內容高度
+            const height = Math.max(document.body.scrollHeight, window.innerHeight);
+
+            // 清空現有背景
+            background.innerHTML = '';
+
+            // 生成水平線
+            for (let i = 0; i < 20; i++) {
+                const line = document.createElement('div');
+                line.className = 'circuit-line';
+
+                const top = Math.random() * height;
+                const left = Math.random() * width * 0.3;
+                const width_line = Math.random() * width * 0.7 + width * 0.3;
+
+                line.style.top = `${top}px`;
+                line.style.left = `${left}px`;
+                line.style.width = `${width_line}px`;
+                line.style.height = '2px';
+
+                background.appendChild(line);
+            }
+
+            // 生成垂直線
+            for (let i = 0; i < 20; i_1) { // 修正變數名稱衝突
+                const line_1 = document.createElement('div'); // 修正變數名稱衝突
+                line_1.className = 'circuit-line';
+
+                const top_1 = Math.random() * height * 0.3; // 修正變數名稱衝突
+                const left_1 = Math.random() * width; // 修正變數名稱衝突
+                const height_line = Math.random() * height * 0.7 + height * 0.3;
+
+                line_1.style.top = `${top_1}px`;
+                line_1.style.left = `${left_1}px`;
+                line_1.style.width = '2px';
+                line_1.style.height = `${height_line}px`;
+
+                background.appendChild(line_1);
+            }
+
+            // 生成節點
+            for (let i = 0; i < 30; i_2) { // 修正變數名稱衝突
+                const dot = document.createElement('div');
+                dot.className = 'circuit-dot';
+
+                dot.style.top = `${Math.random() * height}px`;
+                dot.style.left = `${Math.random() * width}px`;
+
+                background.appendChild(dot);
+            }
+
+            // 生成大節點
+            for (let i = 0; i < 12; i_3) { // 修正變數名稱衝突
+                const node = document.createElement('div');
+                node.className = 'circuit-node';
+
+                node.style.top = `${Math.random() * height}px`;
+                node.style.left = `${Math.random() * width}px`;
+
+                background.appendChild(node);
+            }
+        }
+
+        // 調整電路板背景高度以匹配內容
+        function adjustBackgroundHeight() {
+            const circuitBackground = document.getElementById('circuitBackground');
+            if (!circuitBackground) return;
+            // 設定背景高度為 iframe body 的實際滾動高度
+            const bodyHeight = document.body.scrollHeight;
+            circuitBackground.style.height = `${bodyHeight}px`;
+
+            // 同時調整漸層覆蓋的高度
+            const gradientOverlay = document.querySelector('.gradient-overlay');
+            if (gradientOverlay) {
+                gradientOverlay.style.height = `${bodyHeight}px`;
+            }
+        }
+
+        // 頁面加載和視窗大小改變時重新生成背景和調整高度
+        function setupDynamicBackground() {
+            generateCircuitBackground();
+            adjustBackgroundHeight();
+        }
+
+        window.addEventListener('load', setupDynamicBackground);
+        // 針對 iframe 內內容變化可能導致的高度改變，resize 事件可能不夠，
+        // 但在 Google Sites 中，iframe 大小通常是固定的或由協作平台控制。
+        // resize 事件主要應對 iframe 本身大小被調整的情況。
+        window.addEventListener('resize', setupDynamicBackground);
+
+        // 考慮到內容可能是動態載入或變更的，可以設置一個觀察器來監控 body 高度的變化
+        // 但這會增加複雜性，對於 Google Sites 嵌入，通常 iframe 高度由其設定決定
+        // 如果內容超出 iframe 預設高度，Google Sites 會出現捲軸
+        // 以下 MutationObserver 是進階選項，如果發現高度更新不及時可以考慮
+        /*
+        if (window.MutationObserver) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === "attributes" && mutation.attributeName === "style") {
+                        // This might be too frequent, be careful
+                        // adjustBackgroundHeight();
+                    } else if (mutation.type === "childList") {
+                        adjustBackgroundHeight();
+                    }
+                });
+            });
+
+            observer.observe(document.body, {
+                attributes: true, // observe attributes
+                childList: true, // observe child nodes
+                subtree: true, // observe all descendants
+                attributeFilter: ['style', 'class'] // optional: only specific attributes
+            });
+        }
+        */
+
+        // 確保在所有資源（包括圖片）加載完畢後再執行一次高度調整
+        // 因為圖片加載會影響 scrollHeight
+        window.addEventListener('load', function() {
+            // 給圖片一點時間渲染完成
+            setTimeout(adjustBackgroundHeight, 100); // 短暫延遲
+            setTimeout(adjustBackgroundHeight, 500); // 再次確認
+        });
+
+    </script>
+    </body>
+</html>
