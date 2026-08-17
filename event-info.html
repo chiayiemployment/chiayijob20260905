@@ -153,9 +153,11 @@
                 </div>
 
                 <!-- 地點與導航 (滿版) -->
-                <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-xl bg-white/5 border border-white/10 hover:border-circuitCyan/40 transition-all">
-                    <div class="flex items-start gap-4">
-                        <div class="w-10 h-10 rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-300 shrink-0 mt-0.5">
+                <div class="md:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl bg-white/5 border border-white/10 hover:border-circuitCyan/40 transition-all">
+                    <!-- 左側資訊區：加入 flex-1 避免寬度壓縮 -->
+                    <div class="flex items-start gap-4 flex-1">
+                        <!-- 圖示容器：確保 self-start 與固定尺寸 -->
+                        <div class="w-10 h-10 min-w-[40px] rounded-lg bg-purple-500/15 flex items-center justify-center text-purple-300 shrink-0 self-start mt-0.5">
                             <i class="fa-solid fa-location-dot text-xl"></i>
                         </div>
                         <div class="space-y-1">
@@ -165,15 +167,17 @@
                             <div class="text-xs text-accentGold font-medium mt-1">(請由新生路大門進入)</div>
                         </div>
                     </div>
+
+                    <!-- 右側按鈕：在手機版寬度滿版 (w-full sm:w-auto) -->
                     <a href="https://maps.google.com/?q=耐斯王子大飯店" target="_blank" 
-                       class="btn-gradient px-4 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shrink-0">
+                       class="btn-gradient px-4 py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 shrink-0 w-full sm:w-auto">
                         <i class="fa-solid fa-diamond-turn-right"></i> Google 地圖導航
                     </a>
                 </div>
 
             </div>
 
-            <!-- 和牛早鳥券專區 (超級吸睛亮點) -->
+            <!-- 王品集團優惠券 (超級吸睛亮點) -->
             <div class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-purple-600/25 to-pink-500/20 border border-accentGold/40 space-y-4">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div class="flex items-center gap-2">
