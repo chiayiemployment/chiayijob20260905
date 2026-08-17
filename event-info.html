@@ -214,16 +214,18 @@
                 </div>
             </div>
 
-            <div class="bg-[#1e1e38] p-5 rounded-2xl">
-                <!-- 頂部：左邊圓圈編號，右邊圖片 -->
+            <div class="bg-[#1e1e38] p-5 rounded-2xl border border-slate-700/50">
+                <!-- 頂部：左邊圓圈編號，右邊標籤按鈕 -->
                 <div class="flex items-center justify-between mb-4">
                     <!-- 編號 1 -->
                     <div class="w-10 h-10 rounded-full bg-blue-900/60 flex items-center justify-center text-cyan-400 font-bold text-lg">
             1
                     </div>
-        
-                    <!-- 替換原本搜尋 icon 的小圖 -->
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczO4WOZHlFArEB72COEHxPqzFwU1NwT1wAmhJNZIOrGWvPEgQr7hQ02zYN7fcAeA0v6kiXN04Qfo4VbLvj4wCP6K49v4Ss0jo3z1uo8xi4NdxTIhD5hCfk14nPvd8XnWJ1kuxUJfeGR5kxYuoleEsyzM=w879-h837-s-no-gm?authuser=0" alt="職缺資訊" class="h-6 w-auto object-contain cursor-pointer" />
+
+                    <!-- 替代圖片的黃色標籤/按鈕 -->
+                    <a href="#" class="bg-[#FFE500] hover:bg-yellow-400 text-black text-xs font-black px-3 py-1 rounded-full shadow-sm transition">
+                        職缺資訊
+                    </a>
                 </div>
 
                 <!-- 文字內容 -->
@@ -233,16 +235,26 @@
                 </div>
             </div>
 
-                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="w-7 h-7 rounded-full bg-circuitCyan/20 text-circuitCyan font-black text-sm flex items-center justify-center">2</span>
-                        <i class="fa-solid fa-file-signature text-lightPurple/40"></i>
+            <div class="bg-[#1e1e38] p-4 rounded-2xl border border-slate-700/50 flex items-center justify-between gap-4">
+                <!-- 左側：編號 + 文字 -->
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 shrink-0 rounded-full bg-blue-900/60 flex items-center justify-center text-cyan-400 font-bold text-lg">
+                        1
                     </div>
                     <div>
-                        <div class="font-bold text-white text-base">填寫履歷</div>
-                        <div class="text-xs text-gray-300 mt-1">使用 LINE@ 線上履歷表快速登記資料。</div>
+                        <div class="font-bold text-white text-base">瀏覽職缺</div>
+                        <div class="text-xs text-gray-300 mt-0.5">使用 LINE@ 提前查詢當天所有參加廠商與職缺資訊。</div>
                     </div>
                 </div>
+            
+                <!-- 右側：加大圖片高度並加上圓角 -->
+                <img 
+                    src="https://lh3.googleusercontent.com/pw/AP1GczO4WOZHlFArEB72COEHxPqzFwU1NwT1wAmhJNZIOrGWvPEgQr7hQ02zYN7fcAeA0v6kiXN04Qfo4VbLvj4wCP6K49v4Ss0jo3z1uo8xi4NdxTIhD5hCfk14nPvd8XnWJ1kuxUJfeGR5kxYuoleEsyzM=w879-h837-s-no-gm?authuser=0" 
+                    referrerpolicy="no-referrer"
+                    alt="職缺資訊" 
+                    class="h-10 w-auto rounded-lg object-contain cursor-pointer shrink-0" 
+                />
+            </div>
 
                 <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
                     <div class="flex items-center justify-between">
