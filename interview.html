@@ -17,7 +17,7 @@
       position: relative;
     }
 
-    /* 電路科技底圖[cite: 5, 8] */
+    /* 電路科技底圖 */
     .circuit-bg {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 50% 50%, #292468 0%, #15133C 100%);
@@ -53,7 +53,7 @@
     }
     .page-indicator { font-size: 1.3rem; font-weight: 700; color: #E0EFFF; }
 
-    /* 攤位 4x4 卡片網格[cite: 3] */
+    /* 攤位 4x4 卡片網格 */
     .grid-container {
       flex: 1;
       display: grid;
@@ -63,7 +63,7 @@
       background-color: #EBF1F8;
     }
 
-    /* 攤位卡片樣式[cite: 3] */
+    /* 攤位卡片樣式 */
     .booth-card {
       background: #FFFFFF;
       border: 2px solid #8AB4E2;
@@ -91,7 +91,7 @@
       justify-content: space-around;
     }
 
-    /* 面試狀態列[cite: 3] */
+    /* 面試狀態列 */
     .status-row {
       display: flex;
       align-items: center;
@@ -102,7 +102,7 @@
     .status-current {
       font-size: 1.8rem;
       font-weight: 900;
-      color: #108A43; /* 綠色大字[cite: 3] */
+      color: #108A43; /* 綠色大字 */
       margin-bottom: 2px;
     }
     .status-dot {
@@ -112,13 +112,13 @@
       margin-right: 6px;
       flex-shrink: 0;
     }
-    .dot-green { background-color: #108A43; } /*[cite: 3] */
-    .dot-orange { background-color: #E66A1F; } /*[cite: 3] */
+    .dot-green { background-color: #108A43; }
+    .dot-orange { background-color: #E66A1F; }
 
     .text-next { color: #333333; font-size: 1.25rem; }
     .text-pass { color: #444444; font-size: 1.15rem; }
 
-    /* 底部提示與 QR Code 列[cite: 3] */
+    /* 底部提示與 QR Code 列 */
     .footer-bar {
       background-color: #F8FAFC;
       border-top: 2px solid #CBD5E1;
@@ -148,35 +148,35 @@
   <div class="circuit-bg"></div>
 
   <div class="board-container">
-    <!-- 頂部標題[cite: 3] -->
+    <!-- 頂部標題 -->
     <div class="header-bar">
-      <div id="boardTitle">大型聯合徵才活動 - 即時叫號看板 (A01-A17 攤位)</div>
+      <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-17 攤位)</div>
       <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 15 秒自動翻頁)</div>
     </div>
 
-    <!-- 4x4 攤位卡片區[cite: 3] -->
+    <!-- 4x4 攤位卡片區 -->
     <div class="grid-container" id="gridContainer">
       <!-- 卡片由 JS 動態填入 -->
     </div>
 
-    <!-- 底部資訊與 QR Code[cite: 3] -->
+    <!-- 底部資訊與 QR Code -->
     <div class="footer-bar">
       <div class="footer-text">
-        💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢個人面試進度！[cite: 3]
+        💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢個人面試進度！
       </div>
       <div class="footer-qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2010785535-D0SuLqWN" alt="進度查詢 QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="進度查詢 QR">
       </div>
     </div>
   </div>
 
   <script>
     // 🌟 請在此填入您的 GAS Web App 部署網址（結尾加 ?type=json）
-    const API_URL = 'YOUR_GAS_DEPLOYMENT_URL_HERE';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyT5drsLctzkcaXAEfZHEOzeWqUDYhAB3cIrAIlCwlfM69bxwuij81Ve7SYaYa-GaX3Yw/exec';
 
     let allPages = [];
     let currentPageIdx = 0;
-    const FLIP_INTERVAL = 15000; // 每 15 秒自動翻頁[cite: 3]
+    const FLIP_INTERVAL = 15000; // 每 15 秒自動翻頁
 
     async function fetchBoardData() {
       try {
@@ -195,15 +195,15 @@
       if (!allPages || allPages.length === 0) return;
       const pageData = allPages[index];
 
-      // 更新頂部標題與頁次[cite: 3]
-      const rangeText = index === 0 ? "(A01-A17 攤位)" : "(A18-A34 攤位)";
-      document.getElementById('boardTitle').textContent = `大型聯合徵才活動 - 即時叫號看板 ${rangeText}`;
+      // 更新頂部標題與頁次
+      const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
+      document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
       document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
 
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
 
-      // 渲染攤位卡片[cite: 3]
+      // 渲染攤位卡片
       pageData.booths.forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
