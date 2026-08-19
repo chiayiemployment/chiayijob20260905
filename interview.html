@@ -23,7 +23,6 @@
       z-index: 0; pointer-events: none;
     }
 
-    /* 主看板外框（鎖定螢幕高寬，確保底部提示絕不溢出） */
     .board-container {
       position: relative;
       z-index: 10;
@@ -35,7 +34,6 @@
       justify-content: space-between;
     }
 
-    /* 頂部標題列（高度固定） */
     .header-bar {
       flex-shrink: 0;
       background-color: #0F3A7A;
@@ -49,7 +47,6 @@
     }
     .page-indicator { font-size: 1.25rem; font-weight: 700; color: #E0EFFF; }
 
-    /* 4x4 + 1 攤位卡片區（彈性填滿中間空間） */
     .grid-container {
       flex: 1 1 auto;
       min-height: 0;
@@ -61,7 +58,6 @@
       background-color: #EBF1F8;
     }
 
-    /* 攤位卡片 */
     .booth-card {
       background: #FFFFFF;
       border: 2px solid #8AB4E2;
@@ -117,7 +113,11 @@
     .text-next { color: #333333; font-size: 1.1rem; }
     .text-pass { color: #555555; font-size: 1.05rem; }
 
-    /* 底部提示列 */
+    /* 過號人名切換平滑效果 */
+    .pass-name-text {
+      transition: opacity 0.3s ease-in-out;
+    }
+
     .footer-bar {
       flex-shrink: 0;
       background-color: #F8FAFC;
@@ -150,7 +150,6 @@
   <div class="board-container">
     <div class="header-bar">
       <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-17 攤位)</div>
-      <!-- 🌟 文字已更新為 30 秒 -->
       <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 30 秒自動翻頁)</div>
     </div>
     <div class="grid-container" id="gridContainer"></div>
@@ -159,19 +158,20 @@
         💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢所有廠商進度！
       </div>
       <div class="footer-qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/chiayi20260905-job-liff/
-liff_interview.html" alt="進度查詢 QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/interview_system/liff_interview.html" alt="進度查詢 QR">
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwnnmdsTZddL6qNrR6XajvgaggxlwvPUQxrhGifLoGRdkafG_4m-ETHprAOtQHYvRUziw/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycby5vgpIwWBubdqxmTIa1qgnIb0cMSPfOrJT5rn3tmlU8oJLWI3Nz0zL6wKc5fegRk9Qow/exec';
     let allPages = [];
     let currentPageIdx = 0;
-    
-    // 🌟 翻頁時間已調整為 30000 毫秒（30 秒）
-    const FLIP_INTERVAL = 30000;
+    const FLIP_INTERVAL = 15000; // 15 秒大螢幕整頁翻頁
+    const PASS_FLIP_INTERVAL = 5000; // 5 秒過號名單小輪播
+
+    // 紀錄每個攤位當前的過號輪播組別
+    let passRotationMap = {};
 
     async function fetchBoardData() {
       try {
@@ -194,16 +194,24 @@ liff_interview.html" alt="進度查詢 QR">
       const pageData = allPages[index];
       const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
-      
-      // 🌟 翻頁標籤顯示為 30 秒
-      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 30 秒自動翻頁)`;
+      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
 
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
 
       (pageData.booths || []).forEach(b => {
+        const passList = b.passList || [];
+        const totalPassCount = passList.length;
+
+        // 計算目前該攤位顯示第幾組 (每組 3 人)
+        if (passRotationMap[b.boothNo] === undefined) {
+          passRotationMap[b.boothNo] = 0;
+        }
+
         const card = document.createElement('div');
         card.className = 'booth-card';
+        card.id = `booth-card-${b.boothNo}`;
+
         card.innerHTML = `
           <div class="booth-header">攤位 ${b.boothNo} ｜ ${b.company}</div>
           <div class="booth-body">
@@ -214,15 +222,69 @@ liff_interview.html" alt="進度查詢 QR">
               <span style="width:12px; margin-right:6px; display:inline-block;"></span>下一位：${b.next}
             </div>
             <div class="status-row text-pass">
-              <span class="status-dot dot-orange"></span>過 號：${b.pass}
+              <span class="status-dot dot-orange"></span>
+              <span class="pass-label-area" id="pass-label-${b.boothNo}">過 號：</span>
+              <span class="pass-name-text" id="pass-names-${b.boothNo}">無</span>
             </div>
           </div>
         `;
         container.appendChild(card);
+
+        // 立即更新過號文字
+        updateBoothPassText(b);
       });
     }
 
-    // 每 30 秒自動翻頁
+    // 更新單一卡片內的過號人名與標題 (一次顯示 3 位)
+    function updateBoothPassText(booth) {
+      const passLabelEl = document.getElementById(`pass-label-${booth.boothNo}`);
+      const passNamesEl = document.getElementById(`pass-names-${booth.boothNo}`);
+      if (!passLabelEl || !passNamesEl) return;
+
+      const passList = booth.passList || [];
+      const totalCount = passList.length;
+
+      if (totalCount === 0) {
+        passLabelEl.textContent = '過 號：';
+        passNamesEl.textContent = '無';
+        return;
+      }
+
+      // 將名單切分成每組 3 人
+      const chunkSize = 3;
+      const totalGroups = Math.ceil(totalCount / chunkSize);
+      const currentGroupIdx = passRotationMap[booth.boothNo] % totalGroups;
+
+      const start = currentGroupIdx * chunkSize;
+      const currentChunk = passList.slice(start, start + chunkSize);
+
+      // 若有多人過號，標註總人數以提示求職者
+      passLabelEl.textContent = totalCount > 3 ? `過號(共${totalCount}人)：` : '過 號：';
+
+      // 淡出再淡入效果
+      passNamesEl.style.opacity = '0';
+      setTimeout(() => {
+        passNamesEl.textContent = currentChunk.join(', ');
+        passNamesEl.style.opacity = '1';
+      }, 150);
+    }
+
+    // 🌟 每 5 秒針對各卡片的過號名單推進一組 (5秒小輪播)
+    setInterval(() => {
+      if (!allPages || allPages.length === 0) return;
+      const currentPageData = allPages[currentPageIdx];
+      if (!currentPageData) return;
+
+      (currentPageData.booths || []).forEach(b => {
+        const passList = b.passList || [];
+        if (passList.length > 3) {
+          passRotationMap[b.boothNo] = (passRotationMap[b.boothNo] || 0) + 1;
+          updateBoothPassText(b);
+        }
+      });
+    }, PASS_FLIP_INTERVAL);
+
+    // 每 30 秒整頁自動大翻頁
     setInterval(() => {
       if (allPages.length > 1) {
         currentPageIdx = (currentPageIdx + 1) % allPages.length;
@@ -230,8 +292,8 @@ liff_interview.html" alt="進度查詢 QR">
       }
     }, FLIP_INTERVAL);
 
-    // 每 20 秒自後端同步一次最新資料
-    setInterval(fetchBoardData, 20000);
+    // 每 15 秒同步一次最新資料
+    setInterval(fetchBoardData, 15000);
     document.addEventListener('DOMContentLoaded', fetchBoardData);
   </script>
 </body>
