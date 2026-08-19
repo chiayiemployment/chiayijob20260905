@@ -4,48 +4,45 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>面試進度查詢</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
     body {
       background-color: #1F1D53;
       color: #FFFFFF;
       min-height: 100vh;
-      padding: 16px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
     }
 
-    /* 頂部標題 */
     .header {
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       font-weight: 900;
       text-align: center;
       color: #28C4FF;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       text-shadow: 0 2px 8px rgba(40, 196, 255, 0.4);
     }
 
-    /* 廠商下拉選單卡片 */
     .select-card {
       background: rgba(76, 35, 124, 0.85);
       border: 1px solid rgba(164, 141, 205, 0.4);
       border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      padding: 12px;
+      margin-bottom: 14px;
     }
     .select-label {
-      font-size: 1rem;
+      font-size: 0.95rem;
       font-weight: 700;
       color: #EDEEF7;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       display: block;
     }
     .company-dropdown {
       width: 100%;
-      padding: 12px 14px;
-      font-size: 1.15rem;
+      padding: 10px 12px;
+      font-size: 1.1rem;
       font-weight: 700;
       border-radius: 8px;
       border: 2px solid #28C4FF;
@@ -54,23 +51,21 @@
       outline: none;
     }
 
-    /* 即時面試進度摘要卡片 */
     .summary-card {
       background: linear-gradient(135deg, #16609C, #4C237C);
       border-radius: 12px;
-      padding: 14px;
-      margin-bottom: 16px;
+      padding: 12px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-around;
       text-align: center;
       border: 1px solid #28C4FF;
     }
-    .summary-item .title { font-size: 0.9rem; color: #A48DCD; font-weight: 700; margin-bottom: 4px; }
-    .summary-item .name { font-size: 1.35rem; font-weight: 900; }
+    .summary-item .title { font-size: 0.85rem; color: #A48DCD; font-weight: 700; margin-bottom: 2px; }
+    .summary-item .name { font-size: 1.3rem; font-weight: 900; }
     .name-current { color: #4ade80; }
     .name-next { color: #EDEEF7; }
 
-    /* 求職者清單表格卡片 */
     .list-card {
       background: rgba(76, 35, 124, 0.7);
       border-radius: 12px;
@@ -78,45 +73,40 @@
       overflow: hidden;
       flex: 1;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: center;
-    }
+    table { width: 100%; border-collapse: collapse; text-align: center; }
     th {
       background: #0F3A7A;
       color: #28C4FF;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      padding: 12px 8px;
+      padding: 10px 8px;
       border-bottom: 2px solid #28C4FF;
     }
     td {
-      padding: 12px 8px;
-      font-size: 1.15rem;
+      padding: 10px 8px;
+      font-size: 1.1rem;
       font-weight: 700;
       border-bottom: 1px solid rgba(164, 141, 205, 0.2);
     }
     tr:nth-child(even) { background-color: rgba(31, 29, 83, 0.5); }
     tr:nth-child(odd) { background-color: rgba(76, 35, 124, 0.4); }
 
-    /* 狀態標籤樣式 */
     .badge {
       display: inline-block;
       padding: 4px 12px;
       border-radius: 14px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 700;
     }
-    .badge-calling { background-color: #4ade80; color: #000; }  /* 面試中 (綠) */
-    .badge-done { background-color: #A48DCD; color: #000; }     /* 已面試 (灰紫) */
-    .badge-pass { background-color: #FB923C; color: #000; }     /* 已過號 (橘) */
+    .badge-calling { background-color: #4ade80; color: #000; }
+    .badge-done { background-color: #A48DCD; color: #000; }
+    .badge-pass { background-color: #FB923C; color: #000; }
 
     .no-data {
       text-align: center;
       padding: 30px 10px;
       color: #A48DCD;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
     }
   </style>
 </head>
@@ -124,15 +114,13 @@
   <div class="header">數位永續 薪在嘉義2026</div>
   <div class="header">面試進度</div>
 
-  <!-- 下拉選單區 -->
   <div class="select-card">
     <label class="select-label" for="companySelect">請選擇要查詢的廠商攤位：</label>
     <select id="companySelect" class="company-dropdown" onchange="onCompanyChange()">
-      <option value="">正在載入廠商名單...</option>
+      <option value="">正在連線同步進度...</option>
     </select>
   </div>
 
-  <!-- 當前攤位狀態摘要 -->
   <div class="summary-card" id="summaryArea" style="display:none;">
     <div class="summary-item">
       <div class="title">目前面試</div>
@@ -144,7 +132,6 @@
     </div>
   </div>
 
-  <!-- 求職者面試狀態列表 -->
   <div class="list-card">
     <table>
       <thead>
@@ -155,88 +142,82 @@
       </thead>
       <tbody id="candidateTableBody">
         <tr>
-          <td colspan="2" class="no-data">請先於上方選擇欲查詢的廠商</td>
+          <td colspan="2" class="no-data">正在載入最新面試名單...</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <script>
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby5vgpIwWBubdqxmTIa1qgnIb0cMSPfOrJT5rn3tmlU8oJLWI3Nz0zL6wKc5fegRk9Qow/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwplNgcQSFJw7DnhCQV-PD7Dp3Bg7jOOeSOdzY7jFpclw2WC8YJUkTwCGFoiE-b0_sp3A/exec';
     let allBoothsData = [];
+    let currentSelectedBooth = 0;
 
-    async function loadAllData() {
+    async function loadData() {
       try {
         const res = await fetch(`${GAS_API_URL}?t=${Date.now()}`);
         const data = await res.json();
         if (data && data.allBooths) {
           allBoothsData = data.allBooths;
-          initDropdown();
+          buildDropdown();
+          renderBooth(currentSelectedBooth);
         }
       } catch (err) {
         console.error("載入失敗:", err);
       }
     }
 
-    function initDropdown() {
+    function buildDropdown() {
       const select = document.getElementById('companySelect');
-      const savedIndex = select.selectedIndex > 0 ? select.value : 0;
-      select.innerHTML = '';
+      if (select.children.length === allBoothsData.length) return; // 已建立則不重複重繪
 
+      select.innerHTML = '';
       allBoothsData.forEach((b, idx) => {
         const opt = document.createElement('option');
         opt.value = idx;
         opt.textContent = `攤位 ${b.boothNo} ｜ ${b.company}`;
         select.appendChild(opt);
       });
-
-      select.value = savedIndex;
-      renderBoothList(select.value);
+      select.value = currentSelectedBooth;
     }
 
     function onCompanyChange() {
       const select = document.getElementById('companySelect');
-      renderBoothList(select.value);
+      currentSelectedBooth = select.value;
+      renderBooth(currentSelectedBooth);
     }
 
-    function renderBoothList(boothIndex) {
-      if (!allBoothsData[boothIndex]) return;
-      const booth = allBoothsData[boothIndex];
+    function renderBooth(idx) {
+      if (!allBoothsData[idx]) return;
+      const booth = allBoothsData[idx];
 
-      // 顯示上方摘要卡片
       document.getElementById('summaryArea').style.display = 'flex';
       document.getElementById('sumCurrent').textContent = booth.current || '準備中';
       document.getElementById('sumNext').textContent = booth.next || '無';
 
       const tbody = document.getElementById('candidateTableBody');
-      tbody.innerHTML = '';
+      const candidates = booth.candidates || [];
 
-      // 🌟 過濾：只留下「已面試」、「已過號」、「面試中」，排除「等候中」
-      const activeCandidates = (booth.candidates || []).filter(c => c.status !== '等候中');
-
-      if (activeCandidates.length === 0) {
+      if (candidates.length === 0) {
         tbody.innerHTML = `<tr><td colspan="2" class="no-data">目前尚無已叫號或已面試之紀錄</td></tr>`;
         return;
       }
 
-      activeCandidates.forEach(c => {
+      let html = '';
+      candidates.forEach(c => {
         let badgeHtml = '';
         if (c.status === '面試中') badgeHtml = `<span class="badge badge-calling">面試中</span>`;
         else if (c.status === '已面試') badgeHtml = `<span class="badge badge-done">已面試</span>`;
         else if (c.status === '已過號') badgeHtml = `<span class="badge badge-pass">已過號</span>`;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${c.name}</td>
-          <td>${badgeHtml}</td>
-        `;
-        tbody.appendChild(tr);
+        html += `<tr><td>${c.name}</td><td>${badgeHtml}</td></tr>`;
       });
+      tbody.innerHTML = html;
     }
 
-    // 每 15 秒自動刷新最新進度
-    setInterval(loadAllData, 15000);
-    document.addEventListener('DOMContentLoaded', loadAllData);
+    // 每 10 秒在背景悄悄更新快取
+    setInterval(loadData, 10000);
+    document.addEventListener('DOMContentLoaded', loadData);
   </script>
 </body>
 </html>
