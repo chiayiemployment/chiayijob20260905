@@ -7,53 +7,61 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
-    body {
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
       background-color: #1F1D53;
       color: #333;
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
-      position: relative;
     }
+
     .circuit-bg {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 50% 50%, #292468 0%, #15133C 100%);
       z-index: 0; pointer-events: none;
     }
+
+    /* 主看板外框（鎖定螢幕高寬，確保底部提示絕不溢出） */
     .board-container {
       position: relative;
       z-index: 10;
-      width: 98vw;
-      height: 98vh;
-      margin: auto;
+      width: 100vw;
+      height: 100vh;
       background: #FFFFFF;
-      border: 4px solid #003366;
-      border-radius: 8px;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 0 30px rgba(0,0,0,0.8);
+      justify-content: space-between;
     }
+
+    /* 頂部標題列（高度固定） */
     .header-bar {
+      flex-shrink: 0;
       background-color: #0F3A7A;
       color: #FFFFFF;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 24px;
-      font-size: 2rem;
+      padding: 8px 24px;
+      font-size: 1.85rem;
       font-weight: 900;
-      letter-spacing: 1px;
     }
-    .page-indicator { font-size: 1.3rem; font-weight: 700; color: #E0EFFF; }
+    .page-indicator { font-size: 1.25rem; font-weight: 700; color: #E0EFFF; }
+
+    /* 4x4 + 1 攤位卡片區（彈性填滿中間空間） */
     .grid-container {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0; /* 防止子元素撐破 */
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      grid-gap: 8px;
-      padding: 10px 14px;
+      grid-template-rows: repeat(4, 1fr);
+      grid-gap: 6px;
+      padding: 6px 12px;
       background-color: #EBF1F8;
     }
+
+    /* 攤位卡片 */
     .booth-card {
       background: #FFFFFF;
       border: 2px solid #8AB4E2;
@@ -61,40 +69,44 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     .booth-header {
       background-color: #16609C;
       color: #FFFFFF;
-      padding: 6px 10px;
-      font-size: 1.3rem;
+      padding: 3px 8px;
+      font-size: 1.15rem;
       font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
     }
     .booth-body {
-      padding: 6px 10px;
+      padding: 4px 8px;
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
+      justify-content: space-evenly;
     }
+
     .status-row {
       display: flex;
       align-items: center;
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      line-height: 1.3;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .status-current {
-      font-size: 1.8rem;
+      font-size: 1.55rem;
       font-weight: 900;
       color: #108A43;
-      margin-bottom: 2px;
     }
     .status-dot {
-      width: 14px; height: 14px;
+      width: 12px; height: 12px;
       border-radius: 50%;
       display: inline-block;
       margin-right: 6px;
@@ -102,18 +114,22 @@
     }
     .dot-green { background-color: #108A43; }
     .dot-orange { background-color: #E66A1F; }
-    .text-next { color: #333333; font-size: 1.25rem; }
-    .text-pass { color: #444444; font-size: 1.15rem; }
+    .text-next { color: #333333; font-size: 1.1rem; }
+    .text-pass { color: #555555; font-size: 1.05rem; }
+
+    /* 🌟 底部提示列（強制 flex-shrink: 0 確保 100% 呈現） */
     .footer-bar {
+      flex-shrink: 0;
       background-color: #F8FAFC;
       border-top: 2px solid #CBD5E1;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 6px 20px;
+      padding: 4px 18px;
+      height: 58px;
     }
     .footer-text {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 700;
       color: #333;
     }
@@ -123,7 +139,7 @@
       gap: 10px;
     }
     .footer-qr img {
-      width: 65px; height: 65px;
+      width: 48px; height: 48px;
       border: 1px solid #CCC;
       border-radius: 4px;
     }
@@ -139,16 +155,16 @@
     <div class="grid-container" id="gridContainer"></div>
     <div class="footer-bar">
       <div class="footer-text">
-        💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢個人面試進度！
+        💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢所有廠商進度！
       </div>
       <div class="footer-qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="進度查詢 QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/interview_system/liff_interview.html" alt="進度查詢 QR">
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyxgDzrjORBjoqfJgIBIpqkaWP_aD8GxmCgnNfv8-Xrgh_3T8gMmo41cWzIQjfbXx9A4A/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwnnmdsTZddL6qNrR6XajvgaggxlwvPUQxrhGifLoGRdkafG_4m-ETHprAOtQHYvRUziw/exec';
     let allPages = [];
     let currentPageIdx = 0;
     const FLIP_INTERVAL = 15000;
@@ -182,15 +198,15 @@
       (pageData.booths || []).forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
-        // 🌟 已移除業別，只呈現「攤位號碼」與「公司名稱」
+        // 🌟 移除 []，格式為：攤位 01 ｜ 新悦花園酒店
         card.innerHTML = `
-          <div class="booth-header">攤位：${b.boothNo} [${b.company}]</div>
+          <div class="booth-header">攤位 ${b.boothNo} ｜ ${b.company}</div>
           <div class="booth-body">
             <div class="status-row status-current">
               <span class="status-dot dot-green"></span>目前面試：${b.current}
             </div>
             <div class="status-row text-next">
-              <span style="width:14px; margin-right:6px; display:inline-block;"></span>下一位：${b.next}
+              <span style="width:12px; margin-right:6px; display:inline-block;"></span>下一位：${b.next}
             </div>
             <div class="status-row text-pass">
               <span class="status-dot dot-orange"></span>過 號：${b.pass}
@@ -208,7 +224,7 @@
       }
     }, FLIP_INTERVAL);
 
-    setInterval(fetchBoardData, 20000);
+    setInterval(fetchBoardData, 15000);
     document.addEventListener('DOMContentLoaded', fetchBoardData);
   </script>
 </body>
