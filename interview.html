@@ -154,26 +154,32 @@
         💡 溫馨提示：請隨時注意螢幕叫號，過號請洽「面試報到處」。您也可以掃描右方 QR Code，使用手機即時查詢所有廠商進度！
       </div>
       <div class="footer-qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/chiayi20260905-job-liff/liff_interview.html
-" alt="進度查詢 QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/chiayi20260905-job-liff/liff_interview.html" alt="進度查詢 QR">
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyggPcta4Orr9p6WYn_FQcLQwjFkV83dVVHVrR6J0c3mau3A8eVpQq9nwBG27KrRM4BaQ/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxRySlV7lWM3bQ5JeYDNTQFTqXhEv-YU-TAeBd-QvLxSlM76VwdEtHuO7x9ieuTPXYohw/exec';
     let allPages = [];
     let currentPageIdx = 0;
     const FLIP_INTERVAL = 15000;
     let passIntervalTimers = [];
 
+    // 🌟 每 5 秒在背景抓取最新資料
     async function fetchBoardData() {
       try {
         const res = await fetch(`${API_URL}?t=${Date.now()}`);
         const data = await res.json();
         if (data && data.pages && data.pages.length > 0) {
+          const isFirst = (allPages.length === 0);
           allPages = data.pages;
-          renderPage(currentPageIdx);
+          if (isFirst) {
+            renderPage(0);
+          } else {
+            // 原位即時刷新當前頁面的各個卡片文字，不重繪整個 DOM
+            liveUpdateCurrentPage();
+          }
         }
       } catch (e) {
         console.error("資料載入異常:", e);
@@ -206,10 +212,12 @@
           <div class="booth-header">攤位 ${b.boothNo} ｜ ${b.company}</div>
           <div class="booth-body">
             <div class="status-row status-current">
-              <span class="status-dot dot-green"></span>目前面試：${b.current}
+              <span class="status-dot dot-green"></span>
+              <span>目前面試：<span id="cur-txt-${b.boothNo}">${b.current}</span></span>
             </div>
             <div class="status-row text-next">
-              <span style="width:12px; margin-right:6px; display:inline-block;"></span>下一位：${b.next}
+              <span style="width:12px; margin-right:6px; display:inline-block;"></span>
+              <span>下一位：<span id="nxt-txt-${b.boothNo}">${b.next}</span></span>
             </div>
             <div class="status-row text-pass">
               <span class="status-dot dot-orange"></span>
@@ -220,8 +228,21 @@
         `;
         container.appendChild(card);
 
-        // 🌟 15 秒內等比輪播全部過號名單
         setupBoothPassCycle(b);
+      });
+    }
+
+    // 🌟 原位無感極速刷新（每 5 秒直接替換文字，完全不閃爍）
+    function liveUpdateCurrentPage() {
+      if (!allPages || allPages.length === 0) return;
+      const pageData = allPages[currentPageIdx];
+      if (!pageData) return;
+
+      (pageData.booths || []).forEach(b => {
+        const curEl = document.getElementById(`cur-txt-${b.boothNo}`);
+        const nxtEl = document.getElementById(`nxt-txt-${b.boothNo}`);
+        if (curEl && curEl.textContent !== b.current) curEl.textContent = b.current;
+        if (nxtEl && nxtEl.textContent !== b.next) nxtEl.textContent = b.next;
       });
     }
 
@@ -256,7 +277,6 @@
       showGroup(0);
 
       if (totalGroups > 1) {
-        // 🌟 15 秒除以組數，確保在 15 秒內精準播完一輪
         const intervalTime = Math.max(2500, Math.floor(15000 / totalGroups));
         const timerId = setInterval(() => {
           currentGroup = (currentGroup + 1) % totalGroups;
@@ -266,6 +286,7 @@
       }
     }
 
+    // 每 30 秒翻頁
     setInterval(() => {
       if (allPages.length > 1) {
         currentPageIdx = (currentPageIdx + 1) % allPages.length;
@@ -273,7 +294,8 @@
       }
     }, FLIP_INTERVAL);
 
-    setInterval(fetchBoardData, 15000);
+    // 🌟 每 5 秒後台抓一次最新資料並即時原位刷新
+    setInterval(fetchBoardData, 5000);
     document.addEventListener('DOMContentLoaded', fetchBoardData);
   </script>
 </body>
