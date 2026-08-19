@@ -98,9 +98,9 @@
       font-size: 0.9rem;
       font-weight: 700;
     }
-    .badge-calling { background-color: #4ade80; color: #000; }
-    .badge-done { background-color: #A48DCD; color: #000; }
-    .badge-pass { background-color: #FB923C; color: #000; }
+    .badge-calling { background-color: #4ade80; color: #000; }  /* 面試中 (綠) */
+    .badge-done { background-color: #A48DCD; color: #000; }     /* 已面試 (灰紫) */
+    .badge-pass { background-color: #FB923C; color: #000; }     /* 已過號 (橘) */
 
     .no-data {
       text-align: center;
@@ -117,7 +117,7 @@
   <div class="select-card">
     <label class="select-label" for="companySelect">請選擇要查詢的廠商攤位：</label>
     <select id="companySelect" class="company-dropdown" onchange="onCompanyChange()">
-      <option value="">正在連線同步進度...</option>
+      <option value="">載入中...</option>
     </select>
   </div>
 
@@ -141,44 +141,56 @@
         </tr>
       </thead>
       <tbody id="candidateTableBody">
-        <tr>
-          <td colspan="2" class="no-data">正在載入最新面試名單...</td>
-        </tr>
+        <tr><td colspan="2" class="no-data">載入中...</td></tr>
       </tbody>
     </table>
   </div>
 
   <script>
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwplNgcQSFJw7DnhCQV-PD7Dp3Bg7jOOeSOdzY7jFpclw2WC8YJUkTwCGFoiE-b0_sp3A/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbyggPcta4Orr9p6WYn_FQcLQwjFkV83dVVHVrR6J0c3mau3A8eVpQq9nwBG27KrRM4BaQ/exec';
+    const CACHE_LOCAL_KEY = 'CACHED_EXPO_BOOTHS_DATA';
     let allBoothsData = [];
     let currentSelectedBooth = 0;
 
-    async function loadData() {
+    function initFastLoad() {
+      const localCached = localStorage.getItem(CACHE_LOCAL_KEY);
+      if (localCached) {
+        try {
+          allBoothsData = JSON.parse(localCached);
+          buildDropdown();
+          renderBooth(currentSelectedBooth);
+        } catch(e){}
+      }
+      fetchFreshData();
+    }
+
+    async function fetchFreshData() {
       try {
         const res = await fetch(`${GAS_API_URL}?t=${Date.now()}`);
         const data = await res.json();
         if (data && data.allBooths) {
           allBoothsData = data.allBooths;
+          localStorage.setItem(CACHE_LOCAL_KEY, JSON.stringify(allBoothsData));
           buildDropdown();
           renderBooth(currentSelectedBooth);
         }
       } catch (err) {
-        console.error("載入失敗:", err);
+        console.error("更新失敗:", err);
       }
     }
 
     function buildDropdown() {
       const select = document.getElementById('companySelect');
-      if (select.children.length === allBoothsData.length) return; // 已建立則不重複重繪
-
+      const prevVal = select.value !== "" ? select.value : currentSelectedBooth;
       select.innerHTML = '';
+
       allBoothsData.forEach((b, idx) => {
         const opt = document.createElement('option');
         opt.value = idx;
         opt.textContent = `攤位 ${b.boothNo} ｜ ${b.company}`;
         select.appendChild(opt);
       });
-      select.value = currentSelectedBooth;
+      select.value = prevVal;
     }
 
     function onCompanyChange() {
@@ -199,25 +211,31 @@
       const candidates = booth.candidates || [];
 
       if (candidates.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" class="no-data">目前尚無已叫號或已面試之紀錄</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="2" class="no-data">該攤位目前尚無預約名單</td></tr>`;
         return;
       }
 
       let html = '';
       candidates.forEach(c => {
         let badgeHtml = '';
-        if (c.status === '面試中') badgeHtml = `<span class="badge badge-calling">面試中</span>`;
-        else if (c.status === '已面試') badgeHtml = `<span class="badge badge-done">已面試</span>`;
-        else if (c.status === '已過號') badgeHtml = `<span class="badge badge-pass">已過號</span>`;
+        if (c.status === '面試中') {
+          badgeHtml = `<span class="badge badge-calling">面試中</span>`;
+        } else if (c.status === '已面試') {
+          badgeHtml = `<span class="badge badge-done">已面試</span>`;
+        } else if (c.status === '已過號') {
+          badgeHtml = `<span class="badge badge-pass">已過號</span>`;
+        } else {
+          // 🌟 尚未叫號的求職者（如：葉○），狀態保持完全空白
+          badgeHtml = '';
+        }
 
         html += `<tr><td>${c.name}</td><td>${badgeHtml}</td></tr>`;
       });
       tbody.innerHTML = html;
     }
 
-    // 每 10 秒在背景悄悄更新快取
-    setInterval(loadData, 10000);
-    document.addEventListener('DOMContentLoaded', loadData);
+    setInterval(fetchFreshData, 10000);
+    document.addEventListener('DOMContentLoaded', initFastLoad);
   </script>
 </body>
 </html>
