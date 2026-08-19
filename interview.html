@@ -66,8 +66,8 @@
     .booth-header {
       background-color: #16609C;
       color: #FFFFFF;
-      padding: 5px 8px;
-      font-size: 1.25rem;
+      padding: 6px 10px;
+      font-size: 1.3rem;
       font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
@@ -148,7 +148,7 @@
   </div>
 
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyZD5-SArKxPPT12ZmVBPHOYWKhkndSdT0oCJXI6kgzHZmR20PIR2IZFgOXlky1CMGXcg/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyxgDzrjORBjoqfJgIBIpqkaWP_aD8GxmCgnNfv8-Xrgh_3T8gMmo41cWzIQjfbXx9A4A/exec';
     let allPages = [];
     let currentPageIdx = 0;
     const FLIP_INTERVAL = 15000;
@@ -182,8 +182,9 @@
       (pageData.booths || []).forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
+        // 🌟 已移除業別，只呈現「攤位號碼」與「公司名稱」
         card.innerHTML = `
-          <div class="booth-header">攤位：${b.boothNo} (${b.industry}) [${b.company}]</div>
+          <div class="booth-header">攤位：${b.boothNo} [${b.company}]</div>
           <div class="booth-body">
             <div class="status-row status-current">
               <span class="status-dot dot-green"></span>目前面試：${b.current}
