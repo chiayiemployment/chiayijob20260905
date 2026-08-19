@@ -145,7 +145,7 @@
   <div class="circuit-bg"></div>
   <div class="board-container">
     <div class="header-bar">
-      <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-17 攤位)</div>
+      <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-16 攤位)</div>
       <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 15 秒自動翻頁)</div>
     </div>
     <div class="grid-container" id="gridContainer"></div>
@@ -198,7 +198,7 @@
       clearPassTimers();
       
       const pageData = allPages[index];
-      const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
+      const rangeText = index === 0 ? "(01-16 攤位)" : "(17-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
       document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
 
