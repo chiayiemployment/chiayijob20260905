@@ -20,29 +20,36 @@
   </style>
 </head>
 <body>
-  <div class="header">面試進度查詢</div>
-  <div id="content" class="loading">正在載入您的面試進度...</div>
+  <div class="header">📋 我的預約面試進度</div>
+  <div id="content" class="loading">正在連線取得您的面試進度...</div>
 
   <script>
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzYnSBcziRpY_0TZeNENCna7tZICIDXhof3883w4dkPt-zqRFn32dKFXWUW74LNZC-5nA/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwEEUMil7Gzg_iSUqU-seXfkqPk-Hr3tC0z9DU6jw9CxBp_i2KtCPtqdwo7k-h-b1SLCA/exec';
 
     async function initLIFF() {
       try {
         await liff.init({ liffId: "2011155577-GFxY8qTy" });
-        if (!liff.isLoggedIn()) {
+
+        // 在 LINE 內部環境中取得 profile
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          loadUserAppointments(profile.userId);
+        } else {
+          // 若在外部瀏覽器打開則引導登入
           liff.login();
-          return;
         }
-        const profile = await liff.getProfile();
-        loadUserAppointments(profile.userId);
       } catch (err) {
-        document.getElementById('content').innerHTML = `載入失敗，請稍後再試。`;
+        console.error("LIFF Init Error:", err);
+        document.getElementById('content').innerHTML = `
+          <div class="card" style="text-align:center;">
+            <p>連線逾時，請從 LINE 聊天室重新點選開啟！</p>
+          </div>`;
       }
     }
 
     async function loadUserAppointments(userId) {
       try {
-        const res = await fetch(`${GAS_API_URL}?type=user&userId=${userId}`);
+        const res = await fetch(`${GAS_API_URL}?type=user&userId=${userId}&t=${Date.now()}`);
         const data = await res.json();
         const container = document.getElementById('content');
         container.className = '';
@@ -51,27 +58,28 @@
         if (!data.appointments || data.appointments.length === 0) {
           container.innerHTML = `
             <div class="card" style="text-align:center;">
-              <p>您目前尚未預約任何廠商面試喔！</p>
-              <p style="margin-top:10px; color:#28C4FF;">請點選選單「預約面試」前往登記面試攤位！😊</p>
+              <p style="font-size:1.1rem; font-weight:bold;">您目前尚未預約任何廠商面試喔！</p>
+              <p style="margin-top:10px; color:#28C4FF;">請點選 LINE 主選單「預約面試」前往登記面試攤位！😊</p>
             </div>`;
           return;
         }
 
         data.appointments.forEach(app => {
           let badgeClass = 'badge-wait';
-          if (app.myStatus === '叫號') badgeClass = 'badge-calling';
+          if (app.myStatus === '叫號' || app.myStatus === '已面試') badgeClass = 'badge-calling';
           if (app.myStatus.includes('過號')) badgeClass = 'badge-pass';
 
           container.innerHTML += `
             <div class="card">
-              <div class="booth-title">攤位 ${app.boothNo}｜${app.companyName}</div>
+              <div class="booth-title">攤位 ${app.boothNo}｜${app.companyName} (${app.industry})</div>
               <div class="info-row">目前現場面試：<strong style="color:#4ade80;">${app.currentInterviewing}</strong></div>
               <div class="info-row">您的面試狀態：<span class="status-badge ${badgeClass}">${app.myStatus}</span></div>
             </div>
           `;
         });
       } catch (e) {
-        document.getElementById('content').innerHTML = `查詢進度發生異常。`;
+        console.error("Fetch User Data Error:", e);
+        document.getElementById('content').innerHTML = `<div class="card" style="text-align:center;">查詢面試進度失敗，請稍後再試。</div>`;
       }
     }
 
