@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>數位永續 薪在嘉義2026 - 面試進度</title>
+  <title>面試進度查詢</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
@@ -103,15 +103,14 @@
     /* 狀態標籤樣式 */
     .badge {
       display: inline-block;
-      padding: 4px 10px;
+      padding: 4px 12px;
       border-radius: 14px;
       font-size: 0.95rem;
       font-weight: 700;
     }
-    .badge-calling { background-color: #4ade80; color: #000; }  /* 叫號中 (綠) */
+    .badge-calling { background-color: #4ade80; color: #000; }  /* 面試中 (綠) */
     .badge-done { background-color: #A48DCD; color: #000; }     /* 已面試 (灰紫) */
     .badge-pass { background-color: #FB923C; color: #000; }     /* 已過號 (橘) */
-    .badge-wait { background-color: #28C4FF; color: #000; }     /* 等候中 (藍) */
 
     .no-data {
       text-align: center;
@@ -163,7 +162,7 @@
   </div>
 
   <script>
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbwnnmdsTZddL6qNrR6XajvgaggxlwvPUQxrhGifLoGRdkafG_4m-ETHprAOtQHYvRUziw/exec';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycby5vgpIwWBubdqxmTIa1qgnIb0cMSPfOrJT5rn3tmlU8oJLWI3Nz0zL6wKc5fegRk9Qow/exec';
     let allBoothsData = [];
 
     async function loadAllData() {
@@ -191,7 +190,6 @@
         select.appendChild(opt);
       });
 
-      // 預設選取第一個攤位
       select.value = savedIndex;
       renderBoothList(select.value);
     }
@@ -205,7 +203,7 @@
       if (!allBoothsData[boothIndex]) return;
       const booth = allBoothsData[boothIndex];
 
-      // 顯示摘要卡片
+      // 顯示上方摘要卡片
       document.getElementById('summaryArea').style.display = 'flex';
       document.getElementById('sumCurrent').textContent = booth.current || '準備中';
       document.getElementById('sumNext').textContent = booth.next || '無';
@@ -213,17 +211,19 @@
       const tbody = document.getElementById('candidateTableBody');
       tbody.innerHTML = '';
 
-      if (!booth.candidates || booth.candidates.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" class="no-data">該攤位目前尚無預約名單</td></tr>`;
+      // 🌟 過濾：只留下「已面試」、「已過號」、「面試中」，排除「等候中」
+      const activeCandidates = (booth.candidates || []).filter(c => c.status !== '等候中');
+
+      if (activeCandidates.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" class="no-data">目前尚無已叫號或已面試之紀錄</td></tr>`;
         return;
       }
 
-      booth.candidates.forEach(c => {
+      activeCandidates.forEach(c => {
         let badgeHtml = '';
-        if (c.status === '叫號中') badgeHtml = `<span class="badge badge-calling">叫號中</span>`;
+        if (c.status === '面試中') badgeHtml = `<span class="badge badge-calling">面試中</span>`;
         else if (c.status === '已面試') badgeHtml = `<span class="badge badge-done">已面試</span>`;
         else if (c.status === '已過號') badgeHtml = `<span class="badge badge-pass">已過號</span>`;
-        else badgeHtml = `<span class="badge badge-wait">等候中</span>`;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
