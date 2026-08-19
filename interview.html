@@ -193,7 +193,7 @@
       const pageData = allPages[index];
       const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
-      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 30 秒自動翻頁)`;
+      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
 
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
