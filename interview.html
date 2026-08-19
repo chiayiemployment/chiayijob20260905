@@ -52,7 +52,7 @@
     /* 4x4 + 1 攤位卡片區（彈性填滿中間空間） */
     .grid-container {
       flex: 1 1 auto;
-      min-height: 0; /* 防止子元素撐破 */
+      min-height: 0;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       grid-template-rows: repeat(4, 1fr);
@@ -117,7 +117,7 @@
     .text-next { color: #333333; font-size: 1.1rem; }
     .text-pass { color: #555555; font-size: 1.05rem; }
 
-    /* 🌟 底部提示列（強制 flex-shrink: 0 確保 100% 呈現） */
+    /* 底部提示列 */
     .footer-bar {
       flex-shrink: 0;
       background-color: #F8FAFC;
@@ -150,7 +150,8 @@
   <div class="board-container">
     <div class="header-bar">
       <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-17 攤位)</div>
-      <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 15 秒自動翻頁)</div>
+      <!-- 🌟 文字已更新為 30 秒 -->
+      <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 30 秒自動翻頁)</div>
     </div>
     <div class="grid-container" id="gridContainer"></div>
     <div class="footer-bar">
@@ -158,7 +159,8 @@
         💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢所有廠商進度！
       </div>
       <div class="footer-qr">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/interview_system/liff_interview.html" alt="進度查詢 QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://joying830.github.io/chiayi20260905-job-liff/
+liff_interview.html" alt="進度查詢 QR">
       </div>
     </div>
   </div>
@@ -167,7 +169,9 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbwnnmdsTZddL6qNrR6XajvgaggxlwvPUQxrhGifLoGRdkafG_4m-ETHprAOtQHYvRUziw/exec';
     let allPages = [];
     let currentPageIdx = 0;
-    const FLIP_INTERVAL = 15000;
+    
+    // 🌟 翻頁時間已調整為 30000 毫秒（30 秒）
+    const FLIP_INTERVAL = 30000;
 
     async function fetchBoardData() {
       try {
@@ -190,7 +194,9 @@
       const pageData = allPages[index];
       const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
-      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
+      
+      // 🌟 翻頁標籤顯示為 30 秒
+      document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 30 秒自動翻頁)`;
 
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
@@ -198,7 +204,6 @@
       (pageData.booths || []).forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
-        // 🌟 移除 []，格式為：攤位 01 ｜ 新悦花園酒店
         card.innerHTML = `
           <div class="booth-header">攤位 ${b.boothNo} ｜ ${b.company}</div>
           <div class="booth-body">
@@ -217,6 +222,7 @@
       });
     }
 
+    // 每 30 秒自動翻頁
     setInterval(() => {
       if (allPages.length > 1) {
         currentPageIdx = (currentPageIdx + 1) % allPages.length;
@@ -224,7 +230,8 @@
       }
     }, FLIP_INTERVAL);
 
-    setInterval(fetchBoardData, 15000);
+    // 每 20 秒自後端同步一次最新資料
+    setInterval(fetchBoardData, 20000);
     document.addEventListener('DOMContentLoaded', fetchBoardData);
   </script>
 </body>
