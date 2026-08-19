@@ -16,15 +16,11 @@
       overflow: hidden;
       position: relative;
     }
-
-    /* 電路科技底圖 */
     .circuit-bg {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 50% 50%, #292468 0%, #15133C 100%);
       z-index: 0; pointer-events: none;
     }
-
-    /* 主看板容器 */
     .board-container {
       position: relative;
       z-index: 10;
@@ -38,8 +34,6 @@
       flex-direction: column;
       box-shadow: 0 0 30px rgba(0,0,0,0.8);
     }
-
-    /* 頂部深藍標題列 */
     .header-bar {
       background-color: #0F3A7A;
       color: #FFFFFF;
@@ -52,8 +46,6 @@
       letter-spacing: 1px;
     }
     .page-indicator { font-size: 1.3rem; font-weight: 700; color: #E0EFFF; }
-
-    /* 攤位 4x4 卡片網格 */
     .grid-container {
       flex: 1;
       display: grid;
@@ -62,8 +54,6 @@
       padding: 10px 14px;
       background-color: #EBF1F8;
     }
-
-    /* 攤位卡片樣式 */
     .booth-card {
       background: #FFFFFF;
       border: 2px solid #8AB4E2;
@@ -90,8 +80,6 @@
       flex-direction: column;
       justify-content: space-around;
     }
-
-    /* 面試狀態列 */
     .status-row {
       display: flex;
       align-items: center;
@@ -102,7 +90,7 @@
     .status-current {
       font-size: 1.8rem;
       font-weight: 900;
-      color: #108A43; /* 綠色大字 */
+      color: #108A43;
       margin-bottom: 2px;
     }
     .status-dot {
@@ -114,11 +102,8 @@
     }
     .dot-green { background-color: #108A43; }
     .dot-orange { background-color: #E66A1F; }
-
     .text-next { color: #333333; font-size: 1.25rem; }
     .text-pass { color: #444444; font-size: 1.15rem; }
-
-    /* 底部提示與 QR Code 列 */
     .footer-bar {
       background-color: #F8FAFC;
       border-top: 2px solid #CBD5E1;
@@ -146,20 +131,12 @@
 </head>
 <body>
   <div class="circuit-bg"></div>
-
   <div class="board-container">
-    <!-- 頂部標題 -->
     <div class="header-bar">
       <div id="boardTitle">數位永續 薪在嘉義2026 - 面試進度 (01-17 攤位)</div>
       <div class="page-indicator" id="pageIndicator">頁次：1/2 (每 15 秒自動翻頁)</div>
     </div>
-
-    <!-- 4x4 攤位卡片區 -->
-    <div class="grid-container" id="gridContainer">
-      <!-- 卡片由 JS 動態填入 -->
-    </div>
-
-    <!-- 底部資訊與 QR Code -->
+    <div class="grid-container" id="gridContainer"></div>
     <div class="footer-bar">
       <div class="footer-text">
         💡 溫馨提示：請隨時注意螢幕叫號，過號請洽現場服務台。您也可以掃描右方 QR Code，使用手機即時查詢個人面試進度！
@@ -171,31 +148,30 @@
   </div>
 
   <script>
-    // 🌟 請在此填入您的 GAS Web App 部署網址（結尾加 ?type=json）
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzYnSBcziRpY_0TZeNENCna7tZICIDXhof3883w4dkPt-zqRFn32dKFXWUW74LNZC-5nA/exec';
-
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwEEUMil7Gzg_iSUqU-seXfkqPk-Hr3tC0z9DU6jw9CxBp_i2KtCPtqdwo7k-h-b1SLCA/exec';
     let allPages = [];
     let currentPageIdx = 0;
-    const FLIP_INTERVAL = 15000; // 每 15 秒自動翻頁
+    const FLIP_INTERVAL = 15000;
 
     async function fetchBoardData() {
       try {
-        const res = await fetch(`${API_URL}?t=${Date.now()}`);[cite: 5]
+        const res = await fetch(`${API_URL}?t=${Date.now()}`);
         const data = await res.json();
-        if (data && data.pages) {
+        if (data && data.pages && data.pages.length > 0) {
           allPages = data.pages;
           renderPage(currentPageIdx);
         }
       } catch (e) {
-        console.error("資料載入失敗:", e);
+        console.error("資料載入異常:", e);
       }
     }
 
     function renderPage(index) {
       if (!allPages || allPages.length === 0) return;
+      if (index >= allPages.length) index = 0;
+      currentPageIdx = index;
+      
       const pageData = allPages[index];
-
-      // 更新頂部標題與頁次
       const rangeText = index === 0 ? "(01-17 攤位)" : "(18-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
       document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
@@ -203,8 +179,7 @@
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
 
-      // 渲染攤位卡片
-      pageData.booths.forEach(b => {
+      (pageData.booths || []).forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
         card.innerHTML = `
@@ -214,7 +189,7 @@
               <span class="status-dot dot-green"></span>目前面試：${b.current}
             </div>
             <div class="status-row text-next">
-              <span style="width:14px; margin-right:6px;"></span>下一位：${b.next}
+              <span style="width:14px; margin-right:6px; display:inline-block;"></span>下一位：${b.next}
             </div>
             <div class="status-row text-pass">
               <span class="status-dot dot-orange"></span>過 號：${b.pass}
@@ -225,7 +200,6 @@
       });
     }
 
-    // 定時翻頁與更新[cite: 5]
     setInterval(() => {
       if (allPages.length > 1) {
         currentPageIdx = (currentPageIdx + 1) % allPages.length;
@@ -233,11 +207,8 @@
       }
     }, FLIP_INTERVAL);
 
-    // 每 20 秒自後台抓取最新資料[cite: 5]
     setInterval(fetchBoardData, 20000);
-
-    // 首次載入[cite: 5]
-    fetchBoardData();
+    document.addEventListener('DOMContentLoaded', fetchBoardData);
   </script>
 </body>
 </html>
