@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>面試進度查詢</title>
+  <!-- 🌟 1. 引入 LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
@@ -15,16 +17,22 @@
       display: flex;
       flex-direction: column;
     }
-
     .header {
       font-size: 1.55rem;
+      font-weight: 900;
+      text-align: center;
+      color: #28C4FF;
+      margin-bottom: 4px;
+      text-shadow: 0 2px 8px rgba(40, 196, 255, 0.4);
+    }
+    .header-sub {
+      font-size: 1.4rem;
       font-weight: 900;
       text-align: center;
       color: #28C4FF;
       margin-bottom: 14px;
       text-shadow: 0 2px 8px rgba(40, 196, 255, 0.4);
     }
-
     .select-card {
       background: rgba(76, 35, 124, 0.85);
       border: 1px solid rgba(164, 141, 205, 0.4);
@@ -50,7 +58,6 @@
       color: #FFFFFF;
       outline: none;
     }
-
     .summary-card {
       background: linear-gradient(135deg, #16609C, #4C237C);
       border-radius: 12px;
@@ -65,7 +72,6 @@
     .summary-item .name { font-size: 1.3rem; font-weight: 900; }
     .name-current { color: #4ade80; }
     .name-next { color: #EDEEF7; }
-
     .list-card {
       background: rgba(76, 35, 124, 0.7);
       border-radius: 12px;
@@ -90,7 +96,6 @@
     }
     tr:nth-child(even) { background-color: rgba(31, 29, 83, 0.5); }
     tr:nth-child(odd) { background-color: rgba(76, 35, 124, 0.4); }
-
     .badge {
       display: inline-block;
       padding: 4px 12px;
@@ -101,7 +106,6 @@
     .badge-calling { background-color: #4ade80; color: #000; }  /* 面試中 (綠) */
     .badge-done { background-color: #A48DCD; color: #000; }     /* 已面試 (灰紫) */
     .badge-pass { background-color: #FB923C; color: #000; }     /* 已過號 (橘) */
-
     .no-data {
       text-align: center;
       padding: 30px 10px;
@@ -111,33 +115,33 @@
   </style>
 </head>
 <body>
-  <div class="header">數位永續 薪在嘉義2026</div>
-  <div class="header">面試進度</div>
+  <div class="header">數位永續 薪在嘉義2026</div>[cite: 12]
+  <div class="header-sub">面試進度</div>[cite: 12]
 
   <div class="select-card">
-    <label class="select-label" for="companySelect">請選擇要查詢的廠商攤位：</label>
+    <label class="select-label" for="companySelect">請選擇要查詢的廠商攤位：</label>[cite: 12]
     <select id="companySelect" class="company-dropdown" onchange="onCompanyChange()">
       <option value="">載入中...</option>
     </select>
   </div>
 
-  <div class="summary-card" id="summaryArea" style="display:none;">
+  <div class="summary-card" id="summaryArea" style="display:none;">[cite: 12]
     <div class="summary-item">
-      <div class="title">目前面試</div>
-      <div class="name name-current" id="sumCurrent">—</div>
+      <div class="title">目前面試</div>[cite: 12]
+      <div class="name name-current" id="sumCurrent">—</div>[cite: 12]
     </div>
     <div class="summary-item">
-      <div class="title">下一位</div>
-      <div class="name name-next" id="sumNext">—</div>
+      <div class="title">下一位</div>[cite: 12]
+      <div class="name name-next" id="sumNext">—</div>[cite: 12]
     </div>
   </div>
 
-  <div class="list-card">
+  <div class="list-card">[cite: 12]
     <table>
       <thead>
         <tr>
           <th>姓 名</th>
-          <th>面試情形</th>
+          <th>面試情形</th>[cite: 12]
         </tr>
       </thead>
       <tbody id="candidateTableBody">
@@ -147,95 +151,106 @@
   </div>
 
   <script>
-    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxRySlV7lWM3bQ5JeYDNTQFTqXhEv-YU-TAeBd-QvLxSlM76VwdEtHuO7x9ieuTPXYohw/exec';
-    const CACHE_LOCAL_KEY = 'CACHED_EXPO_BOOTHS_DATA';
-    let allBoothsData = [];
-    let currentSelectedBooth = 0;
+    // 🌟 請填入您的 LIFF ID
+    const LIFF_ID = "2011155577-QRgdOBXH";
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxRySlV7lWM3bQ5JeYDNTQFTqXhEv-YU-TAeBd-QvLxSlM76VwdEtHuO7x9ieuTPXYohw/exec';[cite: 12]
+    const CACHE_LOCAL_KEY = 'CACHED_EXPO_BOOTHS_DATA';[cite: 12]
+    let allBoothsData = [];[cite: 12]
+    let currentSelectedBooth = 0;[cite: 12]
 
-    function initFastLoad() {
-      const localCached = localStorage.getItem(CACHE_LOCAL_KEY);
+    // 🌟 2. LIFF 初始化與載入
+    async function initApp() {
+      // 快速載入快取，提升使用者開啟體驗
+      const localCached = localStorage.getItem(CACHE_LOCAL_KEY);[cite: 12]
       if (localCached) {
         try {
-          allBoothsData = JSON.parse(localCached);
-          buildDropdown();
-          renderBooth(currentSelectedBooth);
+          allBoothsData = JSON.parse(localCached);[cite: 12]
+          buildDropdown();[cite: 12]
+          renderBooth(currentSelectedBooth);[cite: 12]
         } catch(e){}
       }
-      fetchFreshData();
+
+      // 初始化 LIFF
+      try {
+        await liff.init({ liffId: LIFF_ID });[cite: 9]
+      } catch (err) {
+        console.warn("LIFF 初始化異常 (若在外部瀏覽器開啟屬正常):", err);
+      }
+
+      // 抓取最新資料
+      fetchFreshData();[cite: 12]
     }
 
     async function fetchFreshData() {
       try {
-        const res = await fetch(`${GAS_API_URL}?t=${Date.now()}`);
-        const data = await res.json();
+        const res = await fetch(`${GAS_API_URL}?t=${Date.now()}`);[cite: 12]
+        const data = await res.json();[cite: 12]
         if (data && data.allBooths) {
-          allBoothsData = data.allBooths;
-          localStorage.setItem(CACHE_LOCAL_KEY, JSON.stringify(allBoothsData));
-          buildDropdown();
-          renderBooth(currentSelectedBooth);
+          allBoothsData = data.allBooths;[cite: 12]
+          localStorage.setItem(CACHE_LOCAL_KEY, JSON.stringify(allBoothsData));[cite: 12]
+          buildDropdown();[cite: 12]
+          renderBooth(currentSelectedBooth);[cite: 12]
         }
       } catch (err) {
-        console.error("更新失敗:", err);
+        console.error("更新失敗:", err);[cite: 12]
       }
     }
 
     function buildDropdown() {
-      const select = document.getElementById('companySelect');
-      const prevVal = select.value !== "" ? select.value : currentSelectedBooth;
-      select.innerHTML = '';
-
+      const select = document.getElementById('companySelect');[cite: 12]
+      const prevVal = select.value !== "" ? select.value : currentSelectedBooth;[cite: 12]
+      select.innerHTML = '';[cite: 12]
       allBoothsData.forEach((b, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = `攤位 ${b.boothNo} ｜ ${b.company}`;
-        select.appendChild(opt);
+        const opt = document.createElement('option');[cite: 12]
+        opt.value = idx;[cite: 12]
+        opt.textContent = `攤位 ${b.boothNo} ｜ ${b.company}`;[cite: 12]
+        select.appendChild(opt);[cite: 12]
       });
-      select.value = prevVal;
+      select.value = prevVal;[cite: 12]
     }
 
     function onCompanyChange() {
-      const select = document.getElementById('companySelect');
-      currentSelectedBooth = select.value;
-      renderBooth(currentSelectedBooth);
+      const select = document.getElementById('companySelect');[cite: 12]
+      currentSelectedBooth = select.value;[cite: 12]
+      renderBooth(currentSelectedBooth);[cite: 12]
     }
 
     function renderBooth(idx) {
-      if (!allBoothsData[idx]) return;
-      const booth = allBoothsData[idx];
+      if (!allBoothsData[idx]) return;[cite: 12]
+      const booth = allBoothsData[idx];[cite: 12]
 
-      document.getElementById('summaryArea').style.display = 'flex';
-      document.getElementById('sumCurrent').textContent = booth.current || '準備中';
-      document.getElementById('sumNext').textContent = booth.next || '無';
+      document.getElementById('summaryArea').style.display = 'flex';[cite: 12]
+      document.getElementById('sumCurrent').textContent = booth.current || '準備中';[cite: 12]
+      document.getElementById('sumNext').textContent = booth.next || '無';[cite: 12]
 
-      const tbody = document.getElementById('candidateTableBody');
-      const candidates = booth.candidates || [];
+      const tbody = document.getElementById('candidateTableBody');[cite: 12]
+      const candidates = booth.candidates || [];[cite: 12]
 
       if (candidates.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="2" class="no-data">該攤位目前尚無預約名單</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="2" class="no-data">該攤位目前尚無預約名單</td></tr>`;[cite: 12]
         return;
       }
 
-      let html = '';
+      let html = '';[cite: 12]
       candidates.forEach(c => {
-        let badgeHtml = '';
+        let badgeHtml = '';[cite: 12]
         if (c.status === '面試中') {
-          badgeHtml = `<span class="badge badge-calling">面試中</span>`;
+          badgeHtml = `<span class="badge badge-calling">面試中</span>`;[cite: 12]
         } else if (c.status === '已面試') {
-          badgeHtml = `<span class="badge badge-done">已面試</span>`;
+          badgeHtml = `<span class="badge badge-done">已面試</span>`;[cite: 12]
         } else if (c.status === '已過號') {
-          badgeHtml = `<span class="badge badge-pass">已過號</span>`;
+          badgeHtml = `<span class="badge badge-pass">已過號</span>`;[cite: 12]
         } else {
-          // 🌟 尚未叫號的求職者（如：葉○），狀態保持完全空白
-          badgeHtml = '';
+          badgeHtml = '';[cite: 12]
         }
-
-        html += `<tr><td>${c.name}</td><td>${badgeHtml}</td></tr>`;
+        html += `<tr><td>${c.name}</td><td>${badgeHtml}</td></tr>`;[cite: 12]
       });
-      tbody.innerHTML = html;
+      tbody.innerHTML = html;[cite: 12]
     }
 
-    setInterval(fetchFreshData, 10000);
-    document.addEventListener('DOMContentLoaded', initFastLoad);
+    // 每 10 秒自動同步最新進度[cite: 12]
+    setInterval(fetchFreshData, 10000);[cite: 12]
+    document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
 </html>
