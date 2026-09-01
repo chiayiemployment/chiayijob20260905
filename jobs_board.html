@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>廠商職缺總表 - 數位永續 薪在嘉義2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #1A1A40;
+      color: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 科技電路背景 */
+    .bg-gradient {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: radial-gradient(circle at 50% 30%, #2A266A 0%, #111033 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* 主看板容器 */
+    .board-wrapper {
+      position: relative;
+      z-index: 10;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px 16px 8px 16px;
+    }
+
+    /* 頂部標題與 Logo 列 */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 54px;
+      margin-bottom: 6px;
+      flex-shrink: 0;
+    }
+    .logo-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-badge {
+      background: linear-gradient(135deg, #0284C7, #0369A1);
+      border: 2px solid #38BDF8;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #FFF;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+    .main-title {
+      font-size: 2.3rem;
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #FFFFFF;
+      text-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+      text-align: center;
+      flex: 1;
+    }
+    .page-indicator {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #38BDF8;
+      background: rgba(15, 23, 42, 0.7);
+      padding: 4px 14px;
+      border-radius: 20px;
+      border: 1px solid #38BDF8;
+    }
+
+    /* 三欄排版主區域 */
+    .columns-container {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 10px;
+      overflow: hidden;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* 公司職缺表格卡片 */
+    .company-table-card {
+      background: #FFFFFF;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1.5px solid #000;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .company-header {
+      background-color: #FACC15; /* 經典亮黃色 */
+      color: #000000;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 900;
+      padding: 3px 6px;
+      border-bottom: 1.5px solid #000;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #000;
+      font-size: 0.8rem;
+    }
+    th {
+      background-color: #FACC15;
+      color: #000;
+      font-weight: 900;
+      border: 1px solid #000;
+      padding: 2px 2px;
+      text-align: center;
+    }
+    td {
+      border: 1px solid #000;
+      padding: 2px 4px;
+      font-weight: 700;
+      text-align: center;
+      background: #FFFFFF;
+      line-height: 1.2;
+    }
+    td.title-cell {
+      text-align: left;
+      padding-left: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+    td.salary-cell {
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    /* 右下角資訊卡片 (在最後一欄底部呈現) */
+    .footer-info-card {
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid #38BDF8;
+      border-radius: 6px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: #FFF;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+    .flow-title {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #FACC15;
+      margin-bottom: 4px;
+    }
+    .flow-steps {
+      font-size: 0.8rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: #E2E8F0;
+    }
+    .flow-time {
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #38BDF8;
+      margin-top: 4px;
+    }
+    .qr-box {
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .qr-box img {
+      width: 68px;
+      height: 68px;
+      border: 2px solid #FFF;
+      border-radius: 4px;
+      display: block;
+    }
+    .qr-label {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #38BDF8;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-gradient"></div>
+  <div class="board-wrapper">
+    <!-- 頂部列 -->
+    <div class="header-bar">
+      <div class="logo-area">
+        <div class="logo-badge">數位永續 薪在嘉義2026</div>
+      </div>
+      <div class="main-title">廠 商 職 缺 總 表</div>
+      <div class="page-indicator" id="pageIndicator">頁次：1/5 (每 20 秒翻頁)</div>
+    </div>
+
+    <!-- 三欄職缺卡片區域 -->
+    <div class="columns-container" id="columnsContainer"></div>
+  </div>
+
+  <script>
+    // 🌟 Excel 完整 36 家廠商與 212 筆職缺數據
+    const COMPANIES_DATA = [
+      {"company":"01新悦花園酒店","jobs":[{"no":"1-1","title":"櫃台服務員","headcount":"2","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-2","title":"禮賓員","headcount":"3","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-3","title":"外場儲備幹部","headcount":"2","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-4","title":"主任","headcount":"2","education":"不拘","salary":"月薪38,000-43,000元"},{"no":"1-5","title":"中餐廳領檯出納","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-6","title":"訂席專員","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-7","title":"內場助手","headcount":"3","education":"不拘","salary":"月薪32,000元以上"}]},
+      {"company":"02耐斯廣場","jobs":[{"no":"2-1","title":"餐飲部訂席專員/領檯","headcount":"1","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-2","title":"餐飲部正職員工","headcount":"4","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-3","title":"行銷企劃課員/助理課員","headcount":"1","education":"大學以上","salary":"月薪30,000元以上"},{"no":"2-4","title":"顧客服務課員","headcount":"1","education":"專科以上","salary":"月薪30,000元以上"},{"no":"2-5","title":"西式廚師","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-6","title":"中西日式廚師助理","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"}]},
+      {"company":"03嘉義福容voco酒店","jobs":[{"no":"3-1","title":"客務接待員","headcount":"3","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"3-2","title":"訂房員","headcount":"1","education":"高中職以上","salary":"月薪30,000-34,000元"},{"no":"3-3","title":"餐飲外場服務員","headcount":"3","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"3-4","title":"中/西/日廚師","headcount":"4","education":"高中職以上","salary":"月薪32,000-40,000元"}]},
+      {"company":"04煙波城行阿里山北門館","jobs":[{"no":"4-1","title":"櫃檯接待員","headcount":"3","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-2","title":"餐飲服務員","headcount":"3","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-3","title":"廚房助理","headcount":"1","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-4","title":"房務員","headcount":"4","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-5","title":"工務員","headcount":"1","education":"高中職以上","salary":"月薪33,000-37,000元"},{"no":"4-6","title":"餐飲幹部","headcount":"1","education":"專科以上","salary":"月薪36,000-43,000元"}]},
+      {"company":"05全聯福利中心","jobs":[{"no":"5-1","title":"兼職門市計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-205元"},{"no":"5-2","title":"兼職生鮮計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-205元"},{"no":"5-3","title":"全職門市助理營業員","headcount":"5","education":"高中職以上","salary":"月薪29,400-30,400元"}]},
+      {"company":"06統一超商 7-11","jobs":[{"no":"6-1","title":"早/晚班兼職人員","headcount":"3","education":"不拘","salary":"時薪190-195元"},{"no":"6-2","title":"儲備幹部/店長","headcount":"3","education":"高中職以上","salary":"月薪33,000-38,000元"}]},
+      {"company":"07康是美","jobs":[{"no":"7-1","title":"正職人員","headcount":"2","education":"專科以上","salary":"月薪30,000元以上"},{"no":"7-2","title":"兼職計時人員","headcount":"2","education":"高中職以上","salary":"時薪190元以上"}]},
+      {"company":"08美商德盟全球凱展","jobs":[{"no":"8-1","title":"好市多展售專員(嘉義店)","headcount":"2","education":"不拘","salary":"時薪210元以上"}]},
+      {"company":"09群品餐飲｜石二鍋","jobs":[{"no":"9-1","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"9-2","title":"大廳/廚房計時人員","headcount":"3","education":"高中職以上","salary":"時薪190-210元"}]},
+      {"company":"10雲雀國際｜涮乃葉｜古拉爵","jobs":[{"no":"10-1","title":"內/外場服務人員(嘉義遠百)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-2","title":"內/外場計時社員(嘉義遠百)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-3","title":"內/外場服務人員(耐斯廣場)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-4","title":"內/外場計時社員(耐斯廣場)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-5","title":"內/外場服務人員(嘉義秀泰)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-6","title":"內/外場計時社員(嘉義秀泰)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-7","title":"內/外場儲備幹部(嘉義區)","headcount":"3","education":"高中職以上","salary":"月薪36,000-45,000元"}]},
+      {"company":"11A王品餐飲｜和牛涮","jobs":[{"no":"11A-1","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"11A-2","title":"大廳/廚房計時人員","headcount":"3","education":"高中職以上","salary":"時薪190-210元"}]},
+      {"company":"11B王品餐飲｜青花驕","jobs":[{"no":"11B-1","title":"大廳正職/廚藝正職人員","headcount":"2","education":"高中職以上","salary":"月薪35,800-39,300元"},{"no":"11B-2","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"11B-3","title":"大廳計時/廚藝計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-210元"},{"no":"11B-4","title":"大夜計時人員","headcount":"1","education":"高中職以上","salary":"時薪245-255元"}]},
+      {"company":"12築間餐飲集團","jobs":[{"no":"12-1","title":"外場服務人員/儲備幹部","headcount":"2","education":"不拘","salary":"月薪35,000-45,000元"},{"no":"12-2","title":"外場計時服務員","headcount":"5","education":"不拘","salary":"時薪190-215元"},{"no":"12-3","title":"廚房正職人員/儲備幹部","headcount":"2","education":"不拘","salary":"月薪35,000-45,000元"},{"no":"12-4","title":"廚房計時服務員","headcount":"5","education":"不拘","salary":"時薪190-215元"}]},
+      {"company":"13饗食天堂｜開飯川食堂｜饗泰多","jobs":[{"no":"13-1","title":"外場服務人員(耐斯廣場)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-2","title":"內場廚藝人員(耐斯廣場)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-3","title":"外場計時人員(耐斯廣場)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-4","title":"內場計時人員(耐斯廣場)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-5","title":"外場服務人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-6","title":"內場廚藝人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-7","title":"外場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-8","title":"內場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-9","title":"外場正職服務員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-10","title":"內場正職廚藝員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"}]},
+      {"company":"14麥當勞","jobs":[{"no":"14-1","title":"餐廳襄理","headcount":"2","education":"專科以上","salary":"月薪42,400元以上"},{"no":"14-2","title":"計時服務員","headcount":"5","education":"不拘","salary":"時薪190元以上"}]},
+      {"company":"15全日大林冷鏈｜奧爾瑪行銷","jobs":[{"no":"15-1","title":"倉儲員","headcount":"5","education":"不拘","salary":"月薪32,500-41,000元"},{"no":"15-2","title":"理貨員","headcount":"3","education":"不拘","salary":"月薪29,000-41,000元"},{"no":"15-3","title":"裁切作業員/食品品保員","headcount":"3","education":"不拘","salary":"月薪30,000-40,000元"}]},
+      {"company":"16辰泰國際","jobs":[{"no":"16-1","title":"食品技師/研發專員","headcount":"1","education":"大學以上","salary":"月薪30,000-45,000元"},{"no":"16-2","title":"包裝作業員/倉儲人員","headcount":"4","education":"不拘","salary":"月薪29,000-35,000元"},{"no":"16-3","title":"品檢人員/電商助理","headcount":"2","education":"高中職以上","salary":"月薪29,000-33,000元"},{"no":"16-4","title":"美編設計人員","headcount":"1","education":"專科以上","salary":"月薪30,000-36,000元"},{"no":"16-5","title":"國內/外業務專員","headcount":"2","education":"專科以上","salary":"月薪32,000-45,000元"},{"no":"16-6","title":"兼職包裝人員","headcount":"2","education":"不拘","salary":"時薪190元以上"},{"no":"16-7","title":"儲備幹部","headcount":"1","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"16-8","title":"司機隨車助手","headcount":"1","education":"不拘","salary":"月薪30,000-35,000元"},{"no":"16-9","title":"會計人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"16-10","title":"採購助理","headcount":"1","education":"專科以上","salary":"月薪29,000-32,000元"},{"no":"16-11","title":"機台操作技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-38,000元"}]},
+      {"company":"17勤億蛋品科技","jobs":[{"no":"17-1","title":"產線作業員/洗選作業員","headcount":"3","education":"不拘","salary":"月薪30,000-34,000元"},{"no":"17-2","title":"品管檢驗專員","headcount":"1","education":"專科以上","salary":"月薪32,000-36,000元"},{"no":"17-3","title":"倉管人員/堆高機人員","headcount":"2","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"17-4","title":"生管助理","headcount":"1","education":"專科以上","salary":"月薪30,000-33,000元"}]},
+      {"company":"18亞護開發","jobs":[{"no":"18-1","title":"品管檢驗人員","headcount":"1","education":"高中職以上","salary":"月薪30,500-33,000元"},{"no":"18-2","title":"繪圖專員","headcount":"1","education":"高中職以上","salary":"月薪33,690元以上"},{"no":"18-3","title":"作業人員(夜班)","headcount":"5","education":"不拘","salary":"月薪33,000-36,000元"},{"no":"18-4","title":"會計人員","headcount":"1","education":"專科以上","salary":"月薪30,190元以上"},{"no":"18-5","title":"外銷器材業務專員","headcount":"1","education":"專科以上","salary":"月薪35,790元以上"},{"no":"18-6","title":"作業人員(日班)","headcount":"5","education":"不拘","salary":"月薪30,190元以上"},{"no":"18-7","title":"倉管人員","headcount":"1","education":"高中職以上","salary":"月薪30,500-33,000元"},{"no":"18-8","title":"現場生管助理","headcount":"1","education":"專科以上","salary":"月薪30,190元以上"}]},
+      {"company":"19佐登妮絲","jobs":[{"no":"19-1","title":"餐飲服務生","headcount":"1","education":"高中職以上","salary":"月薪32,000元以上"},{"no":"19-2","title":"餐廳廚師/廚房領班","headcount":"2","education":"高中職以上","salary":"月薪32,000-40,000元"},{"no":"19-3","title":"美麗教練/銷售人員","headcount":"5","education":"高中職以上","salary":"月薪30,000-35,000元"},{"no":"19-4","title":"採購人員/生管專員","headcount":"2","education":"專科以上","salary":"月薪29,000-35,000元"},{"no":"19-5","title":"廠務機電人員","headcount":"1","education":"專科以上","salary":"月薪40,000元以上"},{"no":"19-6","title":"品保實驗室/工程師","headcount":"2","education":"大學以上","salary":"月薪29,000-42,000元"},{"no":"19-7","title":"調製製程工程師","headcount":"1","education":"專科以上","salary":"月薪30,000-40,000元"},{"no":"19-8","title":"理貨人員/包裝人員","headcount":"5","education":"高中職以上","salary":"月薪29,000-36,000元"},{"no":"19-9","title":"化妝品研發專員","headcount":"1","education":"大學以上","salary":"月薪35,000-48,000元"},{"no":"19-10","title":"總務專員","headcount":"1","education":"專科以上","salary":"月薪30,000-36,000元"},{"no":"19-11","title":"清潔維護人員","headcount":"2","education":"不拘","salary":"月薪29,000元以上"},{"no":"19-12","title":"兼職假日導覽員","headcount":"2","education":"高中職以上","salary":"時薪190元以上"},{"no":"19-13","title":"兼職假日餐飲服務員","headcount":"3","education":"不拘","salary":"時薪190元以上"},{"no":"19-14","title":"兼職假日理貨員","headcount":"3","education":"不拘","salary":"時薪190元以上"},{"no":"19-15","title":"客服專員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"}]},
+      {"company":"20嘉楠食品","jobs":[{"no":"20-1","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪32,000-38,000元"},{"no":"20-2","title":"倉管人員","headcount":"1","education":"高中職以上","salary":"月薪31,000-36,000元"},{"no":"20-3","title":"包裝作業員/產線人員","headcount":"4","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"20-4","title":"工務維修人員","headcount":"1","education":"高中職以上","salary":"月薪35,000-45,000元"},{"no":"20-5","title":"食品研發人員","headcount":"1","education":"大學以上","salary":"月薪33,000-40,000元"},{"no":"20-6","title":"大車司機(職業大貨車)","headcount":"1","education":"不拘","salary":"月薪38,000-50,000元"},{"no":"20-7","title":"小貨車司機","headcount":"1","education":"不拘","salary":"月薪32,000-40,000元"},{"no":"20-8","title":"兼職時薪包裝員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]},
+      {"company":"21上銀科技","jobs":[{"no":"21-1","title":"職業安全衛生管理師/員","headcount":"1","education":"專科以上","salary":"月薪40,000元以上"},{"no":"21-2","title":"機械/電器設備維修工程師","headcount":"2","education":"專科以上","salary":"月薪40,000元以上"},{"no":"21-3","title":"產線人員(機械加工/組裝)","headcount":"5","education":"高中職以上","salary":"月薪40,000元以上"},{"no":"21-4","title":"品保檢驗員","headcount":"2","education":"高中職以上","salary":"月薪34,000-38,000元"},{"no":"21-5","title":"倉儲管理員","headcount":"2","education":"高中職以上","salary":"月薪33,000-37,000元"}]},
+      {"company":"22矽品精密","jobs":[{"no":"22-1","title":"助理工程師(設備/製程/測試)","headcount":"5","education":"專科以上","salary":"月薪32,000-42,000元"},{"no":"22-2","title":"技術助理(日/夜班)","headcount":"8","education":"高中職以上","salary":"月薪30,000-41,000元"},{"no":"22-3","title":"廠務工程師(水電/氣體)","headcount":"2","education":"大學以上","salary":"月薪38,000-48,000元"},{"no":"22-4","title":"品管技術員","headcount":"3","education":"高中職以上","salary":"月薪30,000-38,000元"},{"no":"22-5","title":"製造組長/儲備幹部","headcount":"2","education":"大學以上","salary":"月薪38,000-50,000元"},{"no":"22-6","title":"倉儲作業員","headcount":"2","education":"高中職以上","salary":"月薪29,500-35,000元"},{"no":"22-7","title":"工安管理師","headcount":"1","education":"大學以上","salary":"月薪36,000-45,000元"}]},
+      {"company":"23晶成材料","jobs":[{"no":"23-1","title":"行政助理管理師","headcount":"1","education":"專科以上","salary":"月薪30,000-40,000元"},{"no":"23-2","title":"廠務電力消防工程師","headcount":"2","education":"高中職以上","salary":"月薪40,000元以上"},{"no":"23-3","title":"廠務水處理工程師","headcount":"2","education":"高中職以上","salary":"月薪40,000元以上"},{"no":"23-4","title":"廠務空調工程師","headcount":"2","education":"高中職以上","salary":"月薪40,000元以上"},{"no":"23-5","title":"設備工程師","headcount":"2","education":"專科以上","salary":"月薪40,000元以上"},{"no":"23-6","title":"環安衛工程師","headcount":"1","education":"專科以上","salary":"月薪40,000元以上"},{"no":"23-7","title":"長晶輪班工程師","headcount":"10","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"23-8","title":"長晶工程師","headcount":"5","education":"專科以上","salary":"月薪40,000元以上"},{"no":"23-9","title":"品檢員(輪班)","headcount":"4","education":"高中職以上","salary":"月薪31,000-38,000元"},{"no":"23-10","title":"切片輪班工程師","headcount":"5","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"23-11","title":"研磨拋光工程師","headcount":"3","education":"專科以上","salary":"月薪36,000-44,000元"},{"no":"23-12","title":"倉管管理師","headcount":"1","education":"專科以上","salary":"月薪32,000-38,000元"},{"no":"23-13","title":"生管管理師","headcount":"1","education":"大學以上","salary":"月薪35,000-45,000元"},{"no":"23-14","title":"洗淨操作員","headcount":"3","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"23-15","title":"品保工程師","headcount":"2","education":"大學以上","salary":"月薪36,000-46,000元"}]},
+      {"company":"24鍵祥資訊","jobs":[{"no":"24-1","title":"網路工程師","headcount":"2","education":"專科以上","salary":"月薪32,000-45,000元"},{"no":"24-2","title":"系統維護工程師","headcount":"2","education":"專科以上","salary":"月薪32,000-42,000元"},{"no":"24-3","title":"業務專員","headcount":"1","education":"高中職以上","salary":"月薪30,000-40,000元"},{"no":"24-4","title":"行政助理","headcount":"1","education":"高中職以上","salary":"月薪29,000-32,000元"},{"no":"24-5","title":"弱電工程技術員","headcount":"2","education":"不拘","salary":"月薪30,000-40,000元"}]},
+      {"company":"25福隆玻璃纖維","jobs":[{"no":"25-1","title":"操作技術員(四班二輪)","headcount":"10","education":"高中職以上","salary":"月薪34,000-43,000元"},{"no":"25-2","title":"品檢員(四班二輪)","headcount":"4","education":"高中職以上","salary":"月薪33,000-41,000元"},{"no":"25-3","title":"維修技術員(日班/輪班)","headcount":"2","education":"高中職以上","salary":"月薪33,000-42,000元"},{"no":"25-4","title":"堆高機作業員/倉管","headcount":"2","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"25-5","title":"環安工程師","headcount":"1","education":"大學以上","salary":"月薪38,000-48,000元"},{"no":"25-6","title":"電機工程師","headcount":"1","education":"大學以上","salary":"月薪38,000-48,000元"},{"no":"25-7","title":"製程工程師","headcount":"2","education":"大學以上","salary":"月薪38,000-50,000元"},{"no":"25-8","title":"品保工程師","headcount":"1","education":"大學以上","salary":"月薪36,000-45,000元"},{"no":"25-9","title":"採購管理師","headcount":"1","education":"大學以上","salary":"月薪33,000-40,000元"},{"no":"25-10","title":"廠務水電工程師","headcount":"1","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"25-11","title":"生管專員","headcount":"1","education":"專科以上","salary":"月薪32,000-38,000元"},{"no":"25-12","title":"化驗室檢驗員","headcount":"1","education":"專科以上","salary":"月薪32,000-37,000元"},{"no":"25-13","title":"日班包裝員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"}]},
+      {"company":"26科定企業","jobs":[{"no":"26-1","title":"現場生產技術員","headcount":"5","education":"不拘","salary":"月薪32,000-42,000元"},{"no":"26-2","title":"品管檢驗專員","headcount":"2","education":"高中職以上","salary":"月薪31,000-38,000元"},{"no":"26-3","title":"倉管/堆高機人員","headcount":"2","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"26-4","title":"機械設備維修員","headcount":"1","education":"高中職以上","salary":"月薪35,000-45,000元"},{"no":"26-5","title":"廠務助理","headcount":"1","education":"專科以上","salary":"月薪30,000-34,000元"},{"no":"26-6","title":"包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"}]},
+      {"company":"27遠東機械集團","jobs":[{"no":"27-1","title":"CNC車床/銑床操作員","headcount":"4","education":"高中職以上","salary":"月薪32,000-45,000元"},{"no":"27-2","title":"組裝裝配技術員","headcount":"3","education":"高中職以上","salary":"月薪32,000-42,000元"},{"no":"27-3","title":"品管檢驗人員","headcount":"2","education":"高中職以上","salary":"月薪31,000-38,000元"},{"no":"27-4","title":"機械設計工程師","headcount":"2","education":"大學以上","salary":"月薪38,000-52,000元"},{"no":"27-5","title":"電控工程師(PLC)","headcount":"2","education":"專科以上","salary":"月薪38,000-50,000元"},{"no":"27-6","title":"生管助理專員","headcount":"1","education":"專科以上","salary":"月薪30,000-36,000元"},{"no":"27-7","title":"倉管人員","headcount":"1","education":"高中職以上","salary":"月薪30,000-35,000元"}]},
+      {"company":"28啟坤科技｜打貓廚房","jobs":[{"no":"28-1","title":"生產作業員(沖壓/拋光)","headcount":"4","education":"不拘","salary":"月薪30,000-40,000元"},{"no":"28-2","title":"品管檢驗人員","headcount":"2","education":"高中職以上","salary":"月薪30,000-35,000元"},{"no":"28-3","title":"生管專員","headcount":"1","education":"專科以上","salary":"月薪32,000-38,000元"},{"no":"28-4","title":"打貓廚房-內場廚助","headcount":"2","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"28-5","title":"打貓廚房-外場服務員","headcount":"2","education":"高中職以上","salary":"月薪32,000-36,000元"},{"no":"28-6","title":"打貓廚房-兼職人員","headcount":"3","education":"不拘","salary":"時薪190-210元"},{"no":"28-7","title":"設備維修技術員","headcount":"1","education":"高中職以上","salary":"月薪34,000-42,000元"}]},
+      {"company":"29和大工業","jobs":[{"no":"29-1","title":"CNC車齒/研齒技術員","headcount":"5","education":"高中職以上","salary":"月薪33,000-45,000元"},{"no":"29-2","title":"品檢技術員(輪班)","headcount":"3","education":"高中職以上","salary":"月薪32,000-42,000元"},{"no":"29-3","title":"熱處理技術員","headcount":"3","education":"高中職以上","salary":"月薪35,000-48,000元"},{"no":"29-4","title":"設備保全工程師","headcount":"2","education":"專科以上","salary":"月薪36,000-48,000元"},{"no":"29-5","title":"生管管理師","headcount":"1","education":"大學以上","salary":"月薪33,000-42,000元"}]},
+      {"company":"30新鈺生技","jobs":[{"no":"30-1","title":"化學合成工程師","headcount":"2","education":"大學以上","salary":"月薪36,000-48,000元"},{"no":"30-2","title":"生產操作技術員(輪班)","headcount":"4","education":"高中職以上","salary":"月薪33,000-43,000元"},{"no":"30-3","title":"品保分析人員(HPLC/GC)","headcount":"2","education":"大學以上","salary":"月薪34,000-42,000元"},{"no":"30-4","title":"廠務環工專員","headcount":"1","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"30-5","title":"倉管人員","headcount":"1","education":"高中職以上","salary":"月薪30,000-35,000元"},{"no":"30-6","title":"工安專員","headcount":"1","education":"專科以上","salary":"月薪35,000-45,000元"}]},
+      {"company":"31耐斯企業","jobs":[{"no":"31-1","title":"研發人員(研發部)","headcount":"1","education":"大學以上","salary":"月薪30,000-40,000元"},{"no":"31-2","title":"研究員(法規部)","headcount":"1","education":"大學以上","salary":"月薪30,000-35,000元"},{"no":"31-3","title":"品保人員","headcount":"1","education":"大學以上","salary":"月薪29,000-35,000元"},{"no":"31-4","title":"人資專員","headcount":"1","education":"大學以上","salary":"月薪35,000元以上"},{"no":"31-5","title":"會計人員","headcount":"2","education":"大學以上","salary":"月薪30,000-35,000元"},{"no":"31-6","title":"機電維修員/包裝員","headcount":"8","education":"高中職以上","salary":"月薪29,000-35,000元"}]},
+      {"company":"32愛之味","jobs":[{"no":"32-1","title":"夜班品管員/倉管員","headcount":"4","education":"高中職以上","salary":"月薪33,000-36,000元"},{"no":"32-2","title":"夜班堆高機作業員","headcount":"3","education":"高中職以上","salary":"月薪30,500元以上"},{"no":"32-3","title":"儲運部門行政助理","headcount":"1","education":"大學以上","salary":"月薪29,000-32,000元"},{"no":"32-4","title":"夜班電腦操作員/盤點員","headcount":"3","education":"大學以上","salary":"月薪33,000-42,000元"},{"no":"32-5","title":"輪班技術員/作業員","headcount":"12","education":"高中職以上","salary":"月薪29,000元以上"},{"no":"32-6","title":"醬菜廠儲備幹部/品保","headcount":"3","education":"大學以上","salary":"月薪29,000-36,000元"}]},
+      {"company":"33台灣第一生技","jobs":[{"no":"33-1","title":"生產技術員(輪班)","headcount":"5","education":"高中職以上","salary":"月薪31,000-40,000元"},{"no":"33-2","title":"品檢人員(輪班)","headcount":"2","education":"專科以上","salary":"月薪31,000-38,000元"},{"no":"33-3","title":"廠務維修工程師","headcount":"2","education":"專科以上","salary":"月薪35,000-46,000元"},{"no":"33-4","title":"堆高機倉管員","headcount":"2","education":"高中職以上","salary":"月薪31,000-36,000元"},{"no":"33-5","title":"生管助理","headcount":"1","education":"專科以上","salary":"月薪30,000-34,000元"}]},
+      {"company":"34光泉牧場","jobs":[{"no":"34-1","title":"生產操作技術員(四班二輪)","headcount":"6","education":"高中職以上","salary":"月薪34,000-43,000元"},{"no":"34-2","title":"品管檢驗人員(四班二輪)","headcount":"2","education":"專科以上","salary":"月薪33,000-41,000元"},{"no":"34-3","title":"工務機電人員","headcount":"2","education":"高中職以上","salary":"月薪35,000-45,000元"},{"no":"34-4","title":"堆高機倉儲人員","headcount":"2","education":"高中職以上","salary":"月薪32,000-38,000元"}]},
+      {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
+    ];
+
+    // 🌟 將 36 家廠商分組為 5 頁（每頁約 7-8 家，排滿 3 欄）
+    const PAGES_CONFIG = [
+      [0, 1, 2, 3, 4, 5, 6, 7],      // 頁 1: 01~08
+      [8, 9, 10, 11, 12, 13, 14, 15],// 頁 2: 09~16
+      [16, 17, 18, 19, 20],          // 頁 3: 17~21 (職缺較多)
+      [21, 22, 23, 24, 25, 26],      // 頁 4: 22~27 (晶成/福隆)
+      [27, 28, 29, 30, 31, 32, 33, 34, 35] // 頁 5: 28~35
+    ];
+
+    let currentPageIdx = 0;
+    const FLIP_INTERVAL = 20000; // 每 20 秒翻頁
+
+    function renderCompanyTable(comp) {
+      let rowsHtml = '';
+      comp.jobs.forEach(j => {
+        rowsHtml += `
+          <tr>
+            <td style="width:14%;">${j.no}</td>
+            <td class="title-cell" style="width:36%;">${j.title}</td>
+            <td style="width:10%;">${j.headcount}</td>
+            <td style="width:16%;">${j.education}</td>
+            <td class="salary-cell" style="width:24%;">${j.salary}</td>
+          </tr>
+        `;
+      });
+
+      return `
+        <div class="company-table-card">
+          <div class="company-header">${comp.company}</div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:14%;">編號</th>
+                <th style="width:36%;">職缺名稱</th>
+                <th style="width:10%;">人數</th>
+                <th style="width:16%;">學歷</th>
+                <th style="width:24%;">薪資</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function getFooterCardHtml() {
+      return `
+        <div class="footer-info-card">
+          <div>
+            <div class="flow-title">📌 應徵面試流程</div>
+            <div class="flow-steps">
+              1. 掃描右方 QR Code 加入 LINE@<br>
+              2. 點選「線上履歷」快速填寫<br>
+              3. 點選「預約面試」登記攤位<br>
+              4. 留意 LINE 叫號與大螢幕進度
+            </div>
+            <div class="flow-time">⏰ 活動時間：09:30 - 12:30</div>
+          </div>
+          <div class="qr-box">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
+            <div class="qr-label">掃描預約面試</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPage(pageIdx) {
+      currentPageIdx = pageIdx;
+      const compIndices = PAGES_CONFIG[pageIdx];
+      const container = document.getElementById('columnsContainer');
+      container.innerHTML = '';
+
+      document.getElementById('pageIndicator').textContent = `頁次：${pageIdx + 1}/${PAGES_CONFIG.length} (每 20 秒自動翻頁)`;
+
+      // 將該頁廠商平均分配到 3 欄
+      const colCompanies = [[], [], []];
+      compIndices.forEach((cIdx, i) => {
+        colCompanies[i % 3].push(COMPANIES_DATA[cIdx]);
+      });
+
+      // 渲染 3 欄
+      for (let c = 0; c < 3; c++) {
+        const colDiv = document.createElement('div');
+        colDiv.className = 'column';
+
+        let colHtml = '';
+        colCompanies[c].forEach(comp => {
+          colHtml += renderCompanyTable(comp);
+        });
+
+        // 在第 3 欄底部加上流程提醒與 QR Code
+        if (c === 2) {
+          colHtml += getFooterCardHtml();
+        }
+
+        colDiv.innerHTML = colHtml;
+        container.appendChild(colDiv);
+      }
+    }
+
+    // 自動定時輪播
+    setInterval(() => {
+      currentPageIdx = (currentPageIdx + 1) % PAGES_CONFIG.length;
+      renderPage(currentPageIdx);
+    }, FLIP_INTERVAL);
+
+    // 啟動首頁
+    document.addEventListener('DOMContentLoaded', () => {
+      renderPage(0);
+    });
+  </script>
+</body>
+</html>
