@@ -11,22 +11,21 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background-color: #1A1A40;
+      background-color: #161538;
       color: #FFFFFF;
       display: flex;
       flex-direction: column;
     }
 
-    /* 科技電路背景 */
     .bg-gradient {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: radial-gradient(circle at 50% 30%, #2A266A 0%, #111033 100%);
+      background: radial-gradient(circle at 50% 30%, #2A246B 0%, #0F0E2A 100%);
       z-index: 0;
       pointer-events: none;
     }
 
-    /* 主看板容器 */
+    /* 主看板容器：鎖定滿版高度 */
     .board-wrapper {
       position: relative;
       z-index: 10;
@@ -35,171 +34,185 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 10px 16px 8px 16px;
+      padding: 12px 18px;
     }
 
-    /* 頂部標題與 Logo 列 */
+    /* 頂部列 */
     .header-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 54px;
-      margin-bottom: 6px;
+      height: 56px;
+      margin-bottom: 8px;
       flex-shrink: 0;
-    }
-    .logo-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
     }
     .logo-badge {
       background: linear-gradient(135deg, #0284C7, #0369A1);
       border: 2px solid #38BDF8;
       border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 1.1rem;
+      padding: 6px 14px;
+      font-size: 1.25rem;
       font-weight: 900;
-      letter-spacing: 1px;
       color: #FFF;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
     }
     .main-title {
-      font-size: 2.3rem;
+      font-size: 2.5rem;
       font-weight: 900;
-      letter-spacing: 4px;
+      letter-spacing: 6px;
       color: #FFFFFF;
-      text-shadow: 0 0 15px rgba(56, 189, 248, 0.6);
+      text-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
       text-align: center;
       flex: 1;
     }
     .page-indicator {
-      font-size: 1.15rem;
+      font-size: 1.25rem;
       font-weight: 800;
       color: #38BDF8;
-      background: rgba(15, 23, 42, 0.7);
-      padding: 4px 14px;
+      background: rgba(15, 23, 42, 0.85);
+      padding: 6px 16px;
       border-radius: 20px;
       border: 1px solid #38BDF8;
     }
 
-    /* 三欄排版主區域 */
+    /* 三欄排版區域：彈性撐滿剩餘高度 */
     .columns-container {
       flex: 1 1 auto;
       min-height: 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      grid-gap: 10px;
+      grid-gap: 12px;
       overflow: hidden;
     }
 
     .column {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
+      height: 100%;
+      min-height: 0;
     }
 
-    /* 公司職缺表格卡片 */
+    /* 公司職缺表格卡片：自動彈性撐滿垂直空間 */
     .company-table-card {
       background: #FFFFFF;
       border-radius: 4px;
       overflow: hidden;
-      border: 1.5px solid #000;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 2px solid #000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
     }
     .company-header {
-      background-color: #FACC15; /* 經典亮黃色 */
+      background-color: #FACC15;
       color: #000000;
       text-align: center;
-      font-size: 0.95rem;
+      font-size: 1.15rem;
       font-weight: 900;
-      padding: 3px 6px;
-      border-bottom: 1.5px solid #000;
+      padding: 5px 6px;
+      border-bottom: 2px solid #000;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      flex-shrink: 0;
     }
+
+    .table-box {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
     table {
       width: 100%;
+      height: 100%;
       border-collapse: collapse;
       color: #000;
-      font-size: 0.8rem;
     }
     th {
       background-color: #FACC15;
       color: #000;
       font-weight: 900;
+      font-size: 0.95rem;
       border: 1px solid #000;
-      padding: 2px 2px;
+      padding: 4px 2px;
       text-align: center;
+      height: 28px;
     }
     td {
       border: 1px solid #000;
-      padding: 2px 4px;
-      font-weight: 700;
+      padding: 4px 6px;
+      font-weight: 800;
       text-align: center;
       background: #FFFFFF;
-      line-height: 1.2;
+      font-size: 0.98rem;
     }
     td.title-cell {
       text-align: left;
-      padding-left: 5px;
+      padding-left: 8px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 130px;
+      max-width: 140px;
+      font-size: 1.02rem;
     }
     td.salary-cell {
-      font-size: 0.76rem;
+      font-size: 0.95rem;
       white-space: nowrap;
+      color: #B91C1C; /* 暗紅加粗顯眼 */
     }
 
-    /* 右下角資訊卡片 (在最後一欄底部呈現) */
+    /* 右下角說明卡片 */
     .footer-info-card {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.92);
       border: 2px solid #38BDF8;
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 10px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 12px;
       color: #FFF;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+      flex-shrink: 0;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
     }
     .flow-title {
-      font-size: 0.95rem;
+      font-size: 1.1rem;
       font-weight: 900;
       color: #FACC15;
       margin-bottom: 4px;
     }
     .flow-steps {
-      font-size: 0.8rem;
+      font-size: 0.9rem;
       font-weight: 700;
-      line-height: 1.35;
+      line-height: 1.4;
       color: #E2E8F0;
     }
     .flow-time {
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       font-weight: 900;
       color: #38BDF8;
-      margin-top: 4px;
+      margin-top: 5px;
     }
     .qr-box {
       text-align: center;
       flex-shrink: 0;
     }
     .qr-box img {
-      width: 68px;
-      height: 68px;
+      width: 78px;
+      height: 78px;
       border: 2px solid #FFF;
       border-radius: 4px;
       display: block;
     }
     .qr-label {
-      font-size: 0.72rem;
+      font-size: 0.8rem;
       font-weight: 800;
       color: #38BDF8;
-      margin-top: 2px;
+      margin-top: 3px;
     }
   </style>
 </head>
@@ -220,7 +233,6 @@
   </div>
 
   <script>
-    // 🌟 Excel 完整 36 家廠商與 212 筆職缺數據
     const COMPANIES_DATA = [
       {"company":"01新悦花園酒店","jobs":[{"no":"1-1","title":"櫃台服務員","headcount":"2","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-2","title":"禮賓員","headcount":"3","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-3","title":"外場儲備幹部","headcount":"2","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-4","title":"主任","headcount":"2","education":"不拘","salary":"月薪38,000-43,000元"},{"no":"1-5","title":"中餐廳領檯出納","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-6","title":"訂席專員","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-7","title":"內場助手","headcount":"3","education":"不拘","salary":"月薪32,000元以上"}]},
       {"company":"02耐斯廣場","jobs":[{"no":"2-1","title":"餐飲部訂席專員/領檯","headcount":"1","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-2","title":"餐飲部正職員工","headcount":"4","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-3","title":"行銷企劃課員/助理課員","headcount":"1","education":"大學以上","salary":"月薪30,000元以上"},{"no":"2-4","title":"顧客服務課員","headcount":"1","education":"專科以上","salary":"月薪30,000元以上"},{"no":"2-5","title":"西式廚師","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-6","title":"中西日式廚師助理","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"}]},
@@ -260,25 +272,25 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
-    // 🌟 將 36 家廠商分組為 5 頁（每頁約 7-8 家，排滿 3 欄）
+    // 精確均衡分組配置
     const PAGES_CONFIG = [
-      [0, 1, 2, 3, 4, 5, 6, 7],      // 頁 1: 01~08
-      [8, 9, 10, 11, 12, 13, 14, 15],// 頁 2: 09~16
-      [16, 17, 18, 19, 20],          // 頁 3: 17~21 (職缺較多)
-      [21, 22, 23, 24, 25, 26],      // 頁 4: 22~27 (晶成/福隆)
-      [27, 28, 29, 30, 31, 32, 33, 34, 35] // 頁 5: 28~35
+      [0, 1, 2, 3, 4, 5, 6, 7],      // 頁 1
+      [8, 9, 10, 11, 12, 13, 14, 15],// 頁 2
+      [16, 17, 18, 19, 20],          // 頁 3 (含佐登妮絲等大廠)
+      [21, 22, 23, 24, 25, 26],      // 頁 4 (含晶成/福隆等大廠)
+      [27, 28, 29, 30, 31, 32, 33, 34, 35] // 頁 5
     ];
 
     let currentPageIdx = 0;
-    const FLIP_INTERVAL = 20000; // 每 20 秒翻頁
+    const FLIP_INTERVAL = 20000;
 
     function renderCompanyTable(comp) {
       let rowsHtml = '';
       comp.jobs.forEach(j => {
         rowsHtml += `
           <tr>
-            <td style="width:14%;">${j.no}</td>
-            <td class="title-cell" style="width:36%;">${j.title}</td>
+            <td style="width:13%;">${j.no}</td>
+            <td class="title-cell" style="width:37%;">${j.title}</td>
             <td style="width:10%;">${j.headcount}</td>
             <td style="width:16%;">${j.education}</td>
             <td class="salary-cell" style="width:24%;">${j.salary}</td>
@@ -289,20 +301,22 @@
       return `
         <div class="company-table-card">
           <div class="company-header">${comp.company}</div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width:14%;">編號</th>
-                <th style="width:36%;">職缺名稱</th>
-                <th style="width:10%;">人數</th>
-                <th style="width:16%;">學歷</th>
-                <th style="width:24%;">薪資</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
+          <div class="table-box">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:13%;">編號</th>
+                  <th style="width:37%;">職缺名稱</th>
+                  <th style="width:10%;">人數</th>
+                  <th style="width:16%;">學歷</th>
+                  <th style="width:24%;">薪資</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
         </div>
       `;
     }
@@ -336,10 +350,21 @@
 
       document.getElementById('pageIndicator').textContent = `頁次：${pageIdx + 1}/${PAGES_CONFIG.length} (每 20 秒自動翻頁)`;
 
-      // 將該頁廠商平均分配到 3 欄
+      // 依職缺筆數智慧平均分配至 3 欄
       const colCompanies = [[], [], []];
-      compIndices.forEach((cIdx, i) => {
-        colCompanies[i % 3].push(COMPANIES_DATA[cIdx]);
+      const colWeights = [0, 0, 0];
+
+      compIndices.forEach(cIdx => {
+        const comp = COMPANIES_DATA[cIdx];
+        const weight = comp.jobs.length + 2; // 表頭加權
+
+        // 挑選當前最空的那一欄放入
+        let minCol = 0;
+        if (colWeights[1] < colWeights[minCol]) minCol = 1;
+        if (colWeights[2] < colWeights[minCol]) minCol = 2;
+
+        colCompanies[minCol].push(comp);
+        colWeights[minCol] += weight;
       });
 
       // 渲染 3 欄
@@ -352,7 +377,7 @@
           colHtml += renderCompanyTable(comp);
         });
 
-        // 在第 3 欄底部加上流程提醒與 QR Code
+        // 流程提醒固定附在第 3 欄底端
         if (c === 2) {
           colHtml += getFooterCardHtml();
         }
@@ -362,13 +387,11 @@
       }
     }
 
-    // 自動定時輪播
     setInterval(() => {
       currentPageIdx = (currentPageIdx + 1) % PAGES_CONFIG.length;
       renderPage(currentPageIdx);
     }, FLIP_INTERVAL);
 
-    // 啟動首頁
     document.addEventListener('DOMContentLoaded', () => {
       renderPage(0);
     });
