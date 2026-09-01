@@ -76,7 +76,7 @@
       border: 1px solid #38BDF8;
     }
 
-    /* 三欄排版區域 */
+    /* 三欄排版區域：鎖定剩餘空間 */
     .columns-container {
       flex: 1 1 auto;
       min-height: 0;
@@ -95,7 +95,7 @@
       min-height: 0;
     }
 
-    /* 公司表格卡片 */
+    /* 🌟 公司表格卡片：自動等比垂直撐滿該欄高度 */
     .company-table-card {
       background: #FFFFFF;
       border-radius: 4px;
@@ -104,7 +104,8 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
       display: flex;
       flex-direction: column;
-      flex-shrink: 0;
+      flex: 1 1 0; /* 關鍵：強制卡片均分高度 */
+      min-height: 0;
     }
     .company-header {
       background-color: #FFF100;
@@ -112,7 +113,7 @@
       text-align: center;
       font-size: 0.95rem;
       font-weight: 900;
-      padding: 2.5px 4px;
+      padding: 2px 4px;
       border-bottom: 1.5px solid #000;
       white-space: nowrap;
       overflow: hidden;
@@ -120,8 +121,16 @@
       flex-shrink: 0;
     }
 
+    .table-container {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
     table {
       width: 100%;
+      height: 100%; /* 關鍵：表格高度 100% 填滿卡片 */
       border-collapse: collapse;
       color: #000;
       table-layout: fixed;
@@ -135,16 +144,18 @@
       padding: 2px 1px;
       text-align: center;
       white-space: nowrap;
+      height: 24px;
     }
     td {
       border: 1px solid #000;
-      padding: 2.5px 2px;
+      padding: 1px 2px;
       font-weight: 800;
       text-align: center;
       background: #FFFFFF;
       white-space: nowrap;
       overflow: hidden;
-      line-height: 1.25;
+      line-height: 1.2;
+      vertical-align: middle;
     }
     td.no-cell {
       font-size: 0.8rem;
@@ -165,13 +176,13 @@
       font-size: clamp(0.68rem, 0.76vw, 0.82rem);
       color: #B91C1C;
       text-align: center;
-      padding: 2px 1px;
+      padding: 1px 1px;
     }
 
-    /* 🌟 底部常駐流程橫條列 */
+    /* 底部常駐流程橫條列 */
     .footer-bar {
       flex-shrink: 0;
-      height: 62px;
+      height: 60px;
       background: rgba(15, 23, 42, 0.95);
       border: 2px solid #38BDF8;
       border-radius: 6px;
@@ -193,7 +204,7 @@
       display: flex;
       align-items: center;
       flex-wrap: nowrap;
-      font-size: 0.98rem;
+      font-size: 0.96rem;
       font-weight: 800;
       color: #E2E8F0;
       gap: 6px;
@@ -201,7 +212,7 @@
     .flow-tag {
       color: #FFF100;
       font-weight: 900;
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       flex-shrink: 0;
     }
     .flow-step-highlight {
@@ -209,7 +220,7 @@
       font-weight: 900;
     }
     .flow-step-calling {
-      color: #4ADE80; /* 亮綠色強調叫號 */
+      color: #4ADE80;
       font-weight: 900;
       background: rgba(74, 222, 128, 0.15);
       padding: 1px 6px;
@@ -217,14 +228,14 @@
       border: 1px solid #4ADE80;
     }
     .flow-arrow {
-      color: #FACC15;
+      color: #FFF100;
       font-weight: 900;
       margin: 0 2px;
     }
     .time-line {
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       font-weight: 900;
-      color: #FACC15;
+      color: #FFF100;
       letter-spacing: 0.5px;
     }
 
@@ -235,8 +246,8 @@
       flex-shrink: 0;
     }
     .footer-qr-area img {
-      width: 52px;
-      height: 52px;
+      width: 50px;
+      height: 50px;
       border: 1.5px solid #FFF;
       border-radius: 4px;
       display: block;
@@ -274,7 +285,7 @@
     <!-- 三欄職缺卡片區域 -->
     <div class="columns-container" id="columnsContainer"></div>
 
-    <!-- 🌟 最下方常駐橫向流程列 -->
+    <!-- 最下方常駐橫向流程列 -->
     <div class="footer-bar">
       <div class="footer-left">
         <div class="flow-line">
@@ -341,7 +352,7 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
-    // 🌟 4 頁均衡配置（各欄等長對齊）
+    // 🌟 全域精準平衡分組（19|19|15 等高分配）
     const PAGES_COLUMNS_CONFIG = [
       // 頁 1 (01 ~ 12)
       [
@@ -351,9 +362,9 @@
       ],
       // 頁 2 (13 ~ 19)
       [
-        [13, 14, 15],       // Col 1: 13饗食(10) + 14麥當勞(2) + 15全日(3) = 15 列
-        [16, 17, 18],       // Col 2: 16辰泰(11) + 17勤億(4) + 18亞護(8) = 23 列
-        [19]                // Col 3: 19佐登妮絲(15) = 15 列
+        [13, 14, 15, 17],   // Col 1: 13饗食(10) + 14麥當勞(2) + 15全日(3) + 17勤億(4) = 19 列
+        [16, 18],           // Col 2: 16辰泰(11) + 18亞護(8) = 19 列
+        [19]                // Col 3: 19佐登妮絲(15) = 15 列 (自適應撐滿)
       ],
       // 頁 3 (20 ~ 26)
       [
@@ -365,7 +376,7 @@
       [
         [27, 28, 29],       // Col 1: 27遠東(7) + 28啟坤(7) + 29和大(5) = 19 列
         [30, 31, 32],       // Col 2: 30新鈺(6) + 31耐斯(6) + 32愛之味(6) = 18 列
-        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列
+        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列 (自適應撐滿)
       ]
     ];
 
@@ -389,20 +400,22 @@
       return `
         <div class="company-table-card">
           <div class="company-header">${comp.company}</div>
-          <table>
-            <thead>
-              <tr>
-                <th style="width:10%;">編號</th>
-                <th style="width:33%;">職缺名稱</th>
-                <th style="width:8%;">人數</th>
-                <th style="width:15%;">學歷</th>
-                <th style="width:34%;">薪資</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rowsHtml}
-            </tbody>
-          </table>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:10%;">編號</th>
+                  <th style="width:33%;">職缺名稱</th>
+                  <th style="width:8%;">人數</th>
+                  <th style="width:15%;">學歷</th>
+                  <th style="width:34%;">薪資</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
         </div>
       `;
     }
