@@ -33,7 +33,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 10px 14px 8px 14px;
+      padding: 8px 14px 6px 14px;
     }
 
     /* 頂部列 */
@@ -41,7 +41,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 48px;
+      height: 46px;
       margin-bottom: 6px;
       flex-shrink: 0;
     }
@@ -51,7 +51,7 @@
       height: 100%;
     }
     .logo-area img {
-      height: 44px;
+      height: 40px;
       max-width: 220px;
       object-fit: contain;
       display: block;
@@ -84,6 +84,7 @@
       grid-template-columns: repeat(3, 1fr);
       grid-gap: 8px;
       overflow: hidden;
+      margin-bottom: 6px;
     }
 
     .column {
@@ -167,54 +168,94 @@
       padding: 2px 1px;
     }
 
-    /* 右下角說明卡片 */
-    .footer-info-card {
-      background: rgba(15, 23, 42, 0.94);
+    /* 🌟 底部常駐流程橫條列 */
+    .footer-bar {
+      flex-shrink: 0;
+      height: 62px;
+      background: rgba(15, 23, 42, 0.95);
       border: 2px solid #38BDF8;
       border-radius: 6px;
-      padding: 8px 12px;
+      padding: 4px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 8px;
-      color: #FFF;
-      flex-shrink: 0;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+      gap: 16px;
+      box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
     }
-    .flow-title {
-      font-size: 0.95rem;
-      font-weight: 900;
-      color: #FFF100;
-      margin-bottom: 2px;
+    .footer-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      flex: 1;
     }
-    .flow-steps {
-      font-size: 0.76rem;
-      font-weight: 700;
-      line-height: 1.35;
+    .flow-line {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      font-size: 0.98rem;
+      font-weight: 800;
       color: #E2E8F0;
+      gap: 6px;
     }
-    .flow-time {
-      font-size: 0.82rem;
+    .flow-tag {
+      color: #FFF100;
       font-weight: 900;
-      color: #38BDF8;
-      margin-top: 3px;
-    }
-    .qr-box {
-      text-align: center;
+      font-size: 1.05rem;
       flex-shrink: 0;
     }
-    .qr-box img {
-      width: 65px;
-      height: 65px;
-      border: 2px solid #FFF;
+    .flow-step-highlight {
+      color: #38BDF8;
+      font-weight: 900;
+    }
+    .flow-step-calling {
+      color: #4ADE80; /* 亮綠色強調叫號 */
+      font-weight: 900;
+      background: rgba(74, 222, 128, 0.15);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #4ADE80;
+    }
+    .flow-arrow {
+      color: #FACC15;
+      font-weight: 900;
+      margin: 0 2px;
+    }
+    .time-line {
+      font-size: 0.88rem;
+      font-weight: 900;
+      color: #FACC15;
+      letter-spacing: 0.5px;
+    }
+
+    .footer-qr-area {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .footer-qr-area img {
+      width: 52px;
+      height: 52px;
+      border: 1.5px solid #FFF;
       border-radius: 4px;
       display: block;
     }
-    .qr-label {
-      font-size: 0.7rem;
-      font-weight: 800;
+    .qr-text-box {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .qr-title {
+      font-size: 0.82rem;
+      font-weight: 900;
       color: #38BDF8;
-      margin-top: 2px;
+      line-height: 1.2;
+    }
+    .qr-subtitle {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #94A3B8;
     }
   </style>
 </head>
@@ -232,6 +273,32 @@
 
     <!-- 三欄職缺卡片區域 -->
     <div class="columns-container" id="columnsContainer"></div>
+
+    <!-- 🌟 最下方常駐橫向流程列 -->
+    <div class="footer-bar">
+      <div class="footer-left">
+        <div class="flow-line">
+          <span class="flow-tag">📌 應徵面試流程：</span>
+          <span>掃描右方 QR Code 加入 LINE@</span>
+          <span class="flow-arrow">➔</span>
+          <span class="flow-step-highlight">點選「線上履歷」快速填寫</span>
+          <span class="flow-arrow">➔</span>
+          <span class="flow-step-highlight">點選「預約面試」登記</span>
+          <span class="flow-arrow">➔</span>
+          <span class="flow-step-calling">留意 LINE 叫號或大螢幕進度</span>
+        </div>
+        <div class="time-line">
+          ⏰ 活動時間：09:30 - 12:30
+        </div>
+      </div>
+      <div class="footer-qr-area">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
+        <div class="qr-text-box">
+          <div class="qr-title">掃描預約面試</div>
+          <div class="qr-subtitle">加入官方 LINE@</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -274,30 +341,31 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
+    // 🌟 4 頁均衡配置（各欄等長對齊）
     const PAGES_COLUMNS_CONFIG = [
-      // 頁 1 (01 ~ 12，共 13 家，總計 50 列職缺)
+      // 頁 1 (01 ~ 12)
       [
         [0, 1, 2],          // Col 1: 01新悦(7) + 02耐斯(6) + 03嘉義(4) = 17 列
         [3, 4, 5, 6, 7, 8], // Col 2: 04煙波(6) + 05全聯(3) + 06統一(2) + 07康是(2) + 08德盟(1) + 09石二鍋(2) = 16 列
-        [9, 10, 11, 12]     // Col 3: 10雲雀(7) + 11A和牛(2) + 11B青花(4) + 12築間(4) = 17 列 + 流程卡
+        [9, 10, 11, 12]     // Col 3: 10雲雀(7) + 11A和牛(2) + 11B青花(4) + 12築間(4) = 17 列
       ],
-      // 頁 2 (13 ~ 19，共 7 家，總計 53 列職缺)
+      // 頁 2 (13 ~ 19)
       [
         [13, 14, 15],       // Col 1: 13饗食(10) + 14麥當勞(2) + 15全日(3) = 15 列
         [16, 17, 18],       // Col 2: 16辰泰(11) + 17勤億(4) + 18亞護(8) = 23 列
-        [19]                // Col 3: 19佐登妮絲(15) = 15 列 + 流程卡
+        [19]                // Col 3: 19佐登妮絲(15) = 15 列
       ],
-      // 頁 3 (20 ~ 26，共 7 家，總計 59 列職缺)
+      // 頁 3 (20 ~ 26)
       [
         [20, 21, 22],       // Col 1: 20嘉楠(8) + 21上銀(5) + 22矽品(7) = 20 列
         [23, 24],           // Col 2: 23晶成(15) + 24鍵祥(5) = 20 列
-        [25, 26]            // Col 3: 25福隆(13) + 26科定(6) = 19 列 + 流程卡
+        [25, 26]            // Col 3: 25福隆(13) + 26科定(6) = 19 列
       ],
-      // 頁 4 (27 ~ 35，共 9 家，總計 50 列職缺)
+      // 頁 4 (27 ~ 35)
       [
         [27, 28, 29],       // Col 1: 27遠東(7) + 28啟坤(7) + 29和大(5) = 19 列
         [30, 31, 32],       // Col 2: 30新鈺(6) + 31耐斯(6) + 32愛之味(6) = 18 列
-        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列 + 流程卡
+        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列
       ]
     ];
 
@@ -339,27 +407,6 @@
       `;
     }
 
-    function getFooterCardHtml() {
-      return `
-        <div class="footer-info-card">
-          <div>
-            <div class="flow-title">📌 應徵面試流程</div>
-            <div class="flow-steps">
-              1. 掃描右方 QR Code 加入 LINE@<br>
-              2. 點選「線上履歷」快速填寫<br>
-              3. 點選「預約面試」登記攤位<br>
-              4. 留意 LINE 叫號與大螢幕進度
-            </div>
-            <div class="flow-time">⏰ 活動時間：09:30 - 12:30</div>
-          </div>
-          <div class="qr-box">
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
-            <div class="qr-label">掃描預約面試</div>
-          </div>
-        </div>
-      `;
-    }
-
     function renderPage(pageIdx) {
       currentPageIdx = pageIdx;
       const pageCols = PAGES_COLUMNS_CONFIG[pageIdx];
@@ -376,10 +423,6 @@
         pageCols[c].forEach(compIdx => {
           colHtml += renderCompanyTable(COMPANIES_DATA[compIdx]);
         });
-
-        if (c === 2) {
-          colHtml += getFooterCardHtml();
-        }
 
         colDiv.innerHTML = colHtml;
         container.appendChild(colDiv);
