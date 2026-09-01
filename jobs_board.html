@@ -185,7 +185,7 @@
       padding: 2px 1px;
     }
 
-    /* 🌟 底部常駐流程橫條列（QR Code 內嵌在第 1 步旁邊） */
+    /* 底部常駐流程橫條列 */
     .footer-bar {
       flex-shrink: 0;
       height: 52px;
@@ -219,7 +219,6 @@
       flex-shrink: 0;
     }
     
-    /* 🌟 內嵌 QR Code 區塊 */
     .inline-qr-box {
       display: inline-flex;
       align-items: center;
@@ -282,24 +281,24 @@
     <!-- 三欄職缺卡片區域 -->
     <div class="columns-container" id="columnsContainer"></div>
 
-    <!-- 🌟 最下方常駐橫向流程列（QR Code 移至文字旁） -->
+    <!-- 最下方常駐橫向流程列（已移除時間前的箭頭） -->
     <div class="footer-bar">
       <div class="flow-line">
-        <span class="flow-tag">📌 應徵面試流程：</span>
+        <span class="flow-tag">📌 面試流程：</span>
         
         <!-- 步驟 1 + QR Code -->
         <span class="inline-qr-box">
-          <span>掃描 QR Code 加入 LINE@</span>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
+          <span>掃描 QR Code</span>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://line.me/R/ti/p/@rxp4444s" alt="LINE QR">
         </span>
 
         <span class="flow-arrow">➔</span>
-        <span class="flow-step-highlight">點選「線上履歷」快速填寫</span>
+        <span class="flow-step-highlight">點選「填寫履歷」</span>
         <span class="flow-arrow">➔</span>
-        <span class="flow-step-highlight">點選「預約面試」登記</span>
+        <span class="flow-step-highlight">點選「預約面試」</span>
         <span class="flow-arrow">➔</span>
-        <span class="flow-step-calling">留意 LINE 叫號或大螢幕進度</span>
-        <span class="flow-arrow">➔</span>
+        <span class="flow-step-calling">留意 LINE 面試通知或大螢幕進度</span>
+        
         <span class="flow-time">⏰ 活動時間：09:30 - 12:30</span>
       </div>
     </div>
@@ -308,7 +307,7 @@
   <script>
     const COMPANIES_DATA = [
       {"company":"01新悦花園酒店","jobs":[{"no":"1-1","title":"櫃台服務員","headcount":"2","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-2","title":"禮賓員","headcount":"3","education":"不拘","salary":"月薪30,000元以上"},{"no":"1-3","title":"外場儲備幹部","headcount":"2","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-4","title":"主任","headcount":"2","education":"不拘","salary":"月薪38,000-43,000元"},{"no":"1-5","title":"中餐廳領檯出納","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-6","title":"訂席專員","headcount":"1","education":"不拘","salary":"月薪32,000元以上"},{"no":"1-7","title":"內場助手","headcount":"3","education":"不拘","salary":"月薪32,000元以上"}]},
-      {"company":"02耐斯廣場","jobs":[{"no":"2-1","title":"餐飲部訂席專員/領檯","headcount":"1","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-2","title":"餐飲部正職員工","headcount":"4","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-3","title":"行銷企劃課員/助理課員","headcount":"1","education":"大學以上","salary":"月薪30,000元以上"},{"no":"2-4","title":"顧客服務課員","headcount":"1","education":"專科以上","salary":"月薪30,000元以上"},{"no":"2-5","title":"西式廚師","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-6","title":"中西日式廚師助理","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"}]},
+      {"company":"02耐斯","jobs":[{"no":"2-1","title":"餐飲部訂席專員/領檯","headcount":"1","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-2","title":"餐飲部正職員工","headcount":"4","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-3","title":"行銷企劃課員/助理課員","headcount":"1","education":"大學以上","salary":"月薪30,000元以上"},{"no":"2-4","title":"顧客服務課員","headcount":"1","education":"專科以上","salary":"月薪30,000元以上"},{"no":"2-5","title":"西式廚師","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"},{"no":"2-6","title":"中西日式廚師助理","headcount":"2","education":"高中職以上","salary":"月薪30,000元以上"}]},
       {"company":"03嘉義福容voco酒店","jobs":[{"no":"3-1","title":"客務接待員","headcount":"3","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"3-2","title":"訂房員","headcount":"1","education":"高中職以上","salary":"月薪30,000-34,000元"},{"no":"3-3","title":"餐飲外場服務員","headcount":"3","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"3-4","title":"中/西/日廚師","headcount":"4","education":"高中職以上","salary":"月薪32,000-40,000元"}]},
       {"company":"04煙波城行阿里山北門館","jobs":[{"no":"4-1","title":"櫃檯接待員","headcount":"3","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-2","title":"餐飲服務員","headcount":"3","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-3","title":"廚房助理","headcount":"1","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-4","title":"房務員","headcount":"4","education":"高中職以上","salary":"月薪31,000-35,000元"},{"no":"4-5","title":"工務員","headcount":"1","education":"高中職以上","salary":"月薪33,000-37,000元"},{"no":"4-6","title":"餐飲幹部","headcount":"1","education":"專科以上","salary":"月薪36,000-43,000元"}]},
       {"company":"05全聯福利中心","jobs":[{"no":"5-1","title":"兼職門市計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-205元"},{"no":"5-2","title":"兼職生鮮計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-205元"},{"no":"5-3","title":"全職門市助理營業員","headcount":"5","education":"高中職以上","salary":"月薪29,400-30,400元"}]},
@@ -316,11 +315,11 @@
       {"company":"07康是美","jobs":[{"no":"7-1","title":"正職人員","headcount":"2","education":"專科以上","salary":"月薪30,000元以上"},{"no":"7-2","title":"兼職計時人員","headcount":"2","education":"高中職以上","salary":"時薪190元以上"}]},
       {"company":"08美商德盟全球凱展","jobs":[{"no":"8-1","title":"好市多展售專員(嘉義店)","headcount":"2","education":"不拘","salary":"時薪210元以上"}]},
       {"company":"09群品餐飲｜石二鍋","jobs":[{"no":"9-1","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"9-2","title":"大廳/廚房計時人員","headcount":"3","education":"高中職以上","salary":"時薪190-210元"}]},
-      {"company":"10雲雀國際｜涮乃葉｜古拉爵","jobs":[{"no":"10-1","title":"內/外場服務人員(嘉義遠百)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-2","title":"內/外場計時社員(嘉義遠百)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-3","title":"內/外場服務人員(耐斯廣場)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-4","title":"內/外場計時社員(耐斯廣場)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-5","title":"內/外場服務人員(嘉義秀泰)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-6","title":"內/外場計時社員(嘉義秀泰)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-7","title":"內/外場儲備幹部(嘉義區)","headcount":"3","education":"高中職以上","salary":"月薪36,000-45,000元"}]},
+      {"company":"10雲雀國際｜涮乃葉｜古拉爵","jobs":[{"no":"10-1","title":"內/外場服務人員(遠百)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-2","title":"內/外場計時社員(遠百)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-3","title":"內/外場服務人員(耐斯)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-4","title":"內/外場計時社員(耐斯)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-5","title":"內/外場服務人員(嘉義秀泰)","headcount":"3","education":"高中職以上","salary":"月薪32,000-38,000元"},{"no":"10-6","title":"內/外場計時社員(嘉義秀泰)","headcount":"5","education":"不拘","salary":"時薪190-230元"},{"no":"10-7","title":"內/外場儲備幹部(嘉義區)","headcount":"3","education":"高中職以上","salary":"月薪36,000-45,000元"}]},
       {"company":"11A王品餐飲｜和牛涮","jobs":[{"no":"11A-1","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"11A-2","title":"大廳/廚房計時人員","headcount":"3","education":"高中職以上","salary":"時薪190-210元"}]},
       {"company":"11B王品餐飲｜青花驕","jobs":[{"no":"11B-1","title":"大廳正職/廚藝正職人員","headcount":"2","education":"高中職以上","salary":"月薪35,800-39,300元"},{"no":"11B-2","title":"大廳/廚房見習襄理","headcount":"1","education":"高中職以上","salary":"月薪37,600-41,100元"},{"no":"11B-3","title":"大廳計時/廚藝計時人員","headcount":"2","education":"高中職以上","salary":"時薪190-210元"},{"no":"11B-4","title":"大夜計時人員","headcount":"1","education":"高中職以上","salary":"時薪245-255元"}]},
       {"company":"12築間餐飲集團","jobs":[{"no":"12-1","title":"外場服務人員/儲備幹部","headcount":"2","education":"不拘","salary":"月薪35,000-45,000元"},{"no":"12-2","title":"外場計時服務員","headcount":"5","education":"不拘","salary":"時薪190-215元"},{"no":"12-3","title":"廚房正職人員/儲備幹部","headcount":"2","education":"不拘","salary":"月薪35,000-45,000元"},{"no":"12-4","title":"廚房計時服務員","headcount":"5","education":"不拘","salary":"時薪190-215元"}]},
-      {"company":"13饗食天堂｜開飯川食堂｜饗泰多","jobs":[{"no":"13-1","title":"外場服務人員(耐斯廣場)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-2","title":"內場廚藝人員(耐斯廣場)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-3","title":"外場計時人員(耐斯廣場)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-4","title":"內場計時人員(耐斯廣場)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-5","title":"外場服務人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-6","title":"內場廚藝人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-7","title":"外場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-8","title":"內場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-9","title":"外場正職服務員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-10","title":"內場正職廚藝員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"}]},
+      {"company":"13饗食天堂｜開飯川食堂｜饗泰多","jobs":[{"no":"13-1","title":"外場服務人員(耐斯)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-2","title":"內場廚藝人員(耐斯)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-3","title":"外場計時人員(耐斯)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-4","title":"內場計時人員(耐斯)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-5","title":"外場服務人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-6","title":"內場廚藝人員(嘉義秀泰)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"},{"no":"13-7","title":"外場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-8","title":"內場計時人員(嘉義秀泰)","headcount":"3","education":"不拘","salary":"時薪190-220元"},{"no":"13-9","title":"外場正職服務員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-39,000元"},{"no":"13-10","title":"內場正職廚藝員(饗泰多)","headcount":"2","education":"高中職以上","salary":"月薪36,000-42,000元"}]},
       {"company":"14麥當勞","jobs":[{"no":"14-1","title":"餐廳襄理","headcount":"2","education":"專科以上","salary":"月薪42,400元以上"},{"no":"14-2","title":"計時服務員","headcount":"5","education":"不拘","salary":"時薪190元以上"}]},
       {"company":"15全日大林冷鏈｜奧爾瑪行銷","jobs":[{"no":"15-1","title":"倉儲員","headcount":"5","education":"不拘","salary":"月薪32,500-41,000元"},{"no":"15-2","title":"理貨員","headcount":"3","education":"不拘","salary":"月薪29,000-41,000元"},{"no":"15-3","title":"裁切作業員/食品品保員","headcount":"3","education":"不拘","salary":"月薪30,000-40,000元"}]},
       {"company":"16辰泰國際","jobs":[{"no":"16-1","title":"食品技師/研發專員","headcount":"1","education":"大學以上","salary":"月薪30,000-45,000元"},{"no":"16-2","title":"包裝作業員/倉儲人員","headcount":"4","education":"不拘","salary":"月薪29,000-35,000元"},{"no":"16-3","title":"品檢人員/電商助理","headcount":"2","education":"高中職以上","salary":"月薪29,000-33,000元"},{"no":"16-4","title":"美編設計人員","headcount":"1","education":"專科以上","salary":"月薪30,000-36,000元"},{"no":"16-5","title":"國內/外業務專員","headcount":"2","education":"專科以上","salary":"月薪32,000-45,000元"},{"no":"16-6","title":"兼職包裝人員","headcount":"2","education":"不拘","salary":"時薪190元以上"},{"no":"16-7","title":"儲備幹部","headcount":"1","education":"專科以上","salary":"月薪35,000-45,000元"},{"no":"16-8","title":"司機隨車助手","headcount":"1","education":"不拘","salary":"月薪30,000-35,000元"},{"no":"16-9","title":"會計人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"16-10","title":"採購助理","headcount":"1","education":"專科以上","salary":"月薪29,000-32,000元"},{"no":"16-11","title":"機台操作技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-38,000元"}]},
