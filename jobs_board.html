@@ -185,30 +185,32 @@
       padding: 2px 1px;
     }
 
-    /* 🌟 底部常駐流程橫條列（加大字體・單列排版） */
+    /* 🌟 底部常駐流程橫條列（QR Code 內嵌在第 1 步旁邊） */
     .footer-bar {
       flex-shrink: 0;
       height: 52px;
       background: rgba(15, 23, 42, 0.95);
       border: 2px solid #38BDF8;
       border-radius: 6px;
-      padding: 3px 14px;
+      padding: 2px 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       box-shadow: 0 0 14px rgba(56, 189, 248, 0.3);
     }
     .flow-line {
       display: flex;
       align-items: center;
       flex-wrap: nowrap;
-      font-size: 1.05rem; /* 大字體 */
+      font-size: 1.05rem;
       font-weight: 800;
       color: #FFFFFF;
-      gap: 6px;
+      gap: 8px;
       white-space: nowrap;
       overflow: hidden;
+      width: 100%;
+      justify-content: space-between;
     }
     .flow-tag {
       color: #FFF100;
@@ -216,6 +218,25 @@
       font-size: 1.15rem;
       flex-shrink: 0;
     }
+    
+    /* 🌟 內嵌 QR Code 區塊 */
+    .inline-qr-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      padding: 2px 8px 2px 4px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .inline-qr-box img {
+      width: 42px;
+      height: 42px;
+      border: 1.5px solid #FFF;
+      border-radius: 4px;
+      display: block;
+    }
+
     .flow-step-highlight {
       color: #38BDF8;
       font-weight: 900;
@@ -244,36 +265,6 @@
       border: 1px solid #FFF100;
       flex-shrink: 0;
     }
-
-    .footer-qr-area {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    .footer-qr-area img {
-      width: 44px;
-      height: 44px;
-      border: 1.5px solid #FFF;
-      border-radius: 4px;
-      display: block;
-    }
-    .qr-text-box {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .qr-title {
-      font-size: 0.8rem;
-      font-weight: 900;
-      color: #38BDF8;
-      line-height: 1.15;
-    }
-    .qr-subtitle {
-      font-size: 0.7rem;
-      font-weight: 700;
-      color: #94A3B8;
-    }
   </style>
 </head>
 <body>
@@ -291,11 +282,17 @@
     <!-- 三欄職缺卡片區域 -->
     <div class="columns-container" id="columnsContainer"></div>
 
-    <!-- 🌟 最下方常駐單列橫向流程與時間 -->
+    <!-- 🌟 最下方常駐橫向流程列（QR Code 移至文字旁） -->
     <div class="footer-bar">
       <div class="flow-line">
         <span class="flow-tag">📌 應徵面試流程：</span>
-        <span>掃描右方 QR Code 加入 LINE@</span>
+        
+        <!-- 步驟 1 + QR Code -->
+        <span class="inline-qr-box">
+          <span>掃描 QR Code 加入 LINE@</span>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
+        </span>
+
         <span class="flow-arrow">➔</span>
         <span class="flow-step-highlight">點選「線上履歷」快速填寫</span>
         <span class="flow-arrow">➔</span>
@@ -304,13 +301,6 @@
         <span class="flow-step-calling">留意 LINE 叫號或大螢幕進度</span>
         <span class="flow-arrow">➔</span>
         <span class="flow-time">⏰ 活動時間：09:30 - 12:30</span>
-      </div>
-      <div class="footer-qr-area">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://liff.line.me/2011155577-GFxY8qTy" alt="LINE QR">
-        <div class="qr-text-box">
-          <div class="qr-title">掃描預約面試</div>
-          <div class="qr-subtitle">加入官方 LINE@</div>
-        </div>
       </div>
     </div>
   </div>
@@ -355,7 +345,6 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
-    // 🌟 4 頁均衡配置
     const PAGES_COLUMNS_CONFIG = [
       // 頁 1 (01 ~ 12)
       [
@@ -400,7 +389,6 @@
         `;
       });
 
-      // 依職缺筆數加權分配高度，多筆職缺有足夠高度，少筆職缺不佔多餘空間
       const flexWeight = comp.jobs.length + 1.6;
 
       return `
