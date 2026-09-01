@@ -33,7 +33,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 10px 14px;
+      padding: 10px 14px 8px 14px;
     }
 
     /* 頂部列 */
@@ -41,7 +41,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 50px;
+      height: 48px;
       margin-bottom: 6px;
       flex-shrink: 0;
     }
@@ -56,7 +56,7 @@
       box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
     }
     .main-title {
-      font-size: 2.3rem;
+      font-size: 2.2rem;
       font-weight: 900;
       letter-spacing: 6px;
       color: #FFFFFF;
@@ -65,7 +65,7 @@
       flex: 1;
     }
     .page-indicator {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       font-weight: 800;
       color: #38BDF8;
       background: rgba(15, 23, 42, 0.85);
@@ -104,12 +104,12 @@
       flex-shrink: 0;
     }
     .company-header {
-      background-color: #FACC15;
+      background-color: #FFF100; /* 🌟 依需求設定為 #FFF100 */
       color: #000000;
       text-align: center;
-      font-size: 0.96rem;
+      font-size: 0.95rem;
       font-weight: 900;
-      padding: 3px 4px;
+      padding: 2.5px 4px;
       border-bottom: 1.5px solid #000;
       white-space: nowrap;
       overflow: hidden;
@@ -124,7 +124,7 @@
       table-layout: fixed;
     }
     th {
-      background-color: #FACC15;
+      background-color: #FFF100; /* 🌟 表頭同步設定為 #FFF100 */
       color: #000;
       font-weight: 900;
       font-size: 0.82rem;
@@ -135,27 +135,34 @@
     }
     td {
       border: 1px solid #000;
-      padding: 2px 2px;
+      padding: 2.5px 2px;
       font-weight: 800;
       text-align: center;
       background: #FFFFFF;
-      font-size: 0.82rem;
       white-space: nowrap;
       overflow: hidden;
-      text-overflow: ellipsis;
       line-height: 1.25;
+    }
+    td.no-cell {
+      font-size: 0.8rem;
     }
     td.title-cell {
       text-align: left;
       padding-left: 4px;
       font-size: 0.84rem;
+      text-overflow: ellipsis;
+    }
+    td.headcount-cell {
+      font-size: 0.82rem;
     }
     td.edu-cell {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
     }
     td.salary-cell {
-      font-size: 0.78rem;
+      font-size: clamp(0.68rem, 0.76vw, 0.82rem);
       color: #B91C1C;
+      text-align: center;
+      padding: 2px 1px;
     }
 
     /* 右下角說明卡片 */
@@ -175,11 +182,11 @@
     .flow-title {
       font-size: 0.95rem;
       font-weight: 900;
-      color: #FACC15;
+      color: #FFF100;
       margin-bottom: 2px;
     }
     .flow-steps {
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
       line-height: 1.35;
       color: #E2E8F0;
@@ -218,7 +225,7 @@
         <div class="logo-badge">數位永續 薪在嘉義2026</div>
       </div>
       <div class="main-title">廠 商 職 缺 總 表</div>
-      <div class="page-indicator" id="pageIndicator">頁次：1/3 (每 20 秒翻頁)</div>
+      <div class="page-indicator" id="pageIndicator">頁次：1/4 (每 20 秒翻頁)</div>
     </div>
 
     <!-- 三欄職缺卡片區域 -->
@@ -265,41 +272,47 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
-    // 🌟 3 頁直行連續分組配置 (每頁分三欄，依序由上而下排列)
+    // 🌟 4 頁均衡連續分組配置
     const PAGES_COLUMNS_CONFIG = [
-      // 頁 1 (01 ~ 15)
+      // 頁 1 (01 ~ 10)
       [
-        [0, 1, 2, 3, 4],            // 第 1 欄 (上到下: 01~05)
-        [5, 6, 7, 8, 9, 10, 11],     // 第 2 欄 (上到下: 06~11B)
-        [12, 13, 14, 15]             // 第 3 欄 (上到下: 12~15) + 流程說明
+        [0, 1],             // Col 1: 01新悦(7) + 02耐斯(6) = 13 列
+        [2, 3, 4],          // Col 2: 03嘉義(4) + 04煙波(6) + 05全聯(3) = 13 列
+        [5, 6, 7, 8, 9]     // Col 3: 06統一(2) + 07康是(2) + 08德盟(1) + 09石二鍋(2) + 10雲雀(7) = 14 列 + 流程卡
       ],
-      // 頁 2 (16 ~ 24)
+      // 頁 2 (11A ~ 18)
       [
-        [16, 17, 18],                // 第 1 欄 (上到下: 16~18)
-        [19, 20, 21],                // 第 2 欄 (上到下: 19~21)
-        [22, 23, 24]                 // 第 3 欄 (上到下: 22~24) + 流程說明
+        [10, 11, 12, 13],   // Col 1: 11A和牛(2) + 11B青花(4) + 12築間(4) + 13饗食(10) = 20 列
+        [14, 15, 16],       // Col 2: 14麥當勞(2) + 15全日(3) + 16辰泰(11) = 16 列
+        [17, 18]            // Col 3: 17勤億(4) + 18亞護(8) = 12 列 + 流程卡
       ],
-      // 頁 3 (25 ~ 35)
+      // 頁 3 (19 ~ 24)
       [
-        [25, 26, 27],                // 第 1 欄 (上到下: 25~27)
-        [28, 29, 30, 31],            // 第 2 欄 (上到下: 28~31)
-        [32, 33, 34, 35]             // 第 3 欄 (上到下: 32~35) + 流程說明
+        [19, 20],           // Col 1: 19佐登(15) + 20嘉楠(8) = 23 列
+        [21, 22, 24],       // Col 2: 21上銀(5) + 22矽品(7) + 24鍵祥(5) = 17 列
+        [23]                // Col 3: 23晶成(15) = 15 列 + 流程卡
+      ],
+      // 頁 4 (25 ~ 35)
+      [
+        [25, 26, 27],       // Col 1: 25福隆(13) + 26科定(6) + 27遠東(7) = 26 列
+        [28, 29, 30, 31],   // Col 2: 28啟坤(7) + 29和大(5) + 30新鈺(6) + 31耐斯(6) = 24 列
+        [32, 33, 34, 35]    // Col 3: 32愛之味(6) + 33第一生技(5) + 34光泉(4) + 35分享家(4) = 19 列 + 流程卡
       ]
     ];
 
     let currentPageIdx = 0;
-    const FLIP_INTERVAL = 20000; // 每 20 秒翻頁
+    const FLIP_INTERVAL = 20000;
 
     function renderCompanyTable(comp) {
       let rowsHtml = '';
       comp.jobs.forEach(j => {
         rowsHtml += `
           <tr>
-            <td style="width:12%;">${j.no}</td>
-            <td class="title-cell" style="width:36%;">${j.title}</td>
-            <td style="width:10%;">${j.headcount}</td>
-            <td class="edu-cell" style="width:18%;">${j.education}</td>
-            <td class="salary-cell" style="width:24%;">${j.salary}</td>
+            <td class="no-cell" style="width:10%;">${j.no}</td>
+            <td class="title-cell" style="width:33%;">${j.title}</td>
+            <td class="headcount-cell" style="width:8%;">${j.headcount}</td>
+            <td class="edu-cell" style="width:15%;">${j.education}</td>
+            <td class="salary-cell" style="width:34%;">${j.salary}</td>
           </tr>
         `;
       });
@@ -310,11 +323,11 @@
           <table>
             <thead>
               <tr>
-                <th style="width:12%;">編號</th>
-                <th style="width:36%;">職缺名稱</th>
-                <th style="width:10%;">人數</th>
-                <th style="width:18%;">學歷</th>
-                <th style="width:24%;">薪資</th>
+                <th style="width:10%;">編號</th>
+                <th style="width:33%;">職缺名稱</th>
+                <th style="width:8%;">人數</th>
+                <th style="width:15%;">學歷</th>
+                <th style="width:34%;">薪資</th>
               </tr>
             </thead>
             <tbody>
@@ -354,7 +367,6 @@
 
       document.getElementById('pageIndicator').textContent = `頁次：${pageIdx + 1}/${PAGES_COLUMNS_CONFIG.length} (每 20 秒自動翻頁)`;
 
-      // 依序渲染 3 欄
       for (let c = 0; c < 3; c++) {
         const colDiv = document.createElement('div');
         colDiv.className = 'column';
@@ -364,7 +376,6 @@
           colHtml += renderCompanyTable(COMPANIES_DATA[compIdx]);
         });
 
-        // 流程說明卡固定附在第 3 欄底部
         if (c === 2) {
           colHtml += getFooterCardHtml();
         }
