@@ -38,6 +38,7 @@
 
     /* 頂部列 */
     .header-bar {
+      position: relative; /* 為了讓主標題絕對置中 */
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -49,6 +50,7 @@
       display: flex;
       align-items: center;
       height: 100%;
+      z-index: 2;
     }
     .logo-area img {
       height: 40px;
@@ -57,14 +59,19 @@
       display: block;
       filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.4));
     }
+    /* 🌟 主標題：強制螢幕正中間絕對置中 */
     .main-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       font-size: 2.2rem;
       font-weight: 900;
       letter-spacing: 6px;
       color: #FFFFFF;
       text-shadow: 0 0 16px rgba(56, 189, 248, 0.7);
-      text-align: center;
-      flex: 1;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1;
     }
     .page-indicator {
       font-size: 1.1rem;
@@ -74,9 +81,10 @@
       padding: 4px 14px;
       border-radius: 20px;
       border: 1px solid #38BDF8;
+      z-index: 2;
     }
 
-    /* 三欄排版區域：鎖定剩餘空間 */
+    /* 三欄排版區域 */
     .columns-container {
       flex: 1 1 auto;
       min-height: 0;
@@ -95,7 +103,7 @@
       min-height: 0;
     }
 
-    /* 🌟 公司表格卡片：自動等比垂直撐滿該欄高度 */
+    /* 🌟 公司表格卡片：依職缺筆數加權等比延展，絕不壓縮多筆職缺的廠商 */
     .company-table-card {
       background: #FFFFFF;
       border-radius: 4px;
@@ -104,7 +112,6 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.35);
       display: flex;
       flex-direction: column;
-      flex: 1 1 0; /* 關鍵：強制卡片均分高度 */
       min-height: 0;
     }
     .company-header {
@@ -113,7 +120,7 @@
       text-align: center;
       font-size: 0.95rem;
       font-weight: 900;
-      padding: 2px 4px;
+      padding: 2.5px 4px;
       border-bottom: 1.5px solid #000;
       white-space: nowrap;
       overflow: hidden;
@@ -130,7 +137,7 @@
 
     table {
       width: 100%;
-      height: 100%; /* 關鍵：表格高度 100% 填滿卡片 */
+      height: 100%;
       border-collapse: collapse;
       color: #000;
       table-layout: fixed;
@@ -148,13 +155,13 @@
     }
     td {
       border: 1px solid #000;
-      padding: 1px 2px;
+      padding: 2px 2px;
       font-weight: 800;
       text-align: center;
       background: #FFFFFF;
       white-space: nowrap;
       overflow: hidden;
-      line-height: 1.2;
+      line-height: 1.25;
       vertical-align: middle;
     }
     td.no-cell {
@@ -176,7 +183,7 @@
       font-size: clamp(0.68rem, 0.76vw, 0.82rem);
       color: #B91C1C;
       text-align: center;
-      padding: 1px 1px;
+      padding: 2px 1px;
     }
 
     /* 底部常駐流程橫條列 */
@@ -352,7 +359,7 @@
       {"company":"35分享家食品(代收履歷)","jobs":[{"no":"35-1","title":"生產包裝作業員","headcount":"3","education":"不拘","salary":"月薪29,000-33,000元"},{"no":"35-2","title":"食品調配技術員","headcount":"2","education":"高中職以上","salary":"月薪30,000-36,000元"},{"no":"35-3","title":"品保人員","headcount":"1","education":"專科以上","salary":"月薪30,000-35,000元"},{"no":"35-4","title":"兼職時薪人員","headcount":"3","education":"不拘","salary":"時薪190元以上"}]}
     ];
 
-    // 🌟 全域精準平衡分組（19|19|15 等高分配）
+    // 🌟 4 頁均衡配置
     const PAGES_COLUMNS_CONFIG = [
       // 頁 1 (01 ~ 12)
       [
@@ -364,7 +371,7 @@
       [
         [13, 14, 15, 17],   // Col 1: 13饗食(10) + 14麥當勞(2) + 15全日(3) + 17勤億(4) = 19 列
         [16, 18],           // Col 2: 16辰泰(11) + 18亞護(8) = 19 列
-        [19]                // Col 3: 19佐登妮絲(15) = 15 列 (自適應撐滿)
+        [19]                // Col 3: 19佐登妮絲(15) = 15 列
       ],
       // 頁 3 (20 ~ 26)
       [
@@ -376,7 +383,7 @@
       [
         [27, 28, 29],       // Col 1: 27遠東(7) + 28啟坤(7) + 29和大(5) = 19 列
         [30, 31, 32],       // Col 2: 30新鈺(6) + 31耐斯(6) + 32愛之味(6) = 18 列
-        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列 (自適應撐滿)
+        [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列
       ]
     ];
 
@@ -397,8 +404,11 @@
         `;
       });
 
+      // 🌟 核心關鍵：依職缺筆數加權 (flex-grow: 行數 + 1.6)，確保多筆職缺有足夠高度，少筆職缺不佔多餘空間
+      const flexWeight = comp.jobs.length + 1.6;
+
       return `
-        <div class="company-table-card">
+        <div class="company-table-card" style="flex: ${flexWeight} 1 0;">
           <div class="company-header">${comp.company}</div>
           <div class="table-container">
             <table>
