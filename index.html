@@ -332,7 +332,6 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     <div id="successMessageContent" class="status-message success form-container p-6 sm:p-8"></div>
   </div>
 </div>
-
 <!-- 🌟 升級版客製化彈窗 (支援雙按鈕) -->
 <div id="customAlertModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden z-50 backdrop-blur-sm">
   <div class="form-container p-6 sm:p-8 rounded-xl shadow-2xl max-w-md w-full mx-auto text-center space-y-6">
@@ -346,9 +345,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--bright-cyan); 
     </div>
   </div>
 </div>
-
 <script>
-const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxXW_kTGc6-uYyVztaYO6D1SzORSX9fRjS60tn8UaVa6jk4Ok67R6ALNNiwGdIMCko_cw/exec';
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzOFOqPJBVNS9DPfZiUEy4w0eWv07UB0nja4cNVudy47vgcQJRVdcCLhWmDI51fIWX4/exec';
 const LIFF_ID = '2011155577-H3Qf7lye';
 window.lineUserId = '';
 window.formData = {}; 
@@ -357,6 +355,49 @@ window.companyDataLoaded = false;
 window.companyDataPromise = null;
 window.currentBookingInfo = {};
 window.userProfiles = [];
+
+/**
+ * 🌟 驗證台灣身分證字號與外籍居留證 (新式與舊式)
+ */
+function validateTwId(id) {
+  if (!id) return false;
+  id = String(id).trim().toUpperCase();
+
+  // 本國身分證或新式居留證 (1英文字母 + 9位數字，第二碼為 1, 2, 8, 9)
+  const regexNew = /^[A-Z][1289]\d{8}$/;
+  // 舊式居留證 (1英文字母 + 1位英文字母(A-D) + 8位數字)
+  const regexOld = /^[A-Z][A-D]\d{8}$/;
+
+  if (!regexNew.test(id) && !regexOld.test(id)) {
+    return false;
+  }
+
+  const cityCodeMap = {
+    A: 10, B: 11, C: 12, D: 13, E: 14, F: 15, G: 16, H: 17, I: 34,
+    J: 18, K: 19, L: 20, M: 21, N: 22, O: 35, P: 23, Q: 24, R: 25,
+    S: 26, T: 27, U: 28, V: 29, W: 32, X: 30, Y: 31, Z: 33
+  };
+
+  const firstCharVal = cityCodeMap[id[0]];
+  let sum = Math.floor(firstCharVal / 10) + (firstCharVal % 10) * 9;
+
+  if (regexOld.test(id)) {
+    // 舊式居留證：第2碼為英文字母 A-D，對應數值取個位數
+    const secondCharVal = cityCodeMap[id[1]] % 10;
+    sum += secondCharVal * 8;
+  } else {
+    // 身分證或新式居留證：第2碼為數字
+    sum += parseInt(id[1], 10) * 8;
+  }
+
+  const weights = [7, 6, 5, 4, 3, 2, 1];
+  for (let i = 0; i < 7; i++) {
+    sum += parseInt(id[i + 2], 10) * weights[i];
+  }
+
+  const checkDigit = parseInt(id[9], 10);
+  return (sum + checkDigit) % 10 === 0;
+}
 
 async function callGasApi(action, payload = {}, method = 'GET') {
   try {
@@ -378,7 +419,6 @@ async function callGasApi(action, payload = {}, method = 'GET') {
     return { status: 'error', message: '資料傳輸失敗：' + (err.message || '請檢查網路連線') };
   }
 }
-
 function closeWebPage() {
   if (typeof liff !== 'undefined' && liff.isInClient && liff.isInClient()) {
     liff.closeWindow();
@@ -389,7 +429,6 @@ function closeWebPage() {
     }, 300);
   }
 }
-
 function initBirthdatePicker() {
   const yearSelect = document.getElementById('birthYear');
   const monthSelect = document.getElementById('birthMonth');
@@ -413,7 +452,6 @@ function initBirthdatePicker() {
     daySelect.appendChild(opt);
   }
 }
-
 function syncBirthdateValue() {
   const y = document.getElementById('birthYear').value;
   const m = document.getElementById('birthMonth').value;
@@ -424,7 +462,6 @@ function syncBirthdateValue() {
     document.getElementById('birthdate').value = '';
   }
 }
-
 function setIdentityCheckState(message, state = 'loading') {
   const panel = document.getElementById('identityCheckPanel');
   const text = document.getElementById('identityCheckText');
@@ -440,7 +477,6 @@ function setIdentityCheckState(message, state = 'loading') {
     if (state === 'error') panel.classList.add('error');
   }
 }
-
 function hideIdentityCheck(delay = 700) {
   const panel = document.getElementById('identityCheckPanel');
   if (!panel) return;
@@ -448,7 +484,6 @@ function hideIdentityCheck(delay = 700) {
     panel.classList.add('hidden');
   }, delay);
 }
-
 async function initLiff() {
   try {
     setIdentityCheckState('正在識別 LINE 身份與比對履歷紀錄...', 'loading');
@@ -471,7 +506,6 @@ async function initLiff() {
     setIdentityCheckState('LINE 身份識別暫時失敗，請重新開啟頁面再試一次。', 'error');
   }
 }
-
 function maskPhoneForResumeCard(phone) {
   const v = String(phone || '').trim();
   if (!v) return '未填';
@@ -483,12 +517,10 @@ function maskPhoneForResumeCard(phone) {
   }
   return '***';
 }
-
 function safeResumeCardText(value, fallback = '未填') {
   const v = String(value || '').trim();
   return v || fallback;
 }
-
 async function checkExistingProfiles(lineUserId) {
   const res = await callGasApi('getProfilesByLineUserId', { lineUserId: lineUserId });
   if (res && res.status === 'found' && res.profiles && res.profiles.length > 0) {
@@ -553,7 +585,6 @@ async function checkExistingProfiles(lineUserId) {
     setIdentityCheckState(msg, 'error');
   }
 }
-
 async function loadCompanyDataOnce() {
   if (window.companyDataLoaded) {
     return window.companyData;
@@ -577,7 +608,6 @@ async function loadCompanyDataOnce() {
     });
   return window.companyDataPromise;
 }
-
 function loadProfileIntoForm(profile) {
   document.getElementById('existingResumeBanner').classList.add('hidden');
   document.getElementById('formFields').classList.remove('hidden');
@@ -614,19 +644,16 @@ function loadProfileIntoForm(profile) {
   setCheckboxValues('language', profile.language);
   showCustomAlert(`已成功載入【${profile.name}】的履歷資料，您可以進行修改！`);
 }
-
 function setRadioValue(name, val) {
   if (!val) return;
   const radios = document.getElementsByName(name);
   radios.forEach(r => { if (r.value === val) r.checked = true; });
 }
-
 function setCheckboxValues(name, arr) {
   if (!Array.isArray(arr)) return;
   const cbs = document.getElementsByName(name);
   cbs.forEach(cb => { cb.checked = arr.includes(cb.value); });
 }
-
 function createCircuitBackground() {
   const circuitBg = document.getElementById('circuitBackground');
   if (!circuitBg) return;
@@ -643,7 +670,6 @@ function createCircuitBackground() {
     circuitBg.appendChild(line);
   }
 }
-
 // 🌟 一般提示彈窗 (單按鈕)
 function showCustomAlert(message) {
   const customAlertMessage = document.getElementById('customAlertMessage');
@@ -663,7 +689,6 @@ function showCustomAlert(message) {
     };
   });
 }
-
 // 🌟 提交成功雙選項彈窗 (繼續預約 / 關閉網頁)
 function showPostSubmitChoiceModal(message) {
   const customAlertMessage = document.getElementById('customAlertMessage');
@@ -687,7 +712,6 @@ function showPostSubmitChoiceModal(message) {
     };
   });
 }
-
 function displayDataInReview(dataObject) {
   const reviewContent = document.getElementById('reviewContent');
   reviewContent.innerHTML = '';
@@ -723,7 +747,6 @@ function displayDataInReview(dataObject) {
   document.getElementById('reviewSection').classList.remove('hidden');
   window.scrollTo(0, 0);
 }
-
 function displayAppointmentSection(resumeInfo) {
   const companyListContainer = document.getElementById('companyListContainer');
   if(!companyListContainer) return; 
@@ -749,7 +772,6 @@ function displayAppointmentSection(resumeInfo) {
   document.getElementById('appointmentSection').classList.remove('hidden'); 
   window.scrollTo(0, 0);
 }
-
 function handleFinalSuccess(r) {
   const successMessageContent = document.getElementById('successMessageContent');
   const successMessageContainer = document.getElementById('successMessageContainer');
@@ -778,7 +800,6 @@ function handleFinalSuccess(r) {
   });
   window.scrollTo(0,0);
 }
-
 document.addEventListener('DOMContentLoaded', function() {
   createCircuitBackground();
   initBirthdatePicker();
@@ -788,6 +809,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const agreementError = document.getElementById('agreementError');
   const confirmBtn = document.getElementById('confirmBtn');
   const confirmAppointmentBtn = document.getElementById('confirmAppointmentBtn');
+  const idNumberInput = document.getElementById('idNumber');
+  const idNumberError = document.getElementById('idNumberError');
+  
+  // 即時監聽身分證輸入框驗證
+  if (idNumberInput) {
+    idNumberInput.addEventListener('input', function() {
+      const val = this.value.trim().toUpperCase();
+      if (val && !validateTwId(val)) {
+        if (idNumberError) idNumberError.classList.remove('hidden');
+      } else {
+        if (idNumberError) idNumberError.classList.add('hidden');
+      }
+    });
+  }
   
   ['birthYear', 'birthMonth', 'birthDay'].forEach(id => {
     const el = document.getElementById(id);
@@ -803,7 +838,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     });
   }
-
   // 表單檢查提交
   document.getElementById('dataForm').addEventListener('submit', function(e) {
     e.preventDefault(); 
@@ -819,6 +853,18 @@ document.addEventListener('DOMContentLoaded', function() {
       showCustomAlert('請完整選擇出生年、月、日！');
       return;
     }
+    
+    // 🌟 身分證字號與居留證格式驗證
+    const idVal = idNumberInput ? idNumberInput.value.trim().toUpperCase() : '';
+    if (!validateTwId(idVal)) {
+      if (idNumberError) idNumberError.classList.remove('hidden');
+      if (idNumberInput) idNumberInput.focus();
+      showCustomAlert('身份證字號(居留證號)格式不正確，請確認後重新輸入！');
+      return;
+    } else {
+      if (idNumberError) idNumberError.classList.add('hidden');
+    }
+    
     const f = new FormData(this);
     const dReview = {}; 
     f.forEach((v, k) => { if(!['license', 'computerSkill', 'language'].includes(k)) dReview[k] = v; });
@@ -840,7 +886,6 @@ document.addEventListener('DOMContentLoaded', function() {
     displayDataInReview(dReview);
     loadCompanyDataOnce();
   });
-
   // 返回重新編輯
   document.getElementById('editBtn').addEventListener('click', () => { 
     document.getElementById('reviewSection').classList.add('hidden'); 
@@ -848,12 +893,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const formFieldsEl = document.getElementById('formFields');
     if (formFieldsEl) formFieldsEl.classList.remove('hidden');
   });
-
   document.getElementById('backToReviewBtn').addEventListener('click', () => { 
     document.getElementById('appointmentSection').classList.add('hidden'); 
     document.getElementById('reviewSection').classList.remove('hidden'); 
   });
-
   // 🌟【關鍵修改】：確認送出履歷後提供「繼續預約」與「關閉網頁」雙選項
   confirmBtn.addEventListener('click', async function() {
     const d = { ...window.formData };
@@ -890,7 +933,6 @@ document.addEventListener('DOMContentLoaded', function() {
       showCustomAlert(r.message || '儲存失敗，請重試');
     }
   });
-
   // 確認預約職缺
   confirmAppointmentBtn.addEventListener('click', async function() {
     const companyListContainer = document.getElementById('companyListContainer');
@@ -923,4 +965,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
-</html>  
+</html>
