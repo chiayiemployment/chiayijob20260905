@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>廠商職缺總表 - 數位永續 薪在嘉義2026</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@600;800;900&display=swap" rel="stylesheet">
+  <!-- 補入 400 (正常常規字重)，確保能呈現非粗體字型 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;800;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
     html, body {
@@ -136,7 +137,7 @@
     th {
       background-color: #FFFFFF;
       color: #000000;
-      font-weight: 900;
+      font-weight: normal; /* 已修改：表頭不使用粗體 */
       font-size: 0.82rem;
       border: 1px solid #000;
       padding: 2px 1px;
@@ -147,7 +148,7 @@
     td {
       border: 1px solid #000;
       padding: 2px 2px;
-      font-weight: 800;
+      font-weight: normal; /* 已修改：表格內文不使用粗體 */
       text-align: center;
       background: #FFFFFF;
       white-space: nowrap;
@@ -158,7 +159,7 @@
     td.no-cell {
       font-size: 0.8rem;
     }
-    /* 🌟 職缺名稱欄位改為水平置中 */
+    /* 職缺名稱欄位水平置中 */
     td.title-cell {
       text-align: center;
       font-size: 0.84rem;
@@ -685,7 +686,6 @@
         ]
       }
     ];
-
     const PAGES_COLUMNS_CONFIG = [
       // 頁 1 (01 ~ 12)
       [
@@ -712,10 +712,8 @@
         [33, 34, 35]        // Col 3: 33第一生技(5) + 34光泉(4) + 35分享家(4) = 13 列
       ]
     ];
-
     let currentPageIdx = 0;
     const FLIP_INTERVAL = 20000;
-
     function renderCompanyTable(comp) {
       let rowsHtml = '';
       comp.jobs.forEach(j => {
@@ -729,9 +727,7 @@
           </tr>
         `;
       });
-
       const flexWeight = comp.jobs.length + 1.6;
-
       return `
         <div class="company-table-card" style="flex: ${flexWeight} 1 0;">
           <div class="company-header">${comp.company}</div>
@@ -754,34 +750,27 @@
         </div>
       `;
     }
-
     function renderPage(pageIdx) {
       currentPageIdx = pageIdx;
       const pageCols = PAGES_COLUMNS_CONFIG[pageIdx];
       const container = document.getElementById('columnsContainer');
       container.innerHTML = '';
-
       document.getElementById('pageIndicator').textContent = `頁次：${pageIdx + 1}/${PAGES_COLUMNS_CONFIG.length} (每 20 秒自動翻頁)`;
-
       for (let c = 0; c < 3; c++) {
         const colDiv = document.createElement('div');
         colDiv.className = 'column';
-
         let colHtml = '';
         pageCols[c].forEach(compIdx => {
           colHtml += renderCompanyTable(COMPANIES_DATA[compIdx]);
         });
-
         colDiv.innerHTML = colHtml;
         container.appendChild(colDiv);
       }
     }
-
     setInterval(() => {
       currentPageIdx = (currentPageIdx + 1) % PAGES_COLUMNS_CONFIG.length;
       renderPage(currentPageIdx);
     }, FLIP_INTERVAL);
-
     document.addEventListener('DOMContentLoaded', () => {
       renderPage(0);
     });
