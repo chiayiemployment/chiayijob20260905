@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>數位永續 薪在嘉義2026 - 面試進度</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <!-- 引入 Noto Sans TC 標準字重(400)與粗體字重 -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans TC', sans-serif; }
     html, body {
@@ -16,13 +17,11 @@
       display: flex;
       flex-direction: column;
     }
-
     .circuit-bg {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: radial-gradient(circle at 50% 50%, #292468 0%, #15133C 100%);
       z-index: 0; pointer-events: none;
     }
-
     .board-container {
       position: relative;
       z-index: 10;
@@ -33,7 +32,6 @@
       flex-direction: column;
       justify-content: space-between;
     }
-
     .header-bar {
       flex-shrink: 0;
       background-color: #0F3A7A;
@@ -46,7 +44,6 @@
       font-weight: 900;
     }
     .page-indicator { font-size: 1.25rem; font-weight: 700; color: #E0EFFF; }
-
     .grid-container {
       flex: 1 1 auto;
       min-height: 0;
@@ -57,7 +54,6 @@
       padding: 6px 12px;
       background-color: #EBF1F8;
     }
-
     .booth-card {
       background: #FFFFFF;
       border: 2px solid #8AB4E2;
@@ -72,7 +68,7 @@
       color: #FFFFFF;
       padding: 3px 8px;
       font-size: 1.15rem;
-      font-weight: 700;
+      font-weight: normal; /* 已改為正常字體，不粗體 */
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -85,12 +81,11 @@
       flex-direction: column;
       justify-content: space-evenly;
     }
-
     .status-row {
       display: flex;
       align-items: center;
       font-size: 1.05rem;
-      font-weight: 700;
+      font-weight: normal; /* 已改為正常字體，不粗體 */
       line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
@@ -98,7 +93,7 @@
     }
     .status-current {
       font-size: 1.55rem;
-      font-weight: 900;
+      font-weight: normal; /* 已改為正常字體，不粗體 */
       color: #108A43;
     }
     .status-dot {
@@ -113,7 +108,6 @@
     .text-next { color: #333333; font-size: 1.1rem; }
     .text-pass { color: #555555; font-size: 1.05rem; }
     .pass-name-text { transition: opacity 0.25s ease-in-out; }
-
     .footer-bar {
       flex-shrink: 0;
       background-color: #F8FAFC;
@@ -158,14 +152,12 @@
       </div>
     </div>
   </div>
-
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbxRySlV7lWM3bQ5JeYDNTQFTqXhEv-YU-TAeBd-QvLxSlM76VwdEtHuO7x9ieuTPXYohw/exec';
     let allPages = [];
     let currentPageIdx = 0;
     const FLIP_INTERVAL = 15000;
     let passIntervalTimers = [];
-
     // 🌟 每 5 秒在背景抓取最新資料
     async function fetchBoardData() {
       try {
@@ -185,12 +177,10 @@
         console.error("資料載入異常:", e);
       }
     }
-
     function clearPassTimers() {
       passIntervalTimers.forEach(id => clearInterval(id));
       passIntervalTimers = [];
     }
-
     function renderPage(index) {
       if (!allPages || allPages.length === 0) return;
       if (index >= allPages.length) index = 0;
@@ -201,10 +191,8 @@
       const rangeText = index === 0 ? "(01-16 攤位)" : "(17-34 攤位)";
       document.getElementById('boardTitle').textContent = `數位永續 薪在嘉義2026 - 面試進度 ${rangeText}`;
       document.getElementById('pageIndicator').textContent = `頁次：${pageData.pageIndex}/${pageData.totalPages} (每 15 秒自動翻頁)`;
-
       const container = document.getElementById('gridContainer');
       container.innerHTML = '';
-
       (pageData.booths || []).forEach(b => {
         const card = document.createElement('div');
         card.className = 'booth-card';
@@ -227,17 +215,14 @@
           </div>
         `;
         container.appendChild(card);
-
         setupBoothPassCycle(b);
       });
     }
-
     // 🌟 原位無感極速刷新（每 5 秒直接替換文字，完全不閃爍）
     function liveUpdateCurrentPage() {
       if (!allPages || allPages.length === 0) return;
       const pageData = allPages[currentPageIdx];
       if (!pageData) return;
-
       (pageData.booths || []).forEach(b => {
         const curEl = document.getElementById(`cur-txt-${b.boothNo}`);
         const nxtEl = document.getElementById(`nxt-txt-${b.boothNo}`);
@@ -245,12 +230,10 @@
         if (nxtEl && nxtEl.textContent !== b.next) nxtEl.textContent = b.next;
       });
     }
-
     function setupBoothPassCycle(booth) {
       const lblEl = document.getElementById(`pass-lbl-${booth.boothNo}`);
       const txtEl = document.getElementById(`pass-txt-${booth.boothNo}`);
       if (!lblEl || !txtEl) return;
-
       const list = booth.passList || [];
       const total = list.length;
       if (total === 0) {
@@ -258,11 +241,9 @@
         txtEl.textContent = '無';
         return;
       }
-
       const chunkSize = 3;
       const totalGroups = Math.ceil(total / chunkSize);
       lblEl.textContent = total > 3 ? `過號(共${total}人)：` : '過 號：';
-
       let currentGroup = 0;
       const showGroup = (idx) => {
         const start = idx * chunkSize;
@@ -273,9 +254,7 @@
           txtEl.style.opacity = '1';
         }, 150);
       };
-
       showGroup(0);
-
       if (totalGroups > 1) {
         const intervalTime = Math.max(2500, Math.floor(15000 / totalGroups));
         const timerId = setInterval(() => {
@@ -285,15 +264,13 @@
         passIntervalTimers.push(timerId);
       }
     }
-
-    // 每 30 秒翻頁
+    // 每 15 秒翻頁
     setInterval(() => {
       if (allPages.length > 1) {
         currentPageIdx = (currentPageIdx + 1) % allPages.length;
         renderPage(currentPageIdx);
       }
     }, FLIP_INTERVAL);
-
     // 🌟 每 5 秒後台抓一次最新資料並即時原位刷新
     setInterval(fetchBoardData, 5000);
     document.addEventListener('DOMContentLoaded', fetchBoardData);
